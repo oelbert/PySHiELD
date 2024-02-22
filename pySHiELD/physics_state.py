@@ -10,7 +10,8 @@ from ndsl.initialization.allocator import QuantityFactory
 from ndsl.initialization.sizer import GridSizer
 from ndsl.quantity import Quantity
 from pySHiELD._config import PHYSICS_PACKAGES
-from pySHiELD.stencils.microphysics import MicrophysicsState
+from pySHiELD.stencils.microphysics import MicrophysicsState as MicrophysicsStateOld
+from pySHiELD.stencils.SHiELD_microphysics import MicrophysicsState
 
 
 @dataclass()
@@ -293,13 +294,29 @@ class PhysicsState:
         schemes: List[PHYSICS_PACKAGES],
     ):
         # storage for tendency variables not in PhysicsState
-        if "GFS_microphysics" in [scheme.value for scheme in schemes]:
+        if "SHiELD_microphysics" in [scheme.value for scheme in schemes]:
+            self.microphysics: Optional[MicrophysicsState] = MicrophysicsState.init_zeros(quantity_factory)
+            self.microphysics.pt = self.pt
+            self.microphysics.qvapor = self.qvapor
+            self.microphysics.qliquid = self.qliquid
+            self.microphysics.qrain = self.qrain
+            self.microphysics.qice = self.qice
+            self.microphysics.qsnow = self.qsnow
+            self.microphysics.qgraupel = self.qgraupel
+            self.microphysics.qcld = self.qcld
+            self.microphysics.ua = self.ua
+            self.microphysics.va = self.va
+            self.microphysics.wa = self.w
+            self.microphysics.delp = self.delp
+            self.microphysics.delz = self.delz
+            self.microphysics.geopotential_surface_height = self.phii[:, :, -1]  # does this work? should it go somewhere else?
+        elif "GFS_microphysics" in [scheme.value for scheme in schemes]:
             tendency = quantity_factory.zeros(
                 [X_DIM, Y_DIM, Z_DIM],
                 "unknown",
                 dtype=Float,
             )
-            self.microphysics: Optional[MicrophysicsState] = MicrophysicsState(
+            self.microphysics: Optional[MicrophysicsStateOld] = MicrophysicsStateOld(
                 pt=self.pt,
                 qvapor=self.qvapor,
                 qliquid=self.qliquid,

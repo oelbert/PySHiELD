@@ -20,7 +20,8 @@ from pySHiELD._config import PHYSICS_PACKAGES, PhysicsConfig
 from pySHiELD.physics_state import PhysicsState
 from pySHiELD.stencils.get_phi_fv3 import get_phi_fv3
 from pySHiELD.stencils.get_prs_fv3 import get_prs_fv3
-from pySHiELD.stencils.microphysics import Microphysics
+from pySHiELD.stencils.microphysics import Microphysics as GFS_Microphysics
+from pySHiELD.stencils.SHiELD_microphysics import Microphysics as SHiELD_Microphysics
 
 
 def atmos_phys_driver_statein(
@@ -248,6 +249,8 @@ class Physics:
             },
         )
         if "GFS_microphysics" in schemes:
+            if "SHiELD_microphysics" in schemes:
+                raise ValueError(f"Can only activate 0 or 1 microphysics scheme, current configuration is {schemes}") # TODO: We should consider a ConfigurationError exception for this
             self._gfs_microphysics = True
             self._prepare_microphysics = stencil_factory.from_origin_domain(
                 func=prepare_microphysics,
@@ -261,8 +264,13 @@ class Physics:
                     domain=grid_indexing.domain_compute(),
                 )
             )
-            self._microphysics = Microphysics(
+            self._microphysics = GFS_Microphysics(
                 stencil_factory, quantity_factory, grid_data, namelist=namelist
+            )
+        elif "SHiELD_microphysics" in schemes:
+            self._shield_microphysics = True
+            self._microphysics = SHiELD_Microphysics(
+                stencil_factory, quantity_factory, grid_data, namelist.microphysics
             )
         else:
             self._gfs_microphysics = False
@@ -274,6 +282,7 @@ class Physics:
         self._p00 = 1.0e5
 
     def __call__(self, physics_state: PhysicsState, timestep: float):
+
         self._atmos_phys_driver_statein(
             self._prsik,
             physics_state.phii,
@@ -364,3 +373,7 @@ class Physics:
                 physics_state.physics_updated_va,
                 timestep,
             )
+        elif self._shield_microphysics:
+            self._microphysics(physics_state.microphysics, timestep=timestep)
+        else:
+            raise NotImplementedError(f"{self.scheme} scheme not implemented")
