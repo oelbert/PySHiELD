@@ -1,12 +1,13 @@
 from gt4py.cartesian.gtscript import __INLINED, PARALLEL, computation, interval
 
-import pySHiELD.stencils.SHiELD_microphysics.physical_functions as physfun
 import ndsl.constants as constants
+import pySHiELD.stencils.SHiELD_microphysics.physical_functions as physfun
+from ndsl.constants import X_DIM, Y_DIM, Z_DIM
 from ndsl.dsl.stencil import GridIndexing, StencilFactory
-from ndsl.namelist import Namelist
 from ndsl.dsl.typing import FloatField, FloatFieldIJ
-from ndsl.initialization.allocator import QuantityFactory
 from ndsl.initialization import SubtileGridSizer
+from ndsl.initialization.allocator import QuantityFactory
+from ndsl.namelist import Namelist
 from pySHiELD._config import MicroPhysicsConfig, PhysicsConfig
 from pySHiELD.stencils.SHiELD_microphysics.cloud_fraction import (  # noqa
     CloudFraction,
@@ -16,7 +17,6 @@ from pySHiELD.stencils.SHiELD_microphysics.cloud_fraction import (  # noqa
     cloud_scheme_4,
 )
 from tests.savepoint.translate.translate_physics import TranslatePhysicsFortranData2Py
-from ndsl.constants import X_DIM, Y_DIM, Z_DIM
 
 
 def cloud_fraction_test(

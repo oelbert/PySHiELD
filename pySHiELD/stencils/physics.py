@@ -250,7 +250,9 @@ class Physics:
         )
         if "GFS_microphysics" in schemes:
             if "SHiELD_microphysics" in schemes:
-                raise ValueError(f"Can only activate 0 or 1 microphysics scheme, current configuration is {schemes}") # TODO: We should consider a ConfigurationError exception for this
+                raise ValueError(
+                    f"Multiple microphysics schemes: {schemes}"
+                )  # TODO: We should consider a ConfigurationError exception for this
             self._gfs_microphysics = True
             self._prepare_microphysics = stencil_factory.from_origin_domain(
                 func=prepare_microphysics,

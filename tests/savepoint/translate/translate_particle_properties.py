@@ -1,8 +1,8 @@
-from ndsl.initialization.allocator import QuantityFactory
-from ndsl.initialization import SubtileGridSizer
 from ndsl.dsl.stencil import StencilFactory
-from ndsl.namelist import Namelist
 from ndsl.dsl.typing import FloatField
+from ndsl.initialization import SubtileGridSizer
+from ndsl.initialization.allocator import QuantityFactory
+from ndsl.namelist import Namelist
 from pySHiELD._config import MicroPhysicsConfig, PhysicsConfig
 from pySHiELD.stencils.SHiELD_microphysics.microphysics_v3 import (
     calculate_particle_properties,

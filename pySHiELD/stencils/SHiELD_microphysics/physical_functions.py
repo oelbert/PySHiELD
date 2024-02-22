@@ -1,8 +1,7 @@
-from gt4py.cartesian import gtscript
-from gt4py.cartesian.gtscript import exp, floor, log, sqrt
-
 import pace.fv3core.stencils.basic_operations as basic
 import pace.util.constants as constants
+from gt4py.cartesian import gtscript
+from gt4py.cartesian.gtscript import exp, floor, log, sqrt
 
 
 @gtscript.function

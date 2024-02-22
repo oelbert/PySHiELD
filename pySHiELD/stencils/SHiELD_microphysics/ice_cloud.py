@@ -1,3 +1,4 @@
+import physical_functions as physfun
 from gt4py.cartesian import gtscript
 from gt4py.cartesian.gtscript import (
     __INLINED,
@@ -9,9 +10,8 @@ from gt4py.cartesian.gtscript import (
     log,
 )
 
-import pyFV3.stencils.basic_operations as basic
-import physical_functions as physfun
 import ndsl.constants as constants
+import pyFV3.stencils.basic_operations as basic
 
 # from pace.dsl.dace.orchestration import orchestrate
 from ndsl.dsl.stencil import GridIndexing, StencilFactory

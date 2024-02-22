@@ -1,6 +1,5 @@
-from gt4py.cartesian.gtscript import FORWARD, computation, interval
-
 import pace.util
+from gt4py.cartesian.gtscript import FORWARD, computation, interval
 
 # from pace.dsl.dace.orchestration import orchestrate
 from pace.dsl.stencil import GridIndexing, StencilFactory

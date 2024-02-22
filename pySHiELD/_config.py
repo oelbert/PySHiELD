@@ -1,13 +1,13 @@
 import dataclasses
-from enum import Enum, unique
 import math
+from enum import Enum, unique
 from typing import List, Optional, Tuple
 
 import f90nml
 
+import ndsl.constants as constants
 from ndsl.namelist import Namelist, NamelistDefaults
 from ndsl.utils import MetaEnumStr
-import ndsl.constants as constants
 
 
 DEFAULT_INT = 0

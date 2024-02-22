@@ -295,7 +295,9 @@ class PhysicsState:
     ):
         # storage for tendency variables not in PhysicsState
         if "SHiELD_microphysics" in [scheme.value for scheme in schemes]:
-            self.microphysics: Optional[MicrophysicsState] = MicrophysicsState.init_zeros(quantity_factory)
+            self.microphysics: Optional[
+                MicrophysicsState
+            ] = MicrophysicsState.init_zeros(quantity_factory)
             self.microphysics.pt = self.pt
             self.microphysics.qvapor = self.qvapor
             self.microphysics.qliquid = self.qliquid
@@ -309,7 +311,9 @@ class PhysicsState:
             self.microphysics.wa = self.w
             self.microphysics.delp = self.delp
             self.microphysics.delz = self.delz
-            self.microphysics.geopotential_surface_height = self.phii[:, :, -1]  # does this work? should it go somewhere else?
+            self.microphysics.geopotential_surface_height = self.phii[
+                :, :, -1
+            ]  # does this work? should it go somewhere else?
         elif "GFS_microphysics" in [scheme.value for scheme in schemes]:
             tendency = quantity_factory.zeros(
                 [X_DIM, Y_DIM, Z_DIM],

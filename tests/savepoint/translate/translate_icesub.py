@@ -7,12 +7,12 @@ from gt4py.cartesian.gtscript import (  # noqa
     interval,
 )
 
-from ndsl.dsl.stencil import StencilFactory
+import ndsl.constants as constants
 import pyFV3.stencils.basic_operations as basic
 import pySHiELD.stencils.SHiELD_microphysics.physical_functions as physfun
-from ndsl.namelist import Namelist
-import ndsl.constants as constants
+from ndsl.dsl.stencil import StencilFactory
 from ndsl.dsl.typing import FloatField, FloatFieldIJ
+from ndsl.namelist import Namelist
 from pySHiELD import PhysicsConfig
 from pySHiELD.stencils.SHiELD_microphysics.ice_cloud import (  # noqa
     accrete_graupel_with_cloud_water_and_rain,

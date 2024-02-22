@@ -1,5 +1,5 @@
-from ndsl.namelist import Namelist
 from ndsl.dsl.stencil import StencilFactory
+from ndsl.namelist import Namelist
 from pySHiELD import PhysicsConfig
 from tests.savepoint.translate.translate_physics import TranslatePhysicsFortranData2Py
 

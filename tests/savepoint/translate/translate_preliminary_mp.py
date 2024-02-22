@@ -1,8 +1,9 @@
-from ndsl.initialization.allocator import QuantityFactory
-from ndsl.initialization import SubtileGridSizer
-from ndsl.dsl.stencil import StencilFactory
-from ndsl.namelist import Namelist
 import pyFV3.stencils.basic_operations as basic
+from ndsl.constants import X_DIM, Y_DIM
+from ndsl.dsl.stencil import StencilFactory
+from ndsl.initialization import SubtileGridSizer
+from ndsl.initialization.allocator import QuantityFactory
+from ndsl.namelist import Namelist
 from pySHiELD import PhysicsConfig
 from pySHiELD.stencils.SHiELD_microphysics.microphysics_v3 import (
     calculate_density_factor,
@@ -13,7 +14,6 @@ from pySHiELD.stencils.SHiELD_microphysics.microphysics_v3 import (
     reset_initial_values_and_make_copies,
 )
 from tests.savepoint.translate.translate_physics import TranslatePhysicsFortranData2Py
-from ndsl.constants import X_DIM, Y_DIM
 
 
 class PrelimCalcs:

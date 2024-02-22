@@ -1,9 +1,9 @@
 from dataclasses import InitVar, dataclass, field, fields
 from typing import Any, Dict, Mapping
 
-from ndsl.quantity import Quantity
-from ndsl.initialization.allocator import QuantityFactory, GridSizer
 from ndsl.constants import X_DIM, Y_DIM, Z_DIM
+from ndsl.initialization.allocator import GridSizer, QuantityFactory
+from ndsl.quantity import Quantity
 
 
 @dataclass()

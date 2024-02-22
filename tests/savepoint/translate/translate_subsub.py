@@ -8,12 +8,12 @@ from gt4py.cartesian.gtscript import (  # noqa
     log,
 )
 
-from ndsl.dsl.stencil import GridIndexing, StencilFactory
-from ndsl.namelist import Namelist
+import ndsl.constants as constants  # noqa
 import pyFV3.stencils.basic_operations as basic  # noqa
 import pySHiELD.stencils.SHiELD_microphysics.physical_functions as physfun  # noqa
-import ndsl.constants as constants  # noqa
+from ndsl.dsl.stencil import GridIndexing, StencilFactory
 from ndsl.dsl.typing import FloatField, FloatFieldIJ
+from ndsl.namelist import Namelist
 from pySHiELD import PhysicsConfig
 from pySHiELD.stencils.SHiELD_microphysics.subgrid_z_proc import (  # noqa
     cloud_condensation_evaporation,

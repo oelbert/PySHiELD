@@ -1,6 +1,7 @@
-from ndsl.initialization.allocator import QuantityFactory
-from ndsl.initialization import SubtileGridSizer
+from ndsl.constants import X_DIM, Y_DIM, Z_DIM
 from ndsl.dsl.stencil import StencilFactory
+from ndsl.initialization import SubtileGridSizer
+from ndsl.initialization.allocator import QuantityFactory
 from ndsl.namelist import Namelist
 from pySHiELD import PhysicsConfig
 from pySHiELD.stencils.SHiELD_microphysics.sedimentation import (
@@ -12,7 +13,6 @@ from pySHiELD.stencils.SHiELD_microphysics.sedimentation import (
 )
 from pySHiELD.stencils.SHiELD_microphysics.terminal_fall import TerminalFall
 from tests.savepoint.translate.translate_physics import TranslatePhysicsFortranData2Py
-from ndsl.constants import X_DIM, Y_DIM, Z_DIM
 
 
 class TracerSedimentation:

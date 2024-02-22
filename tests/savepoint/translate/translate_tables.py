@@ -1,10 +1,10 @@
 from gt4py.cartesian.gtscript import __INLINED, FORWARD, computation, interval
 
+import ndsl.constants as constants
 import pySHiELD.stencils.SHiELD_microphysics.physical_functions as physfun
 from ndsl.dsl.stencil import StencilFactory
-from ndsl.namelist import Namelist
-import ndsl.constants as constants
 from ndsl.dsl.typing import FloatField, IntField
+from ndsl.namelist import Namelist
 from pySHiELD import PhysicsConfig
 from pySHiELD.stencils.SHiELD_microphysics.humidity_tables import (
     HumiditySaturationTables,
