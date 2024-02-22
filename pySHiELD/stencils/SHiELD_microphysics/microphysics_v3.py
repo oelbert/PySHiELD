@@ -9,23 +9,24 @@ from gt4py.cartesian.gtscript import (
     sqrt,
 )
 
-import pace.fv3core.stencils.basic_operations as basic
-import pace.physics.stencils.SHiELD_microphysics.physical_functions as physfun
+import pyFV3.stencils.basic_operations as basic
+import physical_functions as physfun
 import pace.util
-import pace.util.constants as constants
+import ndsl.constants as constants
 
 # from pace.dsl.dace.orchestration import orchestrate
-from pace.dsl.stencil import GridIndexing, StencilFactory
-from pace.dsl.typing import Float, FloatField, FloatFieldIJ
-from pace.physics.stencils.SHiELD_microphysics.cloud_fraction import CloudFraction
-from pace.physics.stencils.SHiELD_microphysics.microphysics_state import (
+from ndsl.dsl.stencil import GridIndexing, StencilFactory
+from ndsl.dsl.typing import Float, FloatField, FloatFieldIJ
+from pySHiELD.stencils.SHiELD_microphysics.cloud_fraction import CloudFraction
+from pySHiELD.stencils.SHiELD_microphysics.microphysics_state import (
     MicrophysicsState,
 )
-from pace.physics.stencils.SHiELD_microphysics.mp_fast import FastMicrophysics
-from pace.physics.stencils.SHiELD_microphysics.mp_full import FullMicrophysics
-from pace.physics.stencils.SHiELD_microphysics.neg_adj import AdjustNegativeTracers
-from pace.util import X_DIM, Y_DIM, Z_DIM, Timer
-from pace.util.grid import GridData
+from pySHiELD.stencils.SHiELD_microphysics.mp_fast import FastMicrophysics
+from pySHiELD.stencils.SHiELD_microphysics.mp_full import FullMicrophysics
+from pySHiELD.stencils.SHiELD_microphysics.neg_adj import AdjustNegativeTracers
+from ndsl.constants import X_DIM, Y_DIM, Z_DIM
+from ndsl.performance.timer import Timer
+from ndsl.grid import GridData
 
 from ..._config import MicroPhysicsConfig
 
@@ -677,8 +678,8 @@ def calculate_total_energy_change_and_convert_temp(
                 cp8 = (
                     con_r8 * constants.CP_AIR
                     + qvapor * constants.CP_VAP
-                    + (qliquid + qrain) * constants.C_LIQ0
-                    + (qice + qsnow + qgraupel) * constants.C_ICE0
+                    + (qliquid + qrain) * constants.SHiELD_C_LIQ
+                    + (qice + qsnow + qgraupel) * constants.SHiELD_C_ICE
                 )
                 delz = delz / temperature0
                 temperature = (

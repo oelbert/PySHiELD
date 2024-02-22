@@ -9,12 +9,11 @@ from gt4py.cartesian.gtscript import (
     log10,
 )
 
-import pace.physics.stencils.SHiELD_microphysics.physical_functions as physfun
-import pace.util.constants as constants
+import physical_functions as physfun
+import ndsl.constants as constants
 
-# from pace.dsl.dace.orchestration import orchestrate
-from pace.dsl.stencil import GridIndexing, StencilFactory
-from pace.dsl.typing import FloatField, FloatFieldIJ
+from ndsl.dsl.stencil import GridIndexing, StencilFactory
+from ndsl.dsl.typing import FloatField, FloatFieldIJ
 
 from ..._config import MicroPhysicsConfig
 
@@ -152,7 +151,7 @@ def cloud_scheme_4(
     """
     Gultepe and Isaac (2007)
     """
-    #TODO: fix log10 when possible
+    # TODO: fix log10 when possible
     sigma = 0.28 + exp(0.49 * log(max(constants.QCMIN * 1000.0, q_cond * 1000.0)))
     gam = max(0.0, q_cond * 1000.0) / sigma
     if gam < 0.18:
