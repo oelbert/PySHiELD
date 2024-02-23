@@ -392,7 +392,9 @@ class MicroPhysicsConfig:
 
         # scaled constants to reduce 32 bit floating errors
         self.lv00 = (constants.HLV - self.d0_vap * constants.TICE0) / self.c_air
-        self.li00 = (constants.HLF - constants.SHiELD_DC_ICE * constants.TICE0) / self.c_air
+        self.li00 = (
+            constants.HLF - constants.SHiELD_DC_ICE * constants.TICE0
+        ) / self.c_air
         self.li20 = self.lv00 + self.li00
 
         self.d1_vap = self.d0_vap / self.c_air

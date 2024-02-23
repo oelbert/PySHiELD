@@ -1,7 +1,8 @@
-import pyFV3.stencils.basic_operations as basic
-import pySHiELD.constants as constants
 from gt4py.cartesian import gtscript
 from gt4py.cartesian.gtscript import exp, floor, log, sqrt
+
+import pyFV3.stencils.basic_operations as basic
+import pySHiELD.constants as constants
 
 
 @gtscript.function
@@ -229,9 +230,9 @@ def table2(temp):
         return_val = constants.E00 * exp(
             (
                 constants.SHiELD_D2ICE * log(temp / constants.TICE0)
-                + constants.SHiELD_LI2 * (temp - constants.TICE0) / (
-                    temp * constants.TICE0
-                )
+                + constants.SHiELD_LI2
+                * (temp - constants.TICE0)
+                / (temp * constants.TICE0)
             )
             / constants.RVGAS
         )
@@ -250,9 +251,11 @@ def sat_spec_hum_water(temp, density):
     compute the saturated specific humidity, core function
     """
     q = table0(temp) / (constants.RVGAS * temp * density)
-    dqdt = q * (
-        constants.SHiELD_DC_VAP + constants.SHiELD_LV0 / temp
-    ) / (constants.RVGAS * temp)
+    dqdt = (
+        q
+        * (constants.SHiELD_DC_VAP + constants.SHiELD_LV0 / temp)
+        / (constants.RVGAS * temp)
+    )
     return q, dqdt
 
 

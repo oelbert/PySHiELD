@@ -1,7 +1,6 @@
 from typing import Literal
 
 import physical_functions as physfun
-import ndsl.constants as constants
 from gt4py.cartesian.gtscript import (
     __INLINED,
     BACKWARD,
@@ -11,12 +10,13 @@ from gt4py.cartesian.gtscript import (
     interval,
 )
 
+import ndsl.constants as constants
+from ndsl.constants import X_DIM, Y_DIM, Z_DIM
 from ndsl.dsl.stencil import GridIndexing, StencilFactory
-from ndsl.initialization.allocator import QuantityFactory
 from ndsl.dsl.typing import FloatField, FloatFieldIJ, IntFieldIJ
+from ndsl.initialization.allocator import QuantityFactory
 from pyFV3.stencils.basic_operations import copy_defn
 from pyFV3.stencils.remap_profile import RemapProfile
-from ndsl.constants import X_DIM, Y_DIM, Z_DIM
 
 from ..._config import MicroPhysicsConfig
 

@@ -1,9 +1,9 @@
-import pyFV3.stencils.basic_operations as basic
 import physical_functions as physfun
-import ndsl.constants as constants
 from gt4py.cartesian import gtscript
 from gt4py.cartesian.gtscript import __INLINED, FORWARD, computation, exp, interval, log
 
+import ndsl.constants as constants
+import pyFV3.stencils.basic_operations as basic
 from ndsl.dsl.stencil import GridIndexing, StencilFactory
 from ndsl.dsl.typing import FloatField, FloatFieldIJ
 
