@@ -1707,7 +1707,7 @@ class Microphysics:
         self._c_praut = make_quantity()
         self._m1_sol = make_quantity()
 
-        self.gfdl_cloud_microphys_init(namelist.dt_full)
+        self.gfdl_cloud_microphys_init(namelist.dt_atmos)
 
         self._so3 = 7.0 / 3.0
         self._zs = 0.0
