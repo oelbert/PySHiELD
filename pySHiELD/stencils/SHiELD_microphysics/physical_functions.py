@@ -210,8 +210,8 @@ def table0(temp):
     """
     return constants.E00 * exp(
         (
-            constants.SHiELD_DC_VAP * log(temp / constants.TICE0)
-            + constants.SHiELD_LV0 * (temp - constants.TICE0) / (temp * constants.TICE0)
+            constants.DC_VAP * log(temp / constants.TICE0)
+            + constants.LV0 * (temp - constants.TICE0) / (temp * constants.TICE0)
         )
         / constants.RVGAS
     )
@@ -229,8 +229,8 @@ def table2(temp):
         # Over ice between -160 degrees Celsius and 0 degrees Celsius
         return_val = constants.E00 * exp(
             (
-                constants.SHiELD_D2ICE * log(temp / constants.TICE0)
-                + constants.SHiELD_LI2
+                constants.D2ICE * log(temp / constants.TICE0)
+                + constants.LI2
                 * (temp - constants.TICE0)
                 / (temp * constants.TICE0)
             )
@@ -253,7 +253,7 @@ def sat_spec_hum_water(temp, density):
     q = table0(temp) / (constants.RVGAS * temp * density)
     dqdt = (
         q
-        * (constants.SHiELD_DC_VAP + constants.SHiELD_LV0 / temp)
+        * (constants.DC_VAP + constants.LV0 / temp)
         / (constants.RVGAS * temp)
     )
     return q, dqdt
@@ -266,13 +266,13 @@ def sat_spec_hum_water_ice(temperature, density):
     if temp < constants.TICE0:
         dqdt = (
             q
-            * (constants.SHiELD_D2ICE + constants.SHiELD_LI2 / temp)
+            * (constants.D2ICE + constants.LI2 / temp)
             / (constants.RVGAS * temperature)
         )
     else:
         dqdt = (
             q
-            * (constants.SHiELD_DC_VAP + constants.SHiELD_LV0 / temp)
+            * (constants.DC_VAP + constants.LV0 / temp)
             / (constants.RVGAS * temperature)
         )
     return q, dqdt
@@ -394,7 +394,7 @@ def melting_function(
     """
     return (c1 / (icpk * cvm) * tc / density - c2 * lcpk / icpk * dq) * exp(
         (1 + mu) / (mu + 3) * log(6 * qden)
-    ) * vent_coeff(qden, density_factor, c3, c4, blin, mu) + constants.C_LIQ_0 / (
+    ) * vent_coeff(qden, density_factor, c3, c4, blin, mu) + constants.C_LIQ / (
         icpk * cvm
     ) * tc * (
         pxacw + pxacr

@@ -331,8 +331,8 @@ def update_energy_wind_heat_post_fall(
                 cv0 = dm * (
                     constants.CV_AIR
                     + qvapor * constants.CV_VAP
-                    + (qrain + qliquid) * constants.C_LIQ_0
-                    + (qice + qsnow + qgraupel) * constants.C_ICE_0
+                    + (qrain + qliquid) * constants.C_LIQ
+                    + (qice + qsnow + qgraupel) * constants.C_ICE
                 ) + cw * (flux - flux[0, 0, -1])
 
     with computation(FORWARD), interval(1, None):
@@ -472,7 +472,7 @@ class TerminalFall:
                 "do_sedi_uv": config.do_sedi_uv,
                 "do_sedi_w": config.do_sedi_w,
                 "do_sedi_heat": config.do_sedi_heat,
-                "cw": constants.C_ICE_0,
+                "cw": constants.C_ICE,
                 "c1_ice": config.c1_ice,
                 "c1_liq": config.c1_liq,
                 "c1_vap": config.c1_vap,

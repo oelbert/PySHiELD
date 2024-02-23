@@ -76,7 +76,7 @@ class EndFall:
                 "do_sedi_uv": config.do_sedi_uv,
                 "do_sedi_w": config.do_sedi_w,
                 "do_sedi_heat": config.do_sedi_heat,
-                "cw": constants.C_ICE_0,
+                "cw": constants.C_ICE,
                 "c1_ice": config.c1_ice,
                 "c1_liq": config.c1_liq,
                 "c1_vap": config.c1_vap,

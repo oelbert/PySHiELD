@@ -27,9 +27,9 @@ class HumiditySaturationTables:
         for i in range(self.length):
             tem = tmin + self.delt * float(i)
             fac0 = (tem - constants.TICE0) / (tem * constants.TICE0)
-            fac1 = fac0 * constants.SHiELD_LV0
+            fac1 = fac0 * constants.LV0
             fac2 = (
-                constants.SHiELD_DC_VAP * np.log(tem / constants.TICE0) + fac1
+                constants.DC_VAP * np.log(tem / constants.TICE0) + fac1
             ) / constants.RVGAS
             self.table0[i] = constants.E00 * np.exp(fac2)
             if i > 0:
@@ -48,9 +48,9 @@ class HumiditySaturationTables:
             if i < self.n_min:
                 tem = tmin + self.delt * float(i)
                 fac0 = (tem - constants.TICE0) / (tem * constants.TICE0)
-                fac1 = fac0 * constants.SHiELD_LI2
+                fac1 = fac0 * constants.LI2
                 fac2 = (
-                    constants.SHiELD_D2ICE * np.log(tem / constants.TICE0) + fac1
+                    constants.D2ICE * np.log(tem / constants.TICE0) + fac1
                 ) / constants.RVGAS
                 self.table2[i] = constants.E00 * np.exp(fac2)
             else:

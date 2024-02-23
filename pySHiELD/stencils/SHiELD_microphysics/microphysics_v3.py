@@ -676,8 +676,8 @@ def calculate_total_energy_change_and_convert_temp(
                 cp8 = (
                     con_r8 * constants.CP_AIR
                     + qvapor * constants.CP_VAP
-                    + (qliquid + qrain) * constants.C_LIQ_0
-                    + (qice + qsnow + qgraupel) * constants.C_ICE_0
+                    + (qliquid + qrain) * constants.C_LIQ
+                    + (qice + qsnow + qgraupel) * constants.C_ICE
                 )
                 delz = delz / temperature0
                 temperature = (
