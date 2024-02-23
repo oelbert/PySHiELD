@@ -1,5 +1,5 @@
-import pace.fv3core.stencils.basic_operations as basic
-import pace.util.constants as constants
+import pyFV3.stencils.basic_operations as basic
+import pySHiELD.constants as constants
 from gt4py.cartesian import gtscript
 from gt4py.cartesian.gtscript import exp, floor, log, sqrt
 
@@ -209,8 +209,8 @@ def table0(temp):
     """
     return constants.E00 * exp(
         (
-            constants.DC_VAP0 * log(temp / constants.TICE0)
-            + constants.LV0_0 * (temp - constants.TICE0) / (temp * constants.TICE0)
+            constants.SHiELD_DC_VAP * log(temp / constants.TICE0)
+            + constants.SHiELD_LV0 * (temp - constants.TICE0) / (temp * constants.TICE0)
         )
         / constants.RVGAS
     )
@@ -228,8 +228,10 @@ def table2(temp):
         # Over ice between -160 degrees Celsius and 0 degrees Celsius
         return_val = constants.E00 * exp(
             (
-                constants.D2ICE0 * log(temp / constants.TICE0)
-                + constants.LI2_0 * (temp - constants.TICE0) / (temp * constants.TICE0)
+                constants.SHiELD_D2ICE * log(temp / constants.TICE0)
+                + constants.SHiELD_LI2 * (temp - constants.TICE0) / (
+                    temp * constants.TICE0
+                )
             )
             / constants.RVGAS
         )
@@ -248,7 +250,9 @@ def sat_spec_hum_water(temp, density):
     compute the saturated specific humidity, core function
     """
     q = table0(temp) / (constants.RVGAS * temp * density)
-    dqdt = q * (constants.DC_VAP0 + constants.LV0_0 / temp) / (constants.RVGAS * temp)
+    dqdt = q * (
+        constants.SHiELD_DC_VAP + constants.SHiELD_LV0 / temp
+    ) / (constants.RVGAS * temp)
     return q, dqdt
 
 
@@ -259,13 +263,13 @@ def sat_spec_hum_water_ice(temperature, density):
     if temp < constants.TICE0:
         dqdt = (
             q
-            * (constants.D2ICE0 + constants.LI2_0 / temp)
+            * (constants.SHiELD_D2ICE + constants.SHiELD_LI2 / temp)
             / (constants.RVGAS * temperature)
         )
     else:
         dqdt = (
             q
-            * (constants.DC_VAP0 + constants.LV0_0 / temp)
+            * (constants.SHiELD_DC_VAP + constants.SHiELD_LV0 / temp)
             / (constants.RVGAS * temperature)
         )
     return q, dqdt
@@ -387,7 +391,7 @@ def melting_function(
     """
     return (c1 / (icpk * cvm) * tc / density - c2 * lcpk / icpk * dq) * exp(
         (1 + mu) / (mu + 3) * log(6 * qden)
-    ) * vent_coeff(qden, density_factor, c3, c4, blin, mu) + constants.C_LIQ0 / (
+    ) * vent_coeff(qden, density_factor, c3, c4, blin, mu) + constants.C_LIQ_0 / (
         icpk * cvm
     ) * tc * (
         pxacw + pxacr

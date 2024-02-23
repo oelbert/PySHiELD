@@ -1,16 +1,15 @@
-import pace.util
+from ndsl.initialization.allocator import QuantityFactory
 from gt4py.cartesian.gtscript import FORWARD, computation, interval
 
-# from pace.dsl.dace.orchestration import orchestrate
-from pace.dsl.stencil import GridIndexing, StencilFactory
-from pace.dsl.typing import FloatField, FloatFieldIJ
-from pace.physics.stencils.SHiELD_microphysics.ice_cloud import IceCloud
-from pace.physics.stencils.SHiELD_microphysics.sedimentation import Sedimentation
-from pace.physics.stencils.SHiELD_microphysics.subgrid_z_proc import (
+from ndsl.dsl.stencil import GridIndexing, StencilFactory
+from ndsl.dsl.typing import FloatField, FloatFieldIJ
+from pySHiELD.stencils.SHiELD_microphysics.ice_cloud import IceCloud
+from pySHiELD.stencils.SHiELD_microphysics.sedimentation import Sedimentation
+from pySHiELD.stencils.SHiELD_microphysics.subgrid_z_proc import (
     VerticalSubgridProcesses,
 )
-from pace.physics.stencils.SHiELD_microphysics.warm_rain import WarmRain
-from pace.util import X_DIM, Y_DIM, Z_DIM
+from pySHiELD.stencils.SHiELD_microphysics.warm_rain import WarmRain
+from ndsl.constants import X_DIM, Y_DIM, Z_DIM
 
 from ..._config import MicroPhysicsConfig
 
@@ -79,7 +78,7 @@ class FullMicrophysics:
     def __init__(
         self,
         stencil_factory: StencilFactory,
-        quantity_factory: pace.util.QuantityFactory,
+        quantity_factory: QuantityFactory,
         config: MicroPhysicsConfig,
         timestep: float,
         convert_mm_day: float,

@@ -1,8 +1,7 @@
 from typing import Literal
 
-import pace.physics.stencils.SHiELD_microphysics.physical_functions as physfun
-import pace.util
-import pace.util.constants as constants
+import physical_functions as physfun
+import ndsl.constants as constants
 from gt4py.cartesian.gtscript import (
     __INLINED,
     BACKWARD,
@@ -12,12 +11,12 @@ from gt4py.cartesian.gtscript import (
     interval,
 )
 
-# from pace.dsl.dace.orchestration import orchestrate
-from pace.dsl.stencil import GridIndexing, StencilFactory
-from pace.dsl.typing import FloatField, FloatFieldIJ, IntFieldIJ
-from pace.fv3core.stencils.basic_operations import copy_defn
-from pace.fv3core.stencils.remap_profile import RemapProfile
-from pace.util import X_DIM, Y_DIM, Z_DIM
+from ndsl.dsl.stencil import GridIndexing, StencilFactory
+from ndsl.initialization.allocator import QuantityFactory
+from ndsl.dsl.typing import FloatField, FloatFieldIJ, IntFieldIJ
+from pyFV3.stencils.basic_operations import copy_defn
+from pyFV3.stencils.remap_profile import RemapProfile
+from ndsl.constants import X_DIM, Y_DIM, Z_DIM
 
 from ..._config import MicroPhysicsConfig
 
@@ -332,8 +331,8 @@ def update_energy_wind_heat_post_fall(
                 cv0 = dm * (
                     constants.CV_AIR
                     + qvapor * constants.CV_VAP
-                    + (qrain + qliquid) * constants.C_LIQ0
-                    + (qice + qsnow + qgraupel) * constants.C_ICE0
+                    + (qrain + qliquid) * constants.C_LIQ_0
+                    + (qice + qsnow + qgraupel) * constants.C_ICE_0
                 ) + cw * (flux - flux[0, 0, -1])
 
     with computation(FORWARD), interval(1, None):
@@ -368,7 +367,7 @@ class TerminalFall:
     def __init__(
         self,
         stencil_factory: StencilFactory,
-        quantity_factory: pace.util.QuantityFactory,
+        quantity_factory: QuantityFactory,
         config: MicroPhysicsConfig,
         timestep: float,
     ):
@@ -473,7 +472,7 @@ class TerminalFall:
                 "do_sedi_uv": config.do_sedi_uv,
                 "do_sedi_w": config.do_sedi_w,
                 "do_sedi_heat": config.do_sedi_heat,
-                "cw": constants.C_ICE0,
+                "cw": constants.C_ICE_0,
                 "c1_ice": config.c1_ice,
                 "c1_liq": config.c1_liq,
                 "c1_vap": config.c1_vap,

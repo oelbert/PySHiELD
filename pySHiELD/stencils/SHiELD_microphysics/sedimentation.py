@@ -1,6 +1,6 @@
-import pace.physics.stencils.SHiELD_microphysics.physical_functions as physfun
-import pace.util
-import pace.util.constants as constants
+import physical_functions as physfun
+from ndsl.initialization.allocator import QuantityFactory
+import ndsl.constants as constants
 from gt4py.cartesian.gtscript import (
     __INLINED,
     BACKWARD,
@@ -14,10 +14,10 @@ from gt4py.cartesian.gtscript import (
 )
 
 # from pace.dsl.dace.orchestration import orchestrate
-from pace.dsl.stencil import GridIndexing, StencilFactory
-from pace.dsl.typing import FloatField, FloatFieldIJ
-from pace.physics.stencils.SHiELD_microphysics.terminal_fall import TerminalFall
-from pace.util import X_DIM, Y_DIM, Z_DIM, Z_INTERFACE_DIM
+from ndsl.dsl.stencil import GridIndexing, StencilFactory
+from ndsl.dsl.typing import FloatField, FloatFieldIJ
+from pySHiELD.stencils.SHiELD_microphysics.terminal_fall import TerminalFall
+from ndsl.constants import X_DIM, Y_DIM, Z_DIM, Z_INTERFACE_DIM
 
 from ..._config import MicroPhysicsConfig
 
@@ -371,7 +371,7 @@ class Sedimentation:
     def __init__(
         self,
         stencil_factory: StencilFactory,
-        quantity_factory: pace.util.QuantityFactory,
+        quantity_factory: QuantityFactory,
         config: MicroPhysicsConfig,
         timestep: float,
     ):
