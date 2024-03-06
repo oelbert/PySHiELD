@@ -11,6 +11,7 @@ from gt4py.cartesian.gtscript import (
 )
 
 import ndsl.constants as constants
+from ndsl.initialization.allocator import QuantityFactory
 import pyFV3.stencils.basic_operations as basic
 from ndsl.constants import X_DIM, Y_DIM, Z_DIM
 
@@ -27,10 +28,11 @@ class PBL:
     """
     Planetary Boundary Layer scheme to calculate vertical diffusion
     """
+
     def __init__(
         self,
         stencil_factory: StencilFactory,
-        quantity_factory: pace.util.QuantityFactory,
+        quantity_factory: QuantityFactory,
         grid_data: GridData,
         config: PBLConfig,
         dt_atmos: float,

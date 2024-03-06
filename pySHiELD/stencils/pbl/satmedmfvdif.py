@@ -6,10 +6,10 @@ from gt4py.cartesian.gtscript import (
     FORWARD,
     PARALLEL,
     computation,
-    interval,
-    sqrt,
     exp,
     floor,
+    interval,
+    sqrt,
 )
 
 import ndsl.constants as constants
@@ -19,18 +19,17 @@ from ndsl.constants import X_DIM, Y_DIM, Z_DIM
 # from pace.dsl.dace.orchestration import orchestrate
 from ndsl.dsl.stencil import GridIndexing, StencilFactory
 from ndsl.dsl.typing import (
-    Int,
-    Float,
-    FloatField,
-    IntField,
-    IntFieldIJ,
     BoolField,
     BoolFieldIJ,
+    Float,
+    FloatField,
     FloatFieldIJ,
+    Int,
+    IntField,
+    IntFieldIJ,
 )
 from ndsl.grid import GridData
 from ndsl.performance.timer import Timer
-
 from pySHiELD.functions.physics_functions import fpvs
 
 
@@ -206,7 +205,11 @@ def init_turbulence(
             slx = constants.CP_AIR * t1[0, 0, 0] + phil[0, 0, 0] - ptem
         else:
             qlx = max(q1[0, 0, 0][ntcw], constants.QLMIN)
-            slx = constants.CP_AIR * t1[0, 0, 0] + phil[0, 0, 0] - constants.HLV * qlx[0, 0, 0]
+            slx = (
+                constants.CP_AIR * t1[0, 0, 0]
+                + phil[0, 0, 0]
+                - constants.HLV * qlx[0, 0, 0]
+            )
 
         tem = 1.0 + fv * max(q1[0, 0, 0][0], constants.QMIN) - qlx[0, 0, 0]
         thvx = theta[0, 0, 0] * tem
@@ -214,7 +217,9 @@ def init_turbulence(
         thlx = theta[0, 0, 0] - pix[0, 0, 0] * elocp * qlx[0, 0, 0]
         thlvx = thlx[0, 0, 0] * (1.0 + fv * qtx[0, 0, 0])
         svx = constants.CP_AIR * t1[0, 0, 0] * tem
-        thetae = theta[0, 0, 0] + elocp * pix[0, 0, 0] * max(q1[0, 0, 0][0], constants.QMIN)
+        thetae = theta[0, 0, 0] + elocp * pix[0, 0, 0] * max(
+            q1[0, 0, 0][0], constants.QMIN
+        )
         gotvx = g / (t1[0, 0, 0] * tem)
 
         tem = (t1[0, 0, 1] - t1[0, 0, 0]) * tem * rdzt[0, 0, 0]
@@ -233,7 +238,9 @@ def init_turbulence(
         clwt = 1.0e-6 * (plyr[0, 0, 0] * 0.001)
         if qlx[0, 0, 0] > clwt:
             onemrh = max(1.0e-10, 1.0 - rhly[0, 0, 0])
-            tem1 = constants.CQL / min(max((onemrh * qstl[0, 0, 0]) ** 0.49, 0.0001), 1.0)
+            tem1 = constants.CQL / min(
+                max((onemrh * qstl[0, 0, 0]) ** 0.49, 0.0001), 1.0
+            )
             val = max(min(tem1 * qlx[0, 0, 0], 50.0), 0.0)
             cfly = min(max(sqrt(sqrt(rhly[0, 0, 0])) * (1.0 - exp(-val)), 0.0), 1.0)
 
@@ -268,7 +275,9 @@ def init_turbulence(
                     / (constants.F0 * 0.01 * zorl[0, 0])
                 )
                 thermal = tsea[0, 0] * (1.0 + fv * max(q1[0, 0, 0][0], constants.QMIN))
-                crb = max(min(0.16 * (tem1 ** (-0.18)), constants.CRBMAX), constants.CRBMIN)
+                crb = max(
+                    min(0.16 * (tem1 ** (-0.18)), constants.CRBMAX), constants.CRBMIN
+                )
 
             dtdz1 = dt2 / (zi[0, 0, 1] - zi[0, 0, 0])
             ustar = sqrt(stress[0, 0])
@@ -281,6 +290,7 @@ def init_turbulence(
     with computation(FORWARD):
         with interval(0, 1):
             rbup = rbsoil[0, 0]
+
 
 def mrf_pbl_scheme_part1(
     crb: FloatFieldIJ,
@@ -401,7 +411,11 @@ def mrf_pbl_2_thermal_1(
         ust3 = ustar[0, 0] ** 3.0
 
         if pblflg[0, 0]:
-            wscale = max((ust3 + constants.WFAC * constants.VK * wst3 * constants.SFCFRAC) ** constants.H1, ustar[0, 0] / constants.APHI5)
+            wscale = max(
+                (ust3 + constants.WFAC * constants.VK * wst3 * constants.SFCFRAC)
+                ** constants.H1,
+                ustar[0, 0] / constants.APHI5,
+            )
 
         flg = 1
 
@@ -409,7 +423,9 @@ def mrf_pbl_2_thermal_1(
             hgamt = heat[0, 0] / wscale
             hgamq = evap[0, 0] / wscale
             vpert = max(hgamt + hgamq * fv * theta[0, 0, 0], 0.0)
-            thermal = thermal[0, 0] + min(constants.CFAC * vpert[0, 0], constants.GAMCRT)
+            thermal = thermal[0, 0] + min(
+                constants.CFAC * vpert[0, 0], constants.GAMCRT
+            )
             flg = 0
             rbup = rbsoil[0, 0]
 
@@ -520,12 +536,20 @@ def stratocumulus(
 
     with computation(BACKWARD):
         with interval(-1, None):
-            if flg[0, 0] and (mask[0, 0, 0] <= lcld[0, 0]) and (qlx[0, 0, 0] >= constants.QLCR):
+            if (
+                flg[0, 0]
+                and (mask[0, 0, 0] <= lcld[0, 0])
+                and (qlx[0, 0, 0] >= constants.QLCR)
+            ):
                 kcld = mask[0, 0, 0]
                 flg = 0
 
         with interval(0, -1):
-            if flg[0, 0] and (mask[0, 0, 0] <= lcld[0, 0]) and (qlx[0, 0, 0] >= constants.QLCR):
+            if (
+                flg[0, 0]
+                and (mask[0, 0, 0] <= lcld[0, 0])
+                and (qlx[0, 0, 0] >= constants.QLCR)
+            ):
                 kcld = mask[0, 0, 0]
                 flg = 0
 
@@ -559,6 +583,7 @@ def stratocumulus(
             scuflg = 0
         if scuflg[0, 0] and radmin[0, 0] >= 0.0:
             scuflg = 0
+
 
 def mass_flux_comp(
     pcnvflg: BoolFieldIJ,
@@ -615,8 +640,20 @@ def prandtl_comp_exchg_coeff(
 
         if mask[0, 0, 0] < kpbl[0, 0]:
             prn = max(min(prn[0, 0, 0], constants.PRMAX), constants.PRMIN)
-            ckz = max(min(constants.CK1 + (constants.CK0 - constants.CK1) * exp(ptem), constants.CK0), constants.CK1)
-            chz = max(min(constants.CH1 + (constants.CH0 - constants.CH1) * exp(ptem), constants.CH0), constants.CH1)
+            ckz = max(
+                min(
+                    constants.CK1 + (constants.CK0 - constants.CK1) * exp(ptem),
+                    constants.CK0,
+                ),
+                constants.CK1,
+            )
+            chz = max(
+                min(
+                    constants.CH1 + (constants.CH0 - constants.CH1) * exp(ptem),
+                    constants.CH0,
+                ),
+                constants.CH1,
+            )
 
 
 def compute_eddy_buoy_shear(
@@ -767,7 +804,12 @@ def compute_eddy_buoy_shear(
                 dku[0, 0, 0] * shr2[0, 0, 0]
                 + ptem1
                 + ptem2
-                + (stress[0, 0] * ustar[0, 0] * phim[0, 0] / (constants.VK * zl[0, 0, 0]))
+                + (
+                    stress[0, 0]
+                    * ustar[0, 0]
+                    * phim[0, 0]
+                    / (constants.VK * zl[0, 0, 0])
+                )
             )
 
             prod = buop + shrp
@@ -860,7 +902,9 @@ def predict_tke(
                 ),
                 0.0,
             )
-            tke = max(tke[0, 0, 0] + dtn * (prod[0, 0, 0] - diss[0, 0, 0]), constants.TKMIN)
+            tke = max(
+                tke[0, 0, 0] + dtn * (prod[0, 0, 0] - diss[0, 0, 0]), constants.TKMIN
+            )
 
 
 def tke_up_down_prop(
@@ -1009,6 +1053,7 @@ def tke_tridiag_matrix_ele_comp(
         with interval(-1, None):
             ad = ad_p1[0, 0]
             f1 = f1_p1[0, 0]
+
 
 def part12a(
     rtg: FloatField,
@@ -1180,6 +1225,7 @@ def heat_moist_tridiag_mat_ele_comp(
             f2[0, 0, 0][0] = f2_p1[0, 0]
             ad = ad_p1[0, 0]
 
+
 def part13a(
     pcnvflg: BoolFieldIJ,
     mask: IntField,
@@ -1269,6 +1315,7 @@ def part13a(
                 f2[0, 0, 0][kk2] = q1[0, 0, 0][kk2] + (tem1 - tem2) * ptem2
             else:
                 f2[0, 0, 0][kk2] = q1[0, 0, 0][kk2]
+
 
 def part13b(
     f1: FloatField,
@@ -1701,6 +1748,7 @@ def mfpblt_s3(
                         + tem * (q1_gt[0, 0, 0][n2] + q1_gt[0, 0, -1][n2])
                     ) / factor
 
+
 def mfpblt_s0(
     buo: FloatField,
     cnvflg: BoolFieldIJ,
@@ -1745,6 +1793,7 @@ def mfpblt_s0(
             thlu = thlx[0, 0, 0] + ptem
             qtu = qtx[0, 0, 0]
             buo = g * ptem / thvx[0, 0, 0]
+
 
 def mfpblt_s1(
     buo: FloatField,
@@ -1848,6 +1897,7 @@ def mfpblt_s1(
                 kpblx = mask[0, 0, 0]
                 flg = rbup[0, 0] <= 0.0
 
+
 def mfpblt_s1a(
     cnvflg: BoolFieldIJ,
     hpblx: FloatFieldIJ,
@@ -1871,6 +1921,7 @@ def mfpblt_s1a(
                     rbint = rbdn[0, 0] / (rbdn[0, 0] - rbup[0, 0])
 
                 hpblx = zm[0, 0, -1] + rbint * (zm[0, 0, 0] - zm[0, 0, -1])
+
 
 def mfpblt_s2(
     cnvflg: BoolFieldIJ,
@@ -1959,7 +2010,8 @@ def mfpblt_s2(
             if cnvflg[0, 0]:
                 tem = 0.2 / xlamavg[0, 0]
                 sigma = min(
-                    max((3.14 * tem * tem) / (gdx[0, 0] * gdx[0, 0]), 0.001), 0.999,
+                    max((3.14 * tem * tem) / (gdx[0, 0] * gdx[0, 0]), 0.001),
+                    0.999,
                 )
 
                 if sigma > a1:
@@ -2333,6 +2385,7 @@ def mfscu(
 
     return radj, mrad, buo, xmfd, tcdo, qcdo, ucdo, vcdo, xlamde
 
+
 def mfscu_s2(
     zl: FloatField,
     mask: IntField,
@@ -2364,6 +2417,7 @@ def mfscu_s2(
             else:
                 xlamde = ce0 / dz
             xlamdem = cm * xlamde[0, 0, 0]
+
 
 def mfscu_s6(
     zl: FloatField,
@@ -2444,6 +2498,7 @@ def mfscu_10(
                         + tem * (q1[0, 0, 0][n1] + q1[0, 0, 1][n1])
                     ) / factor
 
+
 def mfscu_s0(
     buo: FloatField,
     cnvflg: BoolFieldIJ,
@@ -2514,6 +2569,7 @@ def mfscu_s0(
         flg = cnvflg[0, 0]
         mrad = krad[0, 0]
 
+
 def mfscu_s1(
     cnvflg: BoolFieldIJ,
     flg: BoolFieldIJ,
@@ -2543,6 +2599,7 @@ def mfscu_s1(
         if cnvflg[0, 0]:
             if kk < 1:
                 cnvflg[0, 0] = 0
+
 
 def mfscu_s3(
     buo: FloatField,
@@ -2594,6 +2651,7 @@ def mfscu_s3(
                 thvd = thld[0, 0, 0] * tem1
             buo = g * (1.0 - thvd / thvx[0, 0, 0])
 
+
 def mfscu_s4(
     buo: FloatField,
     cnvflg: BoolFieldIJ,
@@ -2613,6 +2671,7 @@ def mfscu_s4(
                 wd2 = (bb2 * buo[0, 0, 1] * dz) / (
                     1.0 + (0.5 * bb1 * xlamde[0, 0, 0] * dz)
                 )
+
 
 def mfscu_s5(
     buo: FloatField,
@@ -2661,6 +2720,7 @@ def mfscu_s5(
                 mrad = mradx[0, 0]
             if (krad[0, 0] - mrad[0, 0]) < 1:
                 cnvflg = 0
+
 
 def mfscu_s7(
     cnvflg: BoolFieldIJ,
@@ -2722,6 +2782,7 @@ def mfscu_s7(
             xmmx = (zl[0, 0, 1] - zl[0, 0, 0]) / dt2
             xmfd = min(scaldfunc[0, 0] * xmfd[0, 0, 0], xmmx)
 
+
 def mfscu_s8(
     cnvflg: BoolFieldIJ,
     krad: IntFieldIJ,
@@ -2734,6 +2795,7 @@ def mfscu_s8(
         if krad[0, 0] == mask[0, 0, 0]:
             if cnvflg[0, 0]:
                 thld = thlx[0, 0, 0]
+
 
 def mfscu_s9(
     cnvflg: BoolFieldIJ,
@@ -2805,8 +2867,12 @@ def mfscu_s9(
                 (1.0 - tem) * vcdo[0, 0, 1] + ptem * v1[0, 0, 1] + ptem1 * v1[0, 0, 0]
             ) / factor
 
+
 def tridit(
-    au: FloatField, cm: FloatField, cl: FloatField, f1: FloatField,
+    au: FloatField,
+    cm: FloatField,
+    cl: FloatField,
+    f1: FloatField,
 ):
     with computation(FORWARD):
         with interval(0, 1):
@@ -2870,6 +2936,7 @@ def tridin(
             for n3 in range(nt):
                 a2[0, 0, 0][n3] = a2[0, 0, 0][n3] - au[0, 0, 0] * a2[0, 0, 1][n3]
 
+
 def tridi2(
     a1: FloatField,
     a2: FloatField,
@@ -2901,6 +2968,7 @@ def tridi2(
     with computation(BACKWARD), interval(0, -1):
         a1 = a1[0, 0, 0] - au[0, 0, 0] * a1[0, 0, 1]
         a2[0, 0, 0][0] = a2[0, 0, 0][0] - au[0, 0, 0] * a2[0, 0, 1][0]
+
 
 def comp_asym_mix_up(
     mask: IntField,
@@ -2937,6 +3005,7 @@ def comp_asym_mix_up(
                 zlup = zlup[0, 0] - ptem1 * dz
                 zlup = max(zlup[0, 0], 0.0)
                 mlenflg = False
+
 
 def comp_asym_mix_dn(
     mask: IntField,
@@ -2982,6 +3051,7 @@ def comp_asym_mix_dn(
                 zldn = max(zldn[0, 0], 0.0)
                 mlenflg[0, 0] = False
 
+
 def comp_asym_rlam_ele(
     zi: FloatField,
     rlam: FloatField,
@@ -3012,6 +3082,7 @@ class ScaleAwareTKEMoistEDMF:
 
     Fortran name is satmedmfvdif
     """
+
     def __init__(self):
         pass
 

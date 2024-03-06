@@ -1,9 +1,8 @@
 from gt4py.cartesian import gtscript
-from gt4py.cartesian.gtscript import (
-    exp,
-    floor,
-)
+from gt4py.cartesian.gtscript import exp, floor
+
 import ndsl.constants as constants
+
 
 @gtscript.function
 def fpvsx(t):
@@ -32,6 +31,7 @@ def fpvsx(t):
         fpvsx = w * pvl + (1.0 - w) * pvi
 
     return fpvsx
+
 
 @gtscript.function
 def fpvs(t):
