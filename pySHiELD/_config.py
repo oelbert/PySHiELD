@@ -16,6 +16,28 @@ DEFAULT_SCHEMES = ["GFS_microphysics"]
 @unique
 class PHYSICS_PACKAGES(Enum, metaclass=MetaEnumStr):
     GFS_microphysics = "GFS_microphysics"
+    SATMED_EDMF = "SATMED_EDMF"
+
+
+@dataclasses.dataclass
+class PBLConfig:
+    pbl_scheme: str
+    dt_atmos: int = DEFAULT_INT
+    hydrostatic: bool = DEFAULT_BOOL
+    npx: int = DEFAULT_INT
+    npy: int = DEFAULT_INT
+    npz: int = DEFAULT_INT
+    isatmedmf: int = DEFAULT_INT
+
+    def __post_init__(self):
+        if self.pbl_scheme == "SATMED_EDMF":
+            print("satmededmf")
+            if self.isatmedmf != 0:
+                raise NotImplementedError(
+                    f"PBL Config: isatmedmf == {self.isatmedmf} not implemented"
+                )
+        else:
+            raise NotImplementedError(f"PBL Config:{self.pbl_scheme} not implemented")
 
 
 @dataclasses.dataclass
