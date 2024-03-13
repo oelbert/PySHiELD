@@ -4,6 +4,7 @@ from typing import List, Optional, Tuple
 
 import f90nml
 
+from ndsl.dsl.gt4py_utils import tracer_variables
 from ndsl.namelist import Namelist, NamelistDefaults
 from ndsl.utils import MetaEnumStr
 
@@ -11,6 +12,8 @@ from ndsl.utils import MetaEnumStr
 DEFAULT_INT = 0
 DEFAULT_BOOL = False
 DEFAULT_SCHEMES = ["GFS_microphysics"]
+TRACER_DIM = "n_tracers"
+COND_DIM = "n_cond"
 
 
 @unique
@@ -21,13 +24,20 @@ class PHYSICS_PACKAGES(Enum, metaclass=MetaEnumStr):
 
 @dataclasses.dataclass
 class PBLConfig:
-    pbl_scheme: str
     dt_atmos: int = DEFAULT_INT
     hydrostatic: bool = DEFAULT_BOOL
     npx: int = DEFAULT_INT
     npy: int = DEFAULT_INT
     npz: int = DEFAULT_INT
-    isatmedmf: int = DEFAULT_INT
+    isatmedmf: int = NamelistDefaults.isatmedmf
+    xkzm_h: float = NamelistDefaults.xkzm_h
+    xkzm_m: float = NamelistDefaults.xkzm_m
+    xkzm_s: float = NamelistDefaults.xkzm_s
+    ntracers: int = len(tracer_variables)
+    ntiw: int = DEFAULT_INT
+    ntcw: int = DEFAULT_INT
+    ntke: int = DEFAULT_INT
+    dspheat: bool = NamelistDefaults.dspheat
 
     def __post_init__(self):
         if self.pbl_scheme == "SATMED_EDMF":
@@ -38,6 +48,9 @@ class PBLConfig:
                 )
         else:
             raise NotImplementedError(f"PBL Config:{self.pbl_scheme} not implemented")
+        self.ntiw = tracer_variables.index("qice")
+        self.ntiw = tracer_variables.index("qliquid")
+        self.ntke = tracer_variables.index("qsgs_tke")
 
 
 @dataclasses.dataclass
@@ -49,6 +62,10 @@ class PhysicsConfig:
     npz: int = DEFAULT_INT
     nwat: int = DEFAULT_INT
     schemes: List = None
+    ntracers: int = len(tracer_variables)
+    ntiw: int = DEFAULT_INT
+    ntcw: int = DEFAULT_INT
+    ntke: int = DEFAULT_INT
     do_qa: bool = DEFAULT_BOOL
     c_cracw: float = NamelistDefaults.c_cracw
     c_paut: float = NamelistDefaults.c_paut
@@ -128,6 +145,11 @@ class PhysicsConfig:
     tice: float = NamelistDefaults.tice
     alin: float = NamelistDefaults.alin
     clin: float = NamelistDefaults.clin
+    isatmedmf: int = NamelistDefaults.isatmedmf
+    dspheat: bool = NamelistDefaults.dspheat
+    xkzm_h: float = NamelistDefaults.xkzm_h,
+    xkzm_m: float = NamelistDefaults.xkzm_m,
+    xkzm_s: float = NamelistDefaults.xkzm_s
     namelist_override: Optional[str] = None
 
     def __post_init__(self):
@@ -139,6 +161,9 @@ class PhysicsConfig:
                 raise NotImplementedError(f"{scheme} physics scheme not implemented")
             package_schemes.append(PHYSICS_PACKAGES[scheme])
         self.schemes = package_schemes
+        self.ntiw = tracer_variables.index("qice")
+        self.ntiw = tracer_variables.index("qliquid")
+        self.ntke = tracer_variables.index("qsgs_tke")
         if self.namelist_override is not None:
             try:
                 f90_nml = f90nml.read(self.namelist_override)
@@ -219,4 +244,28 @@ class PhysicsConfig:
             tice=namelist.tice,
             alin=namelist.alin,
             clin=namelist.clin,
+            isatmedmf=namelist.isatmedmf,
+            dspheat=namelist.dspheat,
+            xkzm_h=namelist.xkzm_h,
+            xkzm_m=namelist.xkzm_m,
+            xkzm_s=namelist.xkzm_s
+        )
+
+    @property
+    def pbl(self) -> PBLConfig:
+        return PBLConfig(
+            dt_atmos=self.dt_atmos,
+            hydrostatic=self.hydrostatic,
+            npx=self.npx,
+            npy=self.npy,
+            npz=self.npz,
+            isatmedmf=self.isatmedmf,
+            xkzm_h=self.xkzm_h,
+            xkzm_m=self.xkzm_m,
+            xkzm_s=self.xkzm_s,
+            ntracers=self.ntracers,
+            ntiw=self.ntiw,
+            ntcw=self.ntcw,
+            ntke=self.ntke,
+            dspheat=self.dspheat,
         )
