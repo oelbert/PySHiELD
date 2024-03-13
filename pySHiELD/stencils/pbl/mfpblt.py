@@ -31,7 +31,7 @@ def mfpblt_s3(
     mask: IntField,
     xlamue: FloatField,
     qcko: FloatField,
-    q1_gt: FloatField,
+    q1: FloatField,
     zl: FloatField,
 ):
     from __externals__ import ntcw, ntrac1
@@ -45,7 +45,7 @@ def mfpblt_s3(
                     factor = 1.0 + tem
                     qcko[0, 0, 0][n] = (
                         (1.0 - tem) * qcko[0, 0, -1][n]
-                        + tem * (q1_gt[0, 0, 0][n] + q1_gt[0, 0, -1][n])
+                        + tem * (q1[0, 0, 0][n] + q1[0, 0, -1][n])
                     ) / factor
 
         if __INLINED(ntrac1 > ntcw):
@@ -56,7 +56,7 @@ def mfpblt_s3(
                     factor = 1.0 + tem
                     qcko[0, 0, 0][n2] = (
                         (1.0 - tem) * qcko[0, 0, -1][n2]
-                        + tem * (q1_gt[0, 0, 0][n2] + q1_gt[0, 0, -1][n2])
+                        + tem * (q1[0, 0, 0][n2] + q1[0, 0, -1][n2])
                     ) / factor
 
 
@@ -80,12 +80,10 @@ def mfpblt_s0(
     hpblx: FloatFieldIJ,
     xlamavg: FloatFieldIJ,
     sumx: FloatFieldIJ,
-    alp: Float,
-    g: Float,
-    ntcw: Int,
 ):
+    from __externals__ import ntcw
 
-    with computation(PARALLEL), interval(0, -1):
+    with computation(PARALLEL), interval(...):
         if cnvflg[0, 0]:
             buo = 0.0
             wu2 = 0.0
@@ -100,10 +98,10 @@ def mfpblt_s0(
         xlamavg = 0.0
         sumx = 0.0
         if cnvflg[0, 0]:
-            ptem = min(alp * vpert[0, 0], 3.0)
+            ptem = min(constants.ALP * vpert[0, 0], 3.0)
             thlu = thlx[0, 0, 0] + ptem
             qtu = qtx[0, 0, 0]
-            buo = g * ptem / thvx[0, 0, 0]
+            buo = constants.GRAV * ptem / thvx[0, 0, 0]
 
 
 def mfpblt_s1(
@@ -129,26 +127,18 @@ def mfpblt_s1(
     xlamuem: FloatField,
     zl: FloatField,
     zm: FloatField,
-    ce0: Float,
-    cm: Float,
-    el2orc: Float,
-    elocp: Float,
-    eps: Float,
-    epsm1: Float,
-    fv: Float,
-    g: Float,
 ):
     with computation(PARALLEL), interval(...):
         if cnvflg[0, 0]:
             dz = zl[0, 0, 1] - zl[0, 0, 0]
             if mask[0, 0, 0] < kpbl[0, 0]:
-                xlamue = ce0 * (
+                xlamue = constants.CE0 * (
                     1.0 / (zm[0, 0, 0] + dz)
                     + 1.0 / max(hpbl[0, 0] - zm[0, 0, 0] + dz, dz)
                 )
             else:
-                xlamue = ce0 / dz
-            xlamuem = cm * xlamue[0, 0, 0]
+                xlamue = constants.CE0 / dz
+            xlamuem = constants.CM * xlamue[0, 0, 0]
 
     with computation(FORWARD):
         with interval(1, None):
@@ -165,19 +155,22 @@ def mfpblt_s1(
 
                 tlu = thlu[0, 0, 0] / pix[0, 0, 0]
                 es = 0.01 * fpvs(tlu)
-                qs = max(constants.QMIN, eps * es / (plyr[0, 0, 0] + epsm1 * es))
+                qs = max(
+                    constants.QMIN,
+                    constants.EPS * es / (plyr[0, 0, 0] + constants.EPSM1 * es),
+                )
                 dq = qtu[0, 0, 0] - qs
 
                 if dq > 0.0:
-                    gamma = el2orc * qs / (tlu ** 2)
+                    gamma = constants.EL2ORC * qs / (tlu ** 2)
                     qlu = dq / (1.0 + gamma)
                     qtu = qs + qlu
-                    thvu = (thlu[0, 0, 0] + pix[0, 0, 0] * elocp * qlu) * (
-                        1.0 + fv * qs - qlu
+                    thvu = (thlu[0, 0, 0] + pix[0, 0, 0] * constants.ELOCP * qlu) * (
+                        1.0 + constants.ZVIR * qs - qlu
                     )
                 else:
-                    thvu = thlu[0, 0, 0] * (1.0 + fv * qtu[0, 0, 0])
-                buo = g * (thvu / thvx[0, 0, 0] - 1.0)
+                    thvu = thlu[0, 0, 0] * (1.0 + constants.ZVIR * qtu[0, 0, 0])
+                buo = constants.GRAV * (thvu / thvx[0, 0, 0] - 1.0)
 
     with computation(FORWARD):
         with interval(0, 1):
@@ -264,16 +257,8 @@ def mfpblt_s2(
     wu2: FloatField,
     zl: FloatField,
     zm: FloatField,
-    a1: Float,
-    dt2: Float,
-    ce0: Float,
-    cm: Float,
-    el2orc: Float,
-    elocp: Float,
-    eps: Float,
-    epsm1: Float,
-    pgcon: Float,
 ):
+    from __externals__ import dt2
 
     with computation(FORWARD):
         with interval(0, 1):
@@ -288,10 +273,10 @@ def mfpblt_s2(
             if mask[0, 0, 0] < kpbl[0, 0]:
                 ptem = 1 / (zm[0, 0, 0] + dz)
                 ptem1 = 1 / max(hpbl[0, 0] - zm[0, 0, 0] + dz, dz)
-                xlamue = ce0 * (ptem + ptem1)
+                xlamue = constants.CE0 * (ptem + ptem1)
             else:
-                xlamue = ce0 / dz
-            xlamuem = cm * xlamue[0, 0, 0]
+                xlamue = constants.CE0 / dz
+            xlamuem = constants.CM * xlamue[0, 0, 0]
 
     with computation(FORWARD):
         with interval(0, 1):
@@ -312,7 +297,7 @@ def mfpblt_s2(
     with computation(PARALLEL), interval(...):
         if cnvflg[0, 0] and (mask[0, 0, 0] < kpbl[0, 0]):
             if wu2[0, 0, 0] > 0.0:
-                xmf = a1 * sqrt(wu2[0, 0, 0])
+                xmf = constants.A1 * sqrt(wu2[0, 0, 0])
             else:
                 xmf = 0.0
 
@@ -325,7 +310,7 @@ def mfpblt_s2(
                     0.999,
                 )
 
-                if sigma > a1:
+                if sigma > constants.A1:
                     scaldfunc = max(min((1.0 - sigma) * (1.0 - sigma), 1.0), 0.0)
                 else:
                     scaldfunc = 1.0
@@ -355,16 +340,19 @@ def mfpblt_s2(
 
             tlu = thlu[0, 0, 0] / pix[0, 0, 0]
             es = 0.01 * fpvs(tlu)
-            qs = max(constants.QMIN, eps * es / (plyr[0, 0, 0] + epsm1 * es))
+            qs = max(
+                constants.QMIN,
+                constants.EPS * es / (plyr[0, 0, 0] + constants.EPSM1 * es),
+            )
             dq = qtu[0, 0, 0] - qs
-            qlu = dq / (1.0 + (el2orc * qs / (tlu ** 2)))
+            qlu = dq / (1.0 + (constants.EL2ORC * qs / (tlu ** 2)))
 
             if cnvflg[0, 0] and (mask[0, 0, 0] <= kpbl[0, 0]):
                 if dq > 0.0:
                     qtu = qs + qlu
                     qcko[0, 0, 0][0] = qs
                     qcko[0, 0, 0][1] = qlu
-                    tcko = tlu + elocp * qlu
+                    tcko = tlu + constants.ELOCP * qlu
                 else:
                     qcko[0, 0, 0][0] = qtu[0, 0, 0]
                     qcko[0, 0, 0][1] = 0.0
@@ -377,13 +365,13 @@ def mfpblt_s2(
             if cnvflg[0, 0] and (mask[0, 0, 0] <= kpbl[0, 0]):
                 ucko = (
                     (1.0 - tem) * ucko[0, 0, -1]
-                    + (tem + pgcon) * u1[0, 0, 0]
-                    + (tem - pgcon) * u1[0, 0, -1]
+                    + (tem + constants.PGCON) * u1[0, 0, 0]
+                    + (tem - constants.PGCON) * u1[0, 0, -1]
                 ) / factor
                 vcko = (
                     (1.0 - tem) * vcko[0, 0, -1]
-                    + (tem + pgcon) * v1[0, 0, 0]
-                    + (tem - pgcon) * v1[0, 0, -1]
+                    + (tem + constants.PGCON) * v1[0, 0, 0]
+                    + (tem - constants.PGCON) * v1[0, 0, -1]
                 ) / factor
 
 
@@ -398,22 +386,74 @@ class PBLMassFlux:
         self,
         stencil_factory: StencilFactory,
         quantity_factory: QuantityFactory,
+        dt2: Float,
+        ntcw: Int,
+        ntrac1: Int,
+        kmpbl: Int,
     ):
+        idx = stencil_factory.grid_indexing
+        self._im = idx.iec - idx.isc
+
+        def make_quantity():
+            return quantity_factory.zeros(
+                [X_DIM, Y_DIM, Z_DIM],
+                units="unknown",
+                dtype=Float,
+            )
+
+        def make_quantity_2D(type):
+            return quantity_factory.zeros([X_DIM, Y_DIM], units="unknown", dtype=type)
+
+        self._wu2 = make_quantity()
+        self._sigma = make_quantity_2D(Float)
+
+        self._mfpblt_s0 = stencil_factory.from_origin_domain(
+            func=mfpblt_s0,
+            externals={"ntcw": ntcw},
+            origin=idx.origin_compute(),
+            domain=idx.domain_compute(),
+        )
+
+        self._mfpblt_s1 = stencil_factory.from_origin_domain(
+            func=mfpblt_s1,
+            origin=idx.origin_compute(),
+            domain=(idx.iec, idx.jec, kmpbl),
+        )
+
+        self._mfpblt_s1a = stencil_factory.from_origin_domain(
+            func=mfpblt_s1a,
+            origin=idx.origin_compute(),
+            domain=idx.domain_compute(),
+        )
+
+        self._mfpblt_s2 = stencil_factory.from_origin_domain(
+            func=mfpblt_s2,
+            externals={
+                "dt2": dt2,
+            },
+            origin=idx.origin_compute(),
+            domain=(idx.iec, idx.jec, kmpbl),
+        )
+
+        self._mfpblt_s3 = stencil_factory.from_origin_domain(
+            func=mfpblt_s3,
+            externals={
+                "ntcw": ntcw,
+                "ntrac1": ntrac1,
+            },
+            origin=idx.origin_compute(),
+            domain=(idx.iec, idx.jec, kmpbl),
+        )
+
         pass
 
     def __call__(
         self,
-        im,
-        ix,
-        km,
-        kmpbl,
-        ntcw,
-        ntrac1,
         delt,
         cnvflg,
         zl,
         zm,
-        q1_gt,
+        q1,
         t1,
         u1,
         v1,
@@ -432,10 +472,6 @@ class PBLMassFlux:
         ucko,
         vcko,
         xlamue,
-        g,
-        gocp,
-        elocp,
-        el2orc,
         mask,
         qtx,
         wu2,
@@ -451,154 +487,112 @@ class PBLMassFlux:
         xlamavg,
         sumx,
         scaldfunc,
-        ce0,
-        cm,
-        qmin,
-        qlmin,
-        alp,
-        pgcon,
-        a1,
-        b1,
-        f1,
-        fv,
-        eps,
-        epsm1,
     ):
         totflag = True
 
-        for i in range(im):
-            totflag = totflag and ~cnvflg[i, 0]
+        for i in range(self._im):
+            totflag = totflag and (not cnvflg[i, 0])
 
         if totflag:
             return kpbl, hpbl, buo, xmf, tcko, qcko, ucko, vcko, xlamue
 
-        mfpblt_s0(
-            alp=alp,
-            buo=buo,
-            cnvflg=cnvflg,
-            g=g,
-            hpbl=hpbl,
-            kpbl=kpbl,
-            q1=q1_gt,
-            qtu=qtu,
-            qtx=qtx,
-            thlu=thlu,
-            thlx=thlx,
-            thvx=thvx,
-            vpert=vpert,
-            wu2=wu2,
-            kpblx=kpblx,
-            kpbly=kpbly,
-            rbup=rbup,
-            rbdn=rbdn,
-            hpblx=hpblx,
-            xlamavg=xlamavg,
-            sumx=sumx,
-            ntcw=ntcw - 1,
+        self._mfpblt_s0(
+            buo,
+            cnvflg,
+            hpbl,
+            kpbl,
+            q1,
+            qtu,
+            qtx,
+            thlu,
+            thlx,
+            thvx,
+            vpert,
+            wu2,
+            kpblx,
+            kpbly,
+            rbup,
+            rbdn,
+            hpblx,
+            xlamavg,
+            sumx,
         )
 
-        mfpblt_s1(
-            buo=buo,
-            ce0=ce0,
-            cm=cm,
-            cnvflg=cnvflg,
-            elocp=elocp,
-            el2orc=el2orc,
-            eps=eps,
-            epsm1=epsm1,
-            flg=flg,
-            fv=fv,
-            g=g,
-            hpbl=hpbl,
-            kpbl=kpbl,
-            kpblx=kpblx,
-            kpbly=kpbly,
-            mask=mask,
-            pix=pix,
-            plyr=plyr,
-            qtu=qtu,
-            qtx=qtx,
-            rbdn=rbdn,
-            rbup=rbup,
-            thlu=thlu,
-            thlx=thlx,
-            thvx=thvx,
-            wu2=wu2,
-            xlamue=xlamue,
-            xlamuem=xlamuem,
-            zl=zl,
-            zm=zm,
-            domain=(im, 1, kmpbl),
+        self._mfpblt_s1(
+            buo,
+            cnvflg,
+            flg,
+            hpbl,
+            kpbl,
+            kpblx,
+            kpbly,
+            mask,
+            pix,
+            plyr,
+            qtu,
+            qtx,
+            rbdn,
+            rbup,
+            thlu,
+            thlx,
+            thvx,
+            wu2,
+            xlamue,
+            xlamuem,
+            zl,
+            zm,
         )
 
-        mfpblt_s1a(
-            cnvflg=cnvflg,
-            hpblx=hpblx,
-            kpblx=kpblx,
-            mask=mask,
-            rbdn=rbdn,
-            rbup=rbup,
-            zm=zm,
-            domain=(im, 1, km),
+        self._mfpblt_s1a(
+            cnvflg,
+            hpblx,
+            kpblx,
+            mask,
+            rbdn,
+            rbup,
+            zm,
         )
 
-        mfpblt_s2(
-            a1=a1,
-            ce0=ce0,
-            cm=cm,
-            cnvflg=cnvflg,
-            dt2=delt,
-            el2orc=el2orc,
-            elocp=elocp,
-            eps=eps,
-            epsm1=epsm1,
-            gdx=gdx,
-            hpbl=hpbl,
-            hpblx=hpblx,
-            kpbl=kpbl,
-            kpblx=kpblx,
-            kpbly=kpbly,
-            mask=mask,
-            pgcon=pgcon,
-            pix=pix,
-            plyr=plyr,
-            qcko=qcko,
-            qtu=qtu,
-            qtx=qtx,
-            scaldfunc=scaldfunc,
-            sumx=sumx,
-            tcko=tcko,
-            thlu=thlu,
-            thlx=thlx,
-            u1=u1,
-            ucko=ucko,
-            v1=v1,
-            vcko=vcko,
-            xlamue=xlamue,
-            xlamuem=xlamuem,
-            xlamavg=xlamavg,
-            xmf=xmf,
-            wu2=wu2,
-            zl=zl,
-            zm=zm,
-            domain=(im, 1, kmpbl),
+        self._mfpblt_s2(
+            cnvflg,
+            gdx,
+            hpbl,
+            hpblx,
+            kpbl,
+            kpblx,
+            kpbly,
+            mask,
+            pix,
+            plyr,
+            qcko,
+            qtu,
+            qtx,
+            scaldfunc,
+            sumx,
+            tcko,
+            thlu,
+            thlx,
+            u1,
+            ucko,
+            v1,
+            vcko,
+            xmf,
+            xlamavg,
+            xlamue,
+            xlamuem,
+            wu2,
+            zl,
+            zm,
         )
 
-        mfpblt_s3(
-            cnvflg=cnvflg,
-            kpbl=kpbl,
-            mask=mask,
-            xlamue=xlamue,
-            qcko=qcko,
-            q1_gt=q1_gt,
-            zl=zl,
-            ntcw=ntcw,
-            ntrac1=ntrac1,
-            domain=(im, 1, kmpbl),
-            externals={
-                "ntcw": ntcw,
-                "ntrac1": ntrac1,
-            },
+        self._mfpblt_s3(
+            cnvflg,
+            kpbl,
+            mask,
+            xlamue,
+            qcko,
+            q1,
+            zl,
         )
 
         return kpbl, hpbl, buo, xmf, tcko, qcko, ucko, vcko, xlamue
