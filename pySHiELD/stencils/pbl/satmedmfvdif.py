@@ -14,7 +14,6 @@ from ndsl.constants import X_DIM, Y_DIM, Z_DIM
 
 # from pace.dsl.dace.orchestration import orchestrate
 from ndsl.dsl.stencil import StencilFactory
-from ndsl.initialization.allocator import QuantityFactory
 from ndsl.dsl.typing import (
     Bool,
     BoolFieldIJ,
@@ -26,12 +25,13 @@ from ndsl.dsl.typing import (
     IntFieldIJ,
 )
 from ndsl.grid import GridData
+from ndsl.initialization.allocator import QuantityFactory
 from ndsl.performance.timer import Timer
+from pySHiELD._config import COND_DIM, TRACER_DIM, PBLConfig
 from pySHiELD.functions.physics_functions import fpvs
 from pySHiELD.stencils.pbl.mfpblt import PBLMassFlux
 from pySHiELD.stencils.pbl.mfscu import StratocumulusMassFlux
-from pySHiELD.stencils.pbl.tridiag import tridit, tridi2, tridin
-from pySHiELD._config import PBLConfig, TRACER_DIM, COND_DIM
+from pySHiELD.stencils.pbl.tridiag import tridi2, tridin, tridit
 
 
 def init_turbulence(
@@ -116,7 +116,8 @@ def init_turbulence(
     ptop: FloatFieldIJ,
     pbot: FloatFieldIJ,
 ):
-    from __externals__ import dt2, ntke, xkzm_h, xkzm_m, xkzm_s, km1, ntiw, ntcw
+    from __externals__ import dt2, km1, ntcw, ntiw, ntke, xkzm_h, xkzm_m, xkzm_s
+
     with computation(FORWARD), interval(0, 1):
         pcnvflg = False
         scuflg = True
@@ -221,7 +222,10 @@ def init_turbulence(
         #  Compute empirical cloud fraction based on Xu & Randall (1996, JAS)
         plyr = 0.01 * prsl[0, 0, 0]
         es = 0.01 * fpvs(t1)
-        qs = max(constants.QMIN, constants.EPS * es / (plyr[0, 0, 0] + (constants.EPS - 1) * es))
+        qs = max(
+            constants.QMIN,
+            constants.EPS * es / (plyr[0, 0, 0] + (constants.EPS - 1) * es),
+        )
         rhly = max(0.0, min(1.0, max(constants.QMIN, q1[0, 0, 0][0]) / qs))
         qstl = qs
 
@@ -253,7 +257,7 @@ def init_turbulence(
         radx = (zi[0, 0, 1] - zi[0, 0, 0]) * (swh[0, 0, 0] * xmu[0, 0] + hlw[0, 0, 0])
 
     with computation(FORWARD):
-        #  Compute critical bulk richardson number 
+        #  Compute critical bulk richardson number
         with interval(0, 1):
             sflux = heat[0, 0] + evap[0, 0] * constants.ZVIR * theta[0, 0, 0]
 
@@ -522,6 +526,7 @@ def stratocumulus(
     scuflg: BoolFieldIJ,
 ):
     from __externals__ import km1
+
     with computation(FORWARD):
         with interval(0, 1):
             flg = scuflg[0, 0]
@@ -670,7 +675,7 @@ def compute_asymptotic_mixing_length(
         zlup = 0.0
         bsum = 0.0
         lev = 0
-        while (phii[0, 0, lev] < pbot):  # strictly less-than to prevent illegal access
+        while phii[0, 0, lev] < pbot:  # strictly less-than to prevent illegal access
             if mlenflg:
                 dz = zl[0, 0, lev + 1] - zl[0, 0, lev]
                 ptem = gotvx[0, 0, lev] * (thvx[0, 0, lev + 1] - thvx) * dz
@@ -681,9 +686,9 @@ def compute_asymptotic_mixing_length(
                         tem2 = max(ptem, constants.ZFMIN)
                     else:
                         tem2 = min(ptem, -constants.ZFMIN)
-                    ptem1 = (bsum[0, 0] - tke) / tem2
+                    ptem1 = (bsum - tke) / tem2
                     zlup = zlup - ptem1 * dz
-                    zlup = max(zlup[0, 0], 0.0)
+                    zlup = max(zlup, 0.0)
                     mlenflg = False
             lev += 1
 
@@ -691,7 +696,7 @@ def compute_asymptotic_mixing_length(
         bsum = 0.0
         zldn = 0.0
         lev = 0
-        while (phii[0, 0, lev] > ptop):  # strictly less-than to prevent illegal access
+        while phii[0, 0, lev] > ptop:  # strictly less-than to prevent illegal access
             if mlenflg:
                 dz = zl[0, 0, lev] - zl[0, 0, lev - 1]
                 tem1 = thvx[0, 0, lev - 1]
@@ -964,6 +969,7 @@ def predict_tke(
     tke: FloatField,
 ):
     from __externals__ import dtn, kk
+
     with computation(PARALLEL), interval(...):
         for n in range(kk):
             diss = max(
@@ -995,6 +1001,7 @@ def tke_up_down_prop(
     xlamde: FloatField,
 ):
     from __externals__ import kmpbl, kmscu
+
     with computation(PARALLEL), interval(...):
         if pcnvflg[0, 0]:
             qcko[0, 0, 0][7] = tke[0, 0, 0]
@@ -1052,6 +1059,7 @@ def tke_tridiag_matrix_ele_comp(
     xmfd: FloatField,
 ):
     from __externals__ import dt2
+
     with computation(FORWARD):
         with interval(0, 1):
             dtodsd = dt2 / delta[0, 0, 0]
@@ -1134,7 +1142,8 @@ def recover_tke_tendency_start_tridiag(
     heat: FloatFieldIJ,
     t1: FloatField,
 ):
-    from __externals__ import rdt, ntke, ntrac1
+    from __externals__ import ntke, ntrac1, rdt
+
     with computation(PARALLEL), interval(...):
         rtg[0, 0, 0][ntke - 1] = (
             rtg[0, 0, 0][ntke - 1] + (f1[0, 0, 0] - q1[0, 0, 0][ntke - 1]) * rdt
@@ -1179,6 +1188,7 @@ def heat_moist_tridiag_mat_ele_comp(
     xmfd: FloatField,
 ):
     from __externals__ import dt2
+
     with computation(FORWARD):
         with interval(0, 1):
             dtodsd = dt2 / delta[0, 0, 0]
@@ -1308,6 +1318,7 @@ def setup_multi_tracer_tridiag(
     qcdo: FloatField,
 ):
     from __externals__ import dt2, ntrac1
+
     with computation(FORWARD), interval(0, -1):
         for kk in range(1, ntrac1):
             if k_mask[0, 0, 0] > 0:
@@ -1391,7 +1402,8 @@ def recover_heat_moisture_tendency_add_diss_heat(
     delta: FloatField,
     dqsfc: FloatFieldIJ,
 ):
-    from __externals__ import rdt, ntrac1
+    from __externals__ import ntrac1, rdt
+
     with computation(PARALLEL), interval(...):
         tdt = tdt[0, 0, 0] + (f1[0, 0, 0] - t1[0, 0, 0]) * rdt
         rtg[0, 0, 0][0] = rtg[0, 0, 0][0] + (f2[0, 0, 0][0] - q1[0, 0, 0][0]) * rdt
@@ -1403,7 +1415,9 @@ def recover_heat_moisture_tendency_add_diss_heat(
                 )
 
     with computation(FORWARD), interval(...):
-        dtsfc = dtsfc[0, 0] + (constants.CP_AIR / constants.GRAV) * delta[0, 0, 0] * ((f1[0, 0, 0] - t1[0, 0, 0]) * rdt)
+        dtsfc = dtsfc[0, 0] + (constants.CP_AIR / constants.GRAV) * delta[0, 0, 0] * (
+            (f1[0, 0, 0] - t1[0, 0, 0]) * rdt
+        )
         dqsfc = dqsfc[0, 0] + (constants.HLV / constants.GRAV) * delta[0, 0, 0] * (
             (f2[0, 0, 0][0] - q1[0, 0, 0][0]) * rdt
         )
@@ -1443,6 +1457,7 @@ def moment_tridiag_mat_ele_comp(
     xmfd: FloatField,
 ):
     from __externals__ import dspheat, dt2
+
     with computation(PARALLEL), interval(0, -1):
         if dspheat:
             tdt = tdt[0, 0, 0] + constants.DSPFAC * (diss[0, 0, 0] / constants.CP_AIR)
@@ -1559,6 +1574,7 @@ def recover_momentum_tendency(
     v1: FloatField,
 ):
     from __externals__ import rdt
+
     with computation(FORWARD), interval(...):
         if k_mask[0, 0, 0] < 1:
             hpbl = hpblx[0, 0]
@@ -1588,11 +1604,13 @@ class ScaleAwareTKEMoistEDMF:
         timer: Timer,
         config: PBLConfig,
     ):
-        assert config.ntracers == config.ntke, f"PBL scheme satmedmfvdif requires ntracer ({config.ntracers}) == ntke ({config.ntke})"
-        
+        assert (
+            config.ntracers == config.ntke
+        ), f"PBL scheme satmedmfvdif requires ntracer ({config.ntracers}) == ntke ({config.ntke})"
+
         self._ntracers = config.ntracers
         self._ntrac1 = self._ntracers - 1
-        
+
         self.TRACER_DIM = TRACER_DIM
         self.COND_DIM = COND_DIM
         self.quantity_factory = quantity_factory
@@ -1612,10 +1630,7 @@ class ScaleAwareTKEMoistEDMF:
             )
 
         def make_quantity_2D(type):
-            return quantity_factory.zeros(
-                [X_DIM, Y_DIM],
-                units="unknown",
-                dtype=type)
+            return quantity_factory.zeros([X_DIM, Y_DIM], units="unknown", dtype=type)
 
         # Allocate internal variables:
         self._km1 = idx.domain[2] - 1
@@ -1623,7 +1638,7 @@ class ScaleAwareTKEMoistEDMF:
         self._kmscu = idx.domain[2] / 2
 
         self._dt_atmos = config.dt_atmos
-        self._rdt = 1. / self._dt_atmos
+        self._rdt = 1.0 / self._dt_atmos
         self._kk = max(round(self._dt_atmos / constants.CDTN), 1)
         self._dtn = self._dt_atmos / float(self._kk)
 
@@ -1634,11 +1649,11 @@ class ScaleAwareTKEMoistEDMF:
         self._ntke = config.ntke
 
         self._dspheat = config.dspheat
- 
+
         self._xkzm_h = config.xkzm_h
         self._xkzm_m = config.xkzm_m
         self._xkzm_s = config.xkzm_s
-        
+
         # Layer mask:
         self._k_mask = quantity_factory.zeros(
             [X_DIM, Y_DIM, Z_DIM],
@@ -1752,10 +1767,7 @@ class ScaleAwareTKEMoistEDMF:
         self._pblflg = make_quantity_2D(Bool)
         self._sfcflg = make_quantity_2D(Bool)
         self._flg = make_quantity_2D(Bool)
-        self._scuflg = quantity_factory.ones(
-            [X_DIM, Y_DIM],
-            units="none",
-            dtype=Bool)
+        self._scuflg = quantity_factory.ones([X_DIM, Y_DIM], units="none", dtype=Bool)
         self._pcnvflg = make_quantity_2D(Bool)
 
         # Limiting pressures for vertical loops:
@@ -1800,28 +1812,24 @@ class ScaleAwareTKEMoistEDMF:
 
         self._mrf_pbl_scheme_part1 = stencil_factory.from_origin_domain(
             func=mrf_pbl_scheme_part1,
-            externals={"timestep": self._timestep},
             origin=idx.origin_compute(),
             domain=(idx.iec, idx.jec, self._kmpbl),
         )
 
         self._mrf_pbl_2_thermal_excess = stencil_factory.from_origin_domain(
             func=mrf_pbl_2_thermal_excess,
-            externals={"timestep": self._timestep},
             origin=idx.origin_compute(),
             domain=idx.domain_compute(),
         )
 
         self._thermal_excess_2 = stencil_factory.from_origin_domain(
             func=thermal_excess_2,
-            externals={"timestep": self._timestep},
             origin=idx.origin_compute(),
             domain=(idx.iec, idx.jec, self._kmpbl),
         )
 
         self._enhance_pbl_height_thermal = stencil_factory.from_origin_domain(
             func=enhance_pbl_height_thermal,
-            externals={"timestep": self._timestep},
             origin=idx.origin_compute(),
             domain=idx.domain_compute(),
         )
@@ -1835,7 +1843,6 @@ class ScaleAwareTKEMoistEDMF:
 
         self._compute_mass_flux_prelim = stencil_factory.from_origin_domain(
             func=compute_mass_flux_prelim,
-            externals={"timestep": self._timestep},
             origin=idx.origin_compute(),
             domain=idx.domain_compute(),
         )
@@ -1846,21 +1853,18 @@ class ScaleAwareTKEMoistEDMF:
 
         self._compute_prandtl_num_exchange_coeff = stencil_factory.from_origin_domain(
             func=compute_prandtl_num_exchange_coeff,
-            externals={"timestep": self._timestep},
             origin=idx.origin_compute(),
             domain=(idx.iec, idx.jec, self._kmpbl),
         )
 
         self._compute_asymptotic_mixing_length = stencil_factory.from_origin_domain(
             func=compute_asymptotic_mixing_length,
-            externals={"timestep": self._timestep},
             origin=idx.origin_compute(),
             domain=idx.domain_compute(add=(0, 0, -1)),
         )
 
         self._compute_eddy_diffusivity_buoy_shear = stencil_factory.from_origin_domain(
             func=compute_eddy_diffusivity_buoy_shear,
-            externals={"timestep": self._timestep},
             origin=idx.origin_compute(),
             domain=idx.domain_compute(),
         )
@@ -1894,18 +1898,13 @@ class ScaleAwareTKEMoistEDMF:
 
         self._tridit = stencil_factory.from_origin_domain(
             func=tridit,
-            externals={"timestep": self._timestep},
             origin=idx.origin_compute(),
             domain=idx.domain_compute(),
         )
 
         self._recover_tke_tendency_start_tridiag = stencil_factory.from_origin_domain(
             func=recover_tke_tendency_start_tridiag,
-            externals={
-                "rdt": self._rdt,
-                "ntke": self._ntke,
-                "ntrac1": self._ntrac1
-            },
+            externals={"rdt": self._rdt, "ntke": self._ntke, "ntrac1": self._ntrac1},
             origin=idx.origin_compute(),
             domain=idx.domain_compute(),
         )
@@ -1920,10 +1919,7 @@ class ScaleAwareTKEMoistEDMF:
         if self._ntrac1 >= 2:
             self._setup_multi_tracer_tridiag = stencil_factory.from_origin_domain(
                 func=setup_multi_tracer_tridiag,
-                externals={
-                    "dt2": self._dt_atmos,
-                    "ntrac1": self._ntrac1
-                },
+                externals={"dt2": self._dt_atmos, "ntrac1": self._ntrac1},
                 origin=idx.origin_compute(),
                 domain=idx.domain_compute(),
             )
@@ -1935,14 +1931,16 @@ class ScaleAwareTKEMoistEDMF:
             domain=idx.domain_compute(),
         )
 
-        self._recover_heat_moisture_tendency_add_diss_heat = stencil_factory.from_origin_domain(
-            func=recover_heat_moisture_tendency_add_diss_heat,
-            externals={
-                "rdt": self._rdt,
-                "ntrac1": self._ntrac1,
-            },
-            origin=idx.origin_compute(),
-            domain=idx.domain_compute(),
+        self._recover_heat_moisture_tendency_add_diss_heat = (
+            stencil_factory.from_origin_domain(
+                func=recover_heat_moisture_tendency_add_diss_heat,
+                externals={
+                    "rdt": self._rdt,
+                    "ntrac1": self._ntrac1,
+                },
+                origin=idx.origin_compute(),
+                domain=idx.domain_compute(),
+            )
         )
 
         self._moment_tridiag_mat_ele_comp = stencil_factory.from_origin_domain(
@@ -1957,7 +1955,6 @@ class ScaleAwareTKEMoistEDMF:
 
         self._tridi2 = stencil_factory.from_origin_domain(
             func=tridi2,
-            externals={"timestep": self._timestep},
             origin=idx.origin_compute(),
             domain=idx.domain_compute(),
         )
@@ -2016,7 +2013,7 @@ class ScaleAwareTKEMoistEDMF:
         Still have to figure out what to do with:
         rtg(im,km,ntrac), q1(ix,km,ntrac),
         """
-        
+
         self._init_turbulence(
             self._zi,
             self._zl,
@@ -2193,7 +2190,7 @@ class ScaleAwareTKEMoistEDMF:
         self._compute_mass_flux_prelim(
             self._pcnvflg,
             q1,
-            self._qcdo, 
+            self._qcdo,
             self._qcko,
             self._scuflg,
             t1,

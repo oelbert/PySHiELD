@@ -147,8 +147,8 @@ class PhysicsConfig:
     clin: float = NamelistDefaults.clin
     isatmedmf: int = NamelistDefaults.isatmedmf
     dspheat: bool = NamelistDefaults.dspheat
-    xkzm_h: float = NamelistDefaults.xkzm_h,
-    xkzm_m: float = NamelistDefaults.xkzm_m,
+    xkzm_h: float = NamelistDefaults.xkzm_h
+    xkzm_m: float = NamelistDefaults.xkzm_m
     xkzm_s: float = NamelistDefaults.xkzm_s
     namelist_override: Optional[str] = None
 
@@ -248,7 +248,7 @@ class PhysicsConfig:
             dspheat=namelist.dspheat,
             xkzm_h=namelist.xkzm_h,
             xkzm_m=namelist.xkzm_m,
-            xkzm_s=namelist.xkzm_s
+            xkzm_s=namelist.xkzm_s,
         )
 
     @property

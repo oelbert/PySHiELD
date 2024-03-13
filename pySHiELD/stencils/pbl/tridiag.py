@@ -15,7 +15,6 @@ from ndsl.constants import X_DIM, Y_DIM, Z_DIM
 
 # from pace.dsl.dace.orchestration import orchestrate
 from ndsl.dsl.stencil import StencilFactory
-from ndsl.initialization.allocator import QuantityFactory
 from ndsl.dsl.typing import (
     BoolFieldIJ,
     Float,
@@ -25,6 +24,8 @@ from ndsl.dsl.typing import (
     IntField,
     IntFieldIJ,
 )
+from ndsl.initialization.allocator import QuantityFactory
+
 
 def tridit(
     au: FloatField,
@@ -48,6 +49,7 @@ def tridit(
             f1 = fk * (f1[0, 0, 0] - cl[0, 0, -1] * f1[0, 0, -1])
         with interval(0, -1):
             f1 = f1[0, 0, 0] - au[0, 0, 0] * f1[0, 0, 1]
+
 
 def tridi2(
     a1: FloatField,
@@ -80,7 +82,8 @@ def tridi2(
     with computation(BACKWARD), interval(0, -1):
         a1 = a1[0, 0, 0] - au[0, 0, 0] * a1[0, 0, 1]
         a2[0, 0, 0][0] = a2[0, 0, 0][0] - au[0, 0, 0] * a2[0, 0, 1][0]
-        
+
+
 def tridin(
     cl: FloatField,
     cm: FloatField,
@@ -92,6 +95,7 @@ def tridin(
     a2: FloatField,
 ):
     from __externals__ import nt
+
     with computation(FORWARD):
         with interval(0, 1):
             fk = 1.0 / cm[0, 0, 0]

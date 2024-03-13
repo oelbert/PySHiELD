@@ -1,5 +1,5 @@
 from gt4py.cartesian.gtscript import (
-    __INLINED
+    __INLINED,
     BACKWARD,
     FORWARD,
     PARALLEL,
@@ -13,7 +13,6 @@ from ndsl.constants import X_DIM, Y_DIM, Z_DIM
 
 # from pace.dsl.dace.orchestration import orchestrate
 from ndsl.dsl.stencil import StencilFactory
-from ndsl.initialization.allocator import QuantityFactory
 from ndsl.dsl.typing import (
     BoolFieldIJ,
     Float,
@@ -23,6 +22,7 @@ from ndsl.dsl.typing import (
     IntField,
     IntFieldIJ,
 )
+from ndsl.initialization.allocator import QuantityFactory
 from pySHiELD.functions.physics_functions import fpvs
 
 
@@ -103,10 +103,9 @@ def mfscu_10(
     xlamde: FloatField,
     qcdo: FloatField,
     q1: FloatField,
-    ntcw: Int,
-    ntrac1: Int,
 ):
     from __externals__ import ntcw, ntrac1
+
     with computation(BACKWARD), interval(...):
         if __INLINED(ntcw > 2):
             for n in range(1, ntcw - 1):
@@ -506,20 +505,20 @@ def mfscu_s9(
             vcdo = (
                 (1.0 - tem) * vcdo[0, 0, 1] + ptem * v1[0, 0, 1] + ptem1 * v1[0, 0, 0]
             ) / factor
-            
+
+
 class StratocumulusMassFlux:
     """
     A mass-flux parameterization for stratocumulus-top-induced turbulence
     mixing
     Fortran name is mfscu
     """
+
     def __init__(
-        self,
-        stencil_factory: StencilFactory,
-        quantity_factory: QuantityFactory
+        self, stencil_factory: StencilFactory, quantity_factory: QuantityFactory
     ):
         pass
-    
+
     def __call__(
         self,
         im,
@@ -782,7 +781,12 @@ class StratocumulusMassFlux:
         )
 
         mfscu_s8(
-            cnvflg=cnvflg, krad=krad, mask=mask, thld=thld, thlx=thlx, domain=(im, 1, km)
+            cnvflg=cnvflg,
+            krad=krad,
+            mask=mask,
+            thld=thld,
+            thlx=thlx,
+            domain=(im, 1, km),
         )
 
         mfscu_s9(
@@ -824,10 +828,7 @@ class StratocumulusMassFlux:
             qcdo=qcdo,
             q1=q1,
             domain=(im, 1, kmscu),
-            externals={
-                "ntcw": ntcw,
-                "ntrac1": ntrac1
-            }
+            externals={"ntcw": ntcw, "ntrac1": ntrac1},
         )
 
         return radj, mrad, buo, xmfd, tcdo, qcdo, ucdo, vcdo, xlamde

@@ -12,7 +12,6 @@ from ndsl.constants import X_DIM, Y_DIM, Z_DIM
 
 # from pace.dsl.dace.orchestration import orchestrate
 from ndsl.dsl.stencil import StencilFactory
-from ndsl.initialization.allocator import QuantityFactory
 from ndsl.dsl.typing import (
     BoolFieldIJ,
     Float,
@@ -22,6 +21,7 @@ from ndsl.dsl.typing import (
     IntField,
     IntFieldIJ,
 )
+from ndsl.initialization.allocator import QuantityFactory
 from pySHiELD.functions.physics_functions import fpvs
 
 
@@ -35,6 +35,7 @@ def mfpblt_s3(
     zl: FloatField,
 ):
     from __externals__ import ntcw, ntrac1
+
     with computation(FORWARD), interval(1, None):
         if __INLINED(ntcw > 2):
             for n in range(1, ntcw):
@@ -392,6 +393,7 @@ class PBLMassFlux:
     to take into account nonlocal transport by large eddies
     Fortran name is mfpblt
     """
+
     def __init__(
         self,
         stencil_factory: StencilFactory,
