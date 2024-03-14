@@ -19,7 +19,7 @@ COND_DIM = "n_cond"
 @unique
 class PHYSICS_PACKAGES(Enum, metaclass=MetaEnumStr):
     GFS_microphysics = "GFS_microphysics"
-    SATMED_EDMF = "SATMED_EDMF"
+    SATMED_EDMF = "SATM_EDMF"
 
 
 @dataclasses.dataclass

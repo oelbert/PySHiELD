@@ -21,6 +21,7 @@ from pySHiELD.physics_state import PhysicsState
 from pySHiELD.stencils.get_phi_fv3 import get_phi_fv3
 from pySHiELD.stencils.get_prs_fv3 import get_prs_fv3
 from pySHiELD.stencils.microphysics import Microphysics
+from pySHiELD.stencils.pbl.satmedmfvdif import ScaleAwareTKEMoistEDMF
 
 
 def atmos_phys_driver_statein(
@@ -267,6 +268,17 @@ class Physics:
         else:
             self._gfs_microphysics = False
 
+        if "SATM_EDMF" in schemes:
+            self._satm_edmf = True
+            self._pbl = ScaleAwareTKEMoistEDMF(
+                stencil_factory,
+                quantity_factory,
+                grid_data,
+                namelist.pbl,
+            )
+        else:
+            self._satm_edmf = False
+
     def _setup_statein(self):
         self._NQ = 8  # state.nq_tot - spec.namelist.dnats
         self._dnats = 1  # spec.namelist.dnats
@@ -308,6 +320,8 @@ class Physics:
             physics_state.phii,
             physics_state.phil,
         )
+        if self._satm_edmf:
+            self._pbl()
         if self._gfs_microphysics:
             self._prepare_microphysics(
                 physics_state.dz,
