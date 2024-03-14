@@ -26,7 +26,6 @@ from ndsl.dsl.typing import (
 )
 from ndsl.grid import GridData
 from ndsl.initialization.allocator import QuantityFactory
-from ndsl.performance.timer import Timer
 from pySHiELD._config import COND_DIM, TRACER_DIM, PBLConfig
 from pySHiELD.functions.physics_functions import fpvs
 from pySHiELD.stencils.pbl.mfpblt import PBLMassFlux
@@ -1601,12 +1600,12 @@ class ScaleAwareTKEMoistEDMF:
         stencil_factory: StencilFactory,
         quantity_factory: QuantityFactory,
         grid_data: GridData,
-        timer: Timer,
         config: PBLConfig,
     ):
-        assert (
-            config.ntracers == config.ntke
-        ), f"PBL scheme satmedmfvdif requires ntracer ({config.ntracers}) == ntke ({config.ntke})"
+        assert config.ntracers == config.ntke, (
+            "PBL scheme satmedmfvdif requires ntracer "
+            f"({config.ntracers}) == ntke ({config.ntke})"
+        )
 
         self._ntracers = config.ntracers
         self._ntrac1 = self._ntracers - 1
@@ -1847,9 +1846,23 @@ class ScaleAwareTKEMoistEDMF:
             domain=idx.domain_compute(),
         )
 
-        self._mfpblt = PBLMassFlux()
+        self._mfpblt = PBLMassFlux(
+            stencil_factory,
+            quantity_factory,
+            self._dt_atmos,
+            self._ntcw,
+            self._ntrac1,
+            self._kmpbl,
+        )
 
-        self._mfscu = StratocumulusMassFlux()
+        self._mfscu = StratocumulusMassFlux(
+            stencil_factory,
+            quantity_factory,
+            self._dt_atmos,
+            self._ntcw,
+            self._ntrac1,
+            self._kmscu,
+        )
 
         self._compute_prandtl_num_exchange_coeff = stencil_factory.from_origin_domain(
             func=compute_prandtl_num_exchange_coeff,
@@ -2204,9 +2217,58 @@ class ScaleAwareTKEMoistEDMF:
             self._vcko,
         )
 
-        self._mfpblt()
+        self._mfpblt(
+            self._pcnvflg,
+            self._zl,
+            self._zm,
+            q1,  # I, J, K, ntracer field
+            u1,
+            v1,
+            self._plyr,
+            self._pix,
+            self._thlx,
+            self._thvx,
+            self._gdx,
+            hpbl,
+            kpbl,
+            self._vpert,
+            self._buou,
+            self._xmf,
+            self._tcko,
+            self._qcko,  # I, J, K, ntracer field
+            self._ucko,
+            self._vcko,
+            self._xlamue,
+            self._k_mask,
+        )
 
-        self._mfscu()
+        self._mfscu(
+            self._pcnvflg,
+            self._zl,
+            self._zm,
+            q1,  # I, J, K, ntracer field
+            u1,
+            v1,
+            self._plyr,
+            self._pix,
+            self._thlx,
+            self._thvx,
+            self._thlvx,
+            self._gdx,
+            self._thetae,
+            self._radj,
+            self._krad,
+            self._mrad,
+            self._radmin,
+            self._buod,
+            self._xmfd,
+            self._tcdo,
+            self._qcdo,  # I, J, K, ntracer field
+            self._ucdo,
+            self._vcdo,
+            self._xlamde,
+            self._k_mask,
+        )
 
         self._compute_prandtl_num_exchange_coeff(
             self._chz,

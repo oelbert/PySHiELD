@@ -13,6 +13,7 @@ from ndsl.constants import X_DIM, Y_DIM, Z_DIM
 # from pace.dsl.dace.orchestration import orchestrate
 from ndsl.dsl.stencil import StencilFactory
 from ndsl.dsl.typing import (
+    Bool,
     BoolFieldIJ,
     Float,
     FloatField,
@@ -23,41 +24,6 @@ from ndsl.dsl.typing import (
 )
 from ndsl.initialization.allocator import QuantityFactory
 from pySHiELD.functions.physics_functions import fpvs
-
-
-def mfpblt_s3(
-    cnvflg: BoolFieldIJ,
-    kpbl: IntFieldIJ,
-    mask: IntField,
-    xlamue: FloatField,
-    qcko: FloatField,
-    q1: FloatField,
-    zl: FloatField,
-):
-    from __externals__ import ntcw, ntrac1
-
-    with computation(FORWARD), interval(1, None):
-        if __INLINED(ntcw > 2):
-            for n in range(1, ntcw):
-                if cnvflg[0, 0] and mask[0, 0, 0] <= kpbl[0, 0]:
-                    dz = zl[0, 0, 0] - zl[0, 0, -1]
-                    tem = 0.5 * xlamue[0, 0, -1] * dz
-                    factor = 1.0 + tem
-                    qcko[0, 0, 0][n] = (
-                        (1.0 - tem) * qcko[0, 0, -1][n]
-                        + tem * (q1[0, 0, 0][n] + q1[0, 0, -1][n])
-                    ) / factor
-
-        if __INLINED(ntrac1 > ntcw):
-            for n2 in range(ntcw, ntrac1):
-                if cnvflg[0, 0] and mask[0, 0, 0] <= kpbl[0, 0]:
-                    dz = zl[0, 0, 0] - zl[0, 0, -1]
-                    tem = 0.5 * xlamue[0, 0, -1] * dz
-                    factor = 1.0 + tem
-                    qcko[0, 0, 0][n2] = (
-                        (1.0 - tem) * qcko[0, 0, -1][n2]
-                        + tem * (q1[0, 0, 0][n2] + q1[0, 0, -1][n2])
-                    ) / factor
 
 
 def mfpblt_s0(
@@ -112,7 +78,7 @@ def mfpblt_s1(
     kpbl: IntFieldIJ,
     kpblx: IntFieldIJ,
     kpbly: IntFieldIJ,
-    mask: IntField,
+    k_mask: IntField,
     pix: FloatField,
     plyr: FloatField,
     qtu: FloatField,
@@ -131,7 +97,7 @@ def mfpblt_s1(
     with computation(PARALLEL), interval(...):
         if cnvflg[0, 0]:
             dz = zl[0, 0, 1] - zl[0, 0, 0]
-            if mask[0, 0, 0] < kpbl[0, 0]:
+            if k_mask[0, 0, 0] < kpbl[0, 0]:
                 xlamue = constants.CE0 * (
                     1.0 / (zm[0, 0, 0] + dz)
                     + 1.0 / max(hpbl[0, 0] - zm[0, 0, 0] + dz, dz)
@@ -198,7 +164,7 @@ def mfpblt_s1(
             if not flg[0, 0]:
                 rbdn = rbup[0, 0]
                 rbup = wu2[0, 0, 0]
-                kpblx = mask[0, 0, 0]
+                kpblx = k_mask[0, 0, 0]
                 flg = rbup[0, 0] <= 0.0
 
 
@@ -206,7 +172,7 @@ def mfpblt_s1a(
     cnvflg: BoolFieldIJ,
     hpblx: FloatFieldIJ,
     kpblx: IntFieldIJ,
-    mask: IntField,
+    k_mask: IntField,
     rbdn: FloatFieldIJ,
     rbup: FloatFieldIJ,
     zm: FloatField,
@@ -215,7 +181,7 @@ def mfpblt_s1a(
     with computation(FORWARD), interval(...):
         rbint = 0.0
 
-        if mask[0, 0, 0] == kpblx[0, 0]:
+        if k_mask[0, 0, 0] == kpblx[0, 0]:
             if cnvflg[0, 0]:
                 if rbdn[0, 0] <= 0.0:
                     rbint = 0.0
@@ -235,7 +201,7 @@ def mfpblt_s2(
     kpbl: IntFieldIJ,
     kpblx: IntFieldIJ,
     kpbly: IntFieldIJ,
-    mask: IntField,
+    k_mask: IntField,
     pix: FloatField,
     plyr: FloatField,
     qcko: FloatField,
@@ -270,7 +236,7 @@ def mfpblt_s2(
     with computation(PARALLEL), interval(...):
         if cnvflg[0, 0] and (kpbly[0, 0] > kpblx[0, 0]):
             dz = zl[0, 0, 1] - zl[0, 0, 0]
-            if mask[0, 0, 0] < kpbl[0, 0]:
+            if k_mask[0, 0, 0] < kpbl[0, 0]:
                 ptem = 1 / (zm[0, 0, 0] + dz)
                 ptem1 = 1 / max(hpbl[0, 0] - zm[0, 0, 0] + dz, dz)
                 xlamue = constants.CE0 * (ptem + ptem1)
@@ -281,12 +247,12 @@ def mfpblt_s2(
     with computation(FORWARD):
         with interval(0, 1):
             dz = zl[0, 0, 1] - zl[0, 0, 0]
-            if cnvflg[0, 0] and (mask[0, 0, 0] < kpbl[0, 0]):
+            if cnvflg[0, 0] and (k_mask[0, 0, 0] < kpbl[0, 0]):
                 xlamavg = xlamavg[0, 0] + xlamue[0, 0, 0] * dz
                 sumx = sumx[0, 0] + dz
         with interval(1, None):
             dz = zl[0, 0, 1] - zl[0, 0, 0]
-            if cnvflg[0, 0] and (mask[0, 0, 0] < kpbl[0, 0]):
+            if cnvflg[0, 0] and (k_mask[0, 0, 0] < kpbl[0, 0]):
                 xlamavg = xlamavg[0, 0] + xlamue[0, 0, 0] * dz
                 sumx = sumx[0, 0] + dz
 
@@ -295,7 +261,7 @@ def mfpblt_s2(
             xlamavg = xlamavg[0, 0] / sumx[0, 0]
 
     with computation(PARALLEL), interval(...):
-        if cnvflg[0, 0] and (mask[0, 0, 0] < kpbl[0, 0]):
+        if cnvflg[0, 0] and (k_mask[0, 0, 0] < kpbl[0, 0]):
             if wu2[0, 0, 0] > 0.0:
                 xmf = constants.A1 * sqrt(wu2[0, 0, 0])
             else:
@@ -317,7 +283,7 @@ def mfpblt_s2(
 
     with computation(PARALLEL), interval(...):
         xmmx = (zl[0, 0, 1] - zl[0, 0, 0]) / dt2
-        if cnvflg[0, 0] and (mask[0, 0, 0] < kpbl[0, 0]):
+        if cnvflg[0, 0] and (k_mask[0, 0, 0] < kpbl[0, 0]):
             xmf = min(scaldfunc[0, 0] * xmf[0, 0, 0], xmmx)
 
     with computation(FORWARD):
@@ -329,7 +295,7 @@ def mfpblt_s2(
             tem = 0.5 * xlamue[0, 0, -1] * dz
             factor = 1.0 + tem
 
-            if cnvflg[0, 0] and (mask[0, 0, 0] <= kpbl[0, 0]):
+            if cnvflg[0, 0] and (k_mask[0, 0, 0] <= kpbl[0, 0]):
                 thlu = (
                     (1.0 - tem) * thlu[0, 0, -1]
                     + tem * (thlx[0, 0, -1] + thlx[0, 0, 0])
@@ -347,7 +313,7 @@ def mfpblt_s2(
             dq = qtu[0, 0, 0] - qs
             qlu = dq / (1.0 + (constants.EL2ORC * qs / (tlu ** 2)))
 
-            if cnvflg[0, 0] and (mask[0, 0, 0] <= kpbl[0, 0]):
+            if cnvflg[0, 0] and (k_mask[0, 0, 0] <= kpbl[0, 0]):
                 if dq > 0.0:
                     qtu = qs + qlu
                     qcko[0, 0, 0][0] = qs
@@ -362,7 +328,7 @@ def mfpblt_s2(
             tem = 0.5 * xlamuem[0, 0, -1] * dz
             factor = 1.0 + tem
 
-            if cnvflg[0, 0] and (mask[0, 0, 0] <= kpbl[0, 0]):
+            if cnvflg[0, 0] and (k_mask[0, 0, 0] <= kpbl[0, 0]):
                 ucko = (
                     (1.0 - tem) * ucko[0, 0, -1]
                     + (tem + constants.PGCON) * u1[0, 0, 0]
@@ -373,6 +339,41 @@ def mfpblt_s2(
                     + (tem + constants.PGCON) * v1[0, 0, 0]
                     + (tem - constants.PGCON) * v1[0, 0, -1]
                 ) / factor
+
+
+def mfpblt_s3(
+    cnvflg: BoolFieldIJ,
+    kpbl: IntFieldIJ,
+    k_mask: IntField,
+    xlamue: FloatField,
+    qcko: FloatField,
+    q1: FloatField,
+    zl: FloatField,
+):
+    from __externals__ import ntcw, ntrac1
+
+    with computation(FORWARD), interval(1, None):
+        if __INLINED(ntcw > 2):
+            for n in range(1, ntcw):
+                if cnvflg[0, 0] and k_mask[0, 0, 0] <= kpbl[0, 0]:
+                    dz = zl[0, 0, 0] - zl[0, 0, -1]
+                    tem = 0.5 * xlamue[0, 0, -1] * dz
+                    factor = 1.0 + tem
+                    qcko[0, 0, 0][n] = (
+                        (1.0 - tem) * qcko[0, 0, -1][n]
+                        + tem * (q1[0, 0, 0][n] + q1[0, 0, -1][n])
+                    ) / factor
+
+        if __INLINED(ntrac1 > ntcw):
+            for n2 in range(ntcw, ntrac1):
+                if cnvflg[0, 0] and k_mask[0, 0, 0] <= kpbl[0, 0]:
+                    dz = zl[0, 0, 0] - zl[0, 0, -1]
+                    tem = 0.5 * xlamue[0, 0, -1] * dz
+                    factor = 1.0 + tem
+                    qcko[0, 0, 0][n2] = (
+                        (1.0 - tem) * qcko[0, 0, -1][n2]
+                        + tem * (q1[0, 0, 0][n2] + q1[0, 0, -1][n2])
+                    ) / factor
 
 
 class PBLMassFlux:
@@ -393,6 +394,7 @@ class PBLMassFlux:
     ):
         idx = stencil_factory.grid_indexing
         self._im = idx.iec - idx.isc
+        self._jm = idx.jec - idx.jsc
 
         def make_quantity():
             return quantity_factory.zeros(
@@ -404,8 +406,21 @@ class PBLMassFlux:
         def make_quantity_2D(type):
             return quantity_factory.zeros([X_DIM, Y_DIM], units="unknown", dtype=type)
 
+        self._xlamuem = make_quantity()
         self._wu2 = make_quantity()
+        self._thlu = make_quantity()
+        self._qtx = make_quantity()
+        self._qtu = make_quantity()
         self._sigma = make_quantity_2D(Float)
+        self._kpblx = make_quantity_2D(Int)
+        self._kpbly = make_quantity_2D(Int)
+        self._rbdn = make_quantity_2D(Float)
+        self._rbup = make_quantity_2D(Float)
+        self._hpblx = make_quantity_2D(Float)
+        self._xlamavg = make_quantity_2D(Float)
+        self._scaldfunc = make_quantity_2D(Float)
+        self._sumx = make_quantity_2D(Float)
+        self._flg = make_quantity_2D(Bool)
 
         self._mfpblt_s0 = stencil_factory.from_origin_domain(
             func=mfpblt_s0,
@@ -449,52 +464,37 @@ class PBLMassFlux:
 
     def __call__(
         self,
-        delt,
-        cnvflg,
-        zl,
-        zm,
-        q1,
-        t1,
-        u1,
-        v1,
-        plyr,
-        pix,
-        thlx,
-        thvx,
-        gdx,
-        hpbl,
-        kpbl,
-        vpert,
-        buo,
-        xmf,
-        tcko,
-        qcko,
-        ucko,
-        vcko,
-        xlamue,
-        mask,
-        qtx,
-        wu2,
-        qtu,
-        xlamuem,
-        thlu,
-        kpblx,
-        kpbly,
-        rbup,
-        rbdn,
-        flg,
-        hpblx,
-        xlamavg,
-        sumx,
-        scaldfunc,
+        cnvflg: BoolFieldIJ,
+        zl: FloatField,
+        zm: FloatField,
+        q1,  # I, J, K, ntracer field
+        u1: FloatField,
+        v1: FloatField,
+        plyr: FloatField,
+        pix: FloatField,
+        thlx: FloatField,
+        thvx: FloatField,
+        gdx: FloatFieldIJ,
+        hpbl: FloatFieldIJ,
+        kpbl: IntFieldIJ,
+        vpert: FloatFieldIJ,
+        buo: FloatField,
+        xmf: FloatField,
+        tcko: FloatField,
+        qcko,  # I, J, K, ntracer field
+        ucko: FloatField,
+        vcko: FloatField,
+        xlamue: FloatField,
+        k_mask: IntField,
     ):
         totflag = True
 
         for i in range(self._im):
-            totflag = totflag and (not cnvflg[i, 0])
+            for j in range(self._jm):
+                totflag = totflag and (not cnvflg.view[i, j])
 
         if totflag:
-            return kpbl, hpbl, buo, xmf, tcko, qcko, ucko, vcko, xlamue
+            return
 
         self._mfpblt_s0(
             buo,
@@ -502,54 +502,54 @@ class PBLMassFlux:
             hpbl,
             kpbl,
             q1,
-            qtu,
-            qtx,
-            thlu,
+            self._qtu,
+            self._qtx,
+            self._thlu,
             thlx,
             thvx,
             vpert,
-            wu2,
-            kpblx,
-            kpbly,
-            rbup,
-            rbdn,
-            hpblx,
-            xlamavg,
-            sumx,
+            self._wu2,
+            self._kpblx,
+            self._kpbly,
+            self._rbup,
+            self._rbdn,
+            self._hpblx,
+            self._xlamavg,
+            self._sumx,
         )
 
         self._mfpblt_s1(
             buo,
             cnvflg,
-            flg,
+            self._flg,
             hpbl,
             kpbl,
-            kpblx,
-            kpbly,
-            mask,
+            self._kpblx,
+            self._kpbly,
+            k_mask,
             pix,
             plyr,
-            qtu,
-            qtx,
-            rbdn,
-            rbup,
-            thlu,
+            self._qtu,
+            self._qtx,
+            self._rbdn,
+            self._rbup,
+            self._thlu,
             thlx,
             thvx,
-            wu2,
+            self._wu2,
             xlamue,
-            xlamuem,
+            self._xlamuem,
             zl,
             zm,
         )
 
         self._mfpblt_s1a(
             cnvflg,
-            hpblx,
-            kpblx,
-            mask,
-            rbdn,
-            rbup,
+            self._hpblx,
+            self._kpblx,
+            k_mask,
+            self._rbdn,
+            self._rbup,
             zm,
         )
 
@@ -557,30 +557,30 @@ class PBLMassFlux:
             cnvflg,
             gdx,
             hpbl,
-            hpblx,
+            self._hpblx,
             kpbl,
-            kpblx,
-            kpbly,
-            mask,
+            self._kpblx,
+            self._kpbly,
+            k_mask,
             pix,
             plyr,
             qcko,
-            qtu,
-            qtx,
-            scaldfunc,
-            sumx,
+            self._qtu,
+            self._qtx,
+            self._scaldfunc,
+            self._sumx,
             tcko,
-            thlu,
+            self._thlu,
             thlx,
             u1,
             ucko,
             v1,
             vcko,
             xmf,
-            xlamavg,
+            self._xlamavg,
             xlamue,
-            xlamuem,
-            wu2,
+            self._xlamuem,
+            self._wu2,
             zl,
             zm,
         )
@@ -588,11 +588,9 @@ class PBLMassFlux:
         self._mfpblt_s3(
             cnvflg,
             kpbl,
-            mask,
+            k_mask,
             xlamue,
             qcko,
             q1,
             zl,
         )
-
-        return kpbl, hpbl, buo, xmf, tcko, qcko, ucko, vcko, xlamue
