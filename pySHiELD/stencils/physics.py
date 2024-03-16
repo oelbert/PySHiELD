@@ -21,7 +21,7 @@ from pySHiELD.physics_state import PhysicsState
 from pySHiELD.stencils.get_phi_fv3 import get_phi_fv3
 from pySHiELD.stencils.get_prs_fv3 import get_prs_fv3
 from pySHiELD.stencils.microphysics import Microphysics
-from pySHiELD.stencils.pbl.satmedmfvdif import ScaleAwareTKEMoistEDMF
+from pySHiELD.stencils.pbl import ScaleAwareTKEMoistEDMF
 
 
 def atmos_phys_driver_statein(
