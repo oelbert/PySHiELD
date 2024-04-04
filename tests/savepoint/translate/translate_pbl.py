@@ -24,4 +24,25 @@ class TranslatePBL(TranslatePhysicsFortranData2Py):
         self.grid_indexing = self.stencil_factory.grid_indexing
 
     def compute(self, inputs):
+        
+        sizer = SubtileGridSizer.from_tile_params(
+            nx_tile=self.namelist.npx - 1,
+            ny_tile=self.namelist.npy - 1,
+            nz=self.namelist.npz,
+            n_halo=3,
+            extra_dim_lengths={},
+            layout=self.namelist.layout,
+        )
+
+        quantity_factory = QuantityFactory.from_backend(
+            sizer, self.stencil_factory.backend
+        )
+
+        self.pbl = ScaleAwareTKEMoistEDMF(
+            self.stencil_factory,
+            quantity_factory,
+            self.grid.grid_data,
+            self.namelist.pbl,
+        )
+
         pass

@@ -460,8 +460,6 @@ class PBLMassFlux:
             domain=(idx.iec, idx.jec, kmpbl),
         )
 
-        pass
-
     def __call__(
         self,
         cnvflg: BoolFieldIJ,
