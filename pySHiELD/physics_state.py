@@ -276,12 +276,52 @@ class PhysicsState:
             "intent": "inout",
         }
     )
+    hsw = field(
+        metadata={
+            "name": "shortwave_heating_rate",
+            "dims": [X_DIM, Y_DIM, Z_DIM],
+            "units": "k/s",
+            "intent": "in",
+        }
+    )
+    hlw = field(
+        metadata={
+            "name": "longwave_heating_rate",
+            "dims": [X_DIM, Y_DIM, Z_DIM],
+            "units": "k/s",
+            "intent": "in",
+        }
+    )
     land: Quantity = field(
         metadata={
             "name": "land_mask",
             "dims": [X_DIM, Y_DIM],
             "units": "-",
             "intent": "in",
+        }
+    )
+    kpbl: Quantity = field(
+        metadata={
+            "name": "pbl_index",
+            "dims": [X_DIM, Y_DIM],
+            "units": "-",
+            "intent": "inout",
+        }
+    )
+    kinver: Quantity = field(
+        metadata={
+            "name": "inversion_layer_index",
+            "dims": [X_DIM, Y_DIM],
+            "units": "-",
+            "intent": "inout",
+        }
+    )
+    hpbl: Quantity = field(
+        metadata={
+            "name": "pbl_height",
+            "dims": [X_DIM, Y_DIM],
+            "units": "m",
+            "intent": "inout",
         }
     )
     quantity_factory: InitVar[QuantityFactory]

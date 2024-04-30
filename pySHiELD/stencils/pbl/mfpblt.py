@@ -178,7 +178,7 @@ def mfpblt_s1a(
     zm: FloatField,
 ):
 
-    with computation(FORWARD), interval(...):
+    with computation(FORWARD), interval(1, None):
         rbint = 0.0
 
         if k_mask[0, 0, 0] == kpblx[0, 0]:
@@ -349,31 +349,17 @@ def mfpblt_s3(
     qcko: FloatField,
     q1: FloatField,
     zl: FloatField,
+    n_tracer: int,
 ):
-    from __externals__ import ntcw, ntrac1
-
     with computation(FORWARD), interval(1, None):
-        if __INLINED(ntcw > 2):
-            for n in range(1, ntcw):
-                if cnvflg[0, 0] and k_mask[0, 0, 0] <= kpbl[0, 0]:
-                    dz = zl[0, 0, 0] - zl[0, 0, -1]
-                    tem = 0.5 * xlamue[0, 0, -1] * dz
-                    factor = 1.0 + tem
-                    qcko[0, 0, 0][n] = (
-                        (1.0 - tem) * qcko[0, 0, -1][n]
-                        + tem * (q1[0, 0, 0][n] + q1[0, 0, -1][n])
-                    ) / factor
-
-        if __INLINED(ntrac1 > ntcw):
-            for n2 in range(ntcw, ntrac1):
-                if cnvflg[0, 0] and k_mask[0, 0, 0] <= kpbl[0, 0]:
-                    dz = zl[0, 0, 0] - zl[0, 0, -1]
-                    tem = 0.5 * xlamue[0, 0, -1] * dz
-                    factor = 1.0 + tem
-                    qcko[0, 0, 0][n2] = (
-                        (1.0 - tem) * qcko[0, 0, -1][n2]
-                        + tem * (q1[0, 0, 0][n2] + q1[0, 0, -1][n2])
-                    ) / factor
+        if cnvflg[0, 0] and k_mask[0, 0, 0] <= kpbl[0, 0]:
+            dz = zl[0, 0, 0] - zl[0, 0, -1]
+            tem = 0.5 * xlamue[0, 0, -1] * dz
+            factor = 1.0 + tem
+            qcko[0, 0, 0][n_tracer] = (
+                (1.0 - tem) * qcko[0, 0, -1][n_tracer]
+                + tem * (q1[0, 0, 0][n_tracer] + q1[0, 0, -1][n_tracer])
+            ) / factor
 
 
 class PBLMassFlux:
@@ -395,6 +381,9 @@ class PBLMassFlux:
         idx = stencil_factory.grid_indexing
         self._im = idx.iec - idx.isc
         self._jm = idx.jec - idx.jsc
+
+        self._ntcw = ntcw
+        self._ntrac1 = ntrac1
 
         def make_quantity():
             return quantity_factory.zeros(
@@ -450,15 +439,12 @@ class PBLMassFlux:
             domain=(idx.iec, idx.jec, kmpbl),
         )
 
-        self._mfpblt_s3 = stencil_factory.from_origin_domain(
-            func=mfpblt_s3,
-            externals={
-                "ntcw": ntcw,
-                "ntrac1": ntrac1,
-            },
-            origin=idx.origin_compute(),
-            domain=(idx.iec, idx.jec, kmpbl),
-        )
+        if (self._ntcw > 2) or (self._ntrac1 > self._ntcw):
+            self._mfpblt_s3 = stencil_factory.from_origin_domain(
+                func=mfpblt_s3,
+                origin=idx.origin_compute(),
+                domain=(idx.iec, idx.jec, kmpbl),
+            )
 
     def __call__(
         self,
@@ -583,12 +569,27 @@ class PBLMassFlux:
             zm,
         )
 
-        self._mfpblt_s3(
-            cnvflg,
-            kpbl,
-            k_mask,
-            xlamue,
-            qcko,
-            q1,
-            zl,
-        )
+        if self._ntcw > 2:
+            for n in range(1, self._ntcw):
+                self._mfpblt_s3(
+                    cnvflg,
+                    kpbl,
+                    k_mask,
+                    xlamue,
+                    qcko,
+                    q1,
+                    zl,
+                    n,
+                )
+        if self._ntrac1 > self._ntcw:
+            for n in range(self._ntcw, self._ntrac1):
+                self._mfpblt_s3(
+                    cnvflg,
+                    kpbl,
+                    k_mask,
+                    xlamue,
+                    qcko,
+                    q1,
+                    zl,
+                    n,
+                )

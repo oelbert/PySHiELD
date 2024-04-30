@@ -16,6 +16,7 @@ from ndsl.dsl.stencil import StencilFactory
 from ndsl.dsl.typing import Float, FloatField
 from ndsl.grid import GridData
 from ndsl.initialization.allocator import QuantityFactory
+from ndsl.stencils.basic_operations import copy_defn
 from pySHiELD._config import PHYSICS_PACKAGES, PhysicsConfig
 from pySHiELD.physics_state import PhysicsState
 from pySHiELD.stencils.get_phi_fv3 import get_phi_fv3
@@ -227,6 +228,11 @@ class Physics:
         self._prsik = make_quantity()
         self._dm3d = make_quantity()
         self._del_gz = make_quantity()
+        self._copy_stencil = stencil_factory.from_origin_domain(
+            func=copy_defn,
+            origin=grid_indexing.origin_full(),
+            domain=grid_indexing.domain_full(add=(0, 0, 1)),
+        )
         self._get_prs_fv3 = stencil_factory.from_origin_domain(
             func=get_prs_fv3,
             origin=grid_indexing.origin_full(),
@@ -269,6 +275,16 @@ class Physics:
             self._gfs_microphysics = False
 
         if "SATM_EDMF" in schemes:
+            self._dudt = make_quantity()
+            self._dvdt = make_quantity()
+            self._dtdt = make_quantity()
+            self._dusfc = make_quantity()
+            self._dvsfc = make_quantity()
+            self._dtsfc = make_quantity()
+            self._dqsfc = make_quantity()
+            self._u1 = make_quantity()
+            self._v1 = make_quantity()
+            self._t1 = make_quantity()
             self._satm_edmf = True
             self._pbl = ScaleAwareTKEMoistEDMF(
                 stencil_factory,
@@ -321,7 +337,78 @@ class Physics:
             physics_state.phil,
         )
         if self._satm_edmf:
-            self._pbl()
+            self._pbl(
+                physics_state.kpbl,
+                physics_state.kinver,
+                self._dvdt,
+                self._dudt,
+                self._dtdt,
+                rtg,  # FloatField with extra data dimension
+                physics_state.hpbl,
+                self._u1,
+                self._v1,
+                self._t1,
+                q1,  # FloatField with extra data dimension
+                physics_state.hsw,
+                physics_state.hlw,
+                xmu,
+                psk,
+                rbsoil,
+                zorl,
+                tsea,
+                u10m,
+                v10m,
+                fm,
+                fh,
+                evap,
+                heat,
+                stress,
+                spd1,
+                prsi,
+                delta,
+                prsl,
+                prslk,
+                physics_state.phii,
+                physics_state.phil,
+                self._dusfc,
+                self._dvsfc,
+                self._dtsfc,
+                self._dqsfc,
+            )
+
+            self._update_physics_state_with_tendencies(
+                physics_state.qvapor,
+                physics_state.qliquid,
+                physics_state.qrain,
+                physics_state.qice,
+                physics_state.qsnow,
+                physics_state.qgraupel,
+                physics_state.qcld,
+                physics_state.pt,
+                physics_state.ua,
+                physics_state.va,
+                physics_state.microphysics.qv_dt,
+                physics_state.microphysics.ql_dt,
+                physics_state.microphysics.qr_dt,
+                physics_state.microphysics.qi_dt,
+                physics_state.microphysics.qs_dt,
+                physics_state.microphysics.qg_dt,
+                physics_state.microphysics.qa_dt,
+                physics_state.microphysics.pt_dt,
+                physics_state.microphysics.udt,
+                physics_state.microphysics.vdt,
+                physics_state.physics_updated_specific_humidity,
+                physics_state.physics_updated_qliquid,
+                physics_state.physics_updated_qrain,
+                physics_state.physics_updated_qice,
+                physics_state.physics_updated_qsnow,
+                physics_state.physics_updated_qgraupel,
+                physics_state.physics_updated_cloud_fraction,
+                physics_state.physics_updated_pt,
+                physics_state.physics_updated_ua,
+                physics_state.physics_updated_va,
+                timestep,
+            )
         if self._gfs_microphysics:
             self._prepare_microphysics(
                 physics_state.dz,

@@ -100,39 +100,21 @@ def mfscu_10(
     xlamde: FloatField,
     qcdo: FloatField,
     q1: FloatField,
+    n_tracer: int
 ):
-    from __externals__ import ntcw, ntrac1
-
     with computation(BACKWARD), interval(...):
-        if __INLINED(ntcw > 2):
-            for n in range(1, ntcw - 1):
-                if (
-                    cnvflg[0, 0]
-                    and k_mask[0, 0, 0] < krad[0, 0]
-                    and k_mask[0, 0, 0] >= mrad[0, 0]
-                ):
-                    dz = zl[0, 0, 1] - zl[0, 0, 0]
-                    tem = 0.5 * xlamde[0, 0, 0] * dz
-                    factor = 1.0 + tem
-                    qcdo[0, 0, 0][n] = (
-                        (1.0 - tem) * qcdo[0, 0, 1][n]
-                        + tem * (q1[0, 0, 0][n] + q1[0, 0, 1][n])
-                    ) / factor
-
-        if __INLINED(ntrac1 > ntcw):
-            for n1 in range(ntcw, ntrac1):
-                if (
-                    cnvflg[0, 0]
-                    and k_mask[0, 0, 0] < krad[0, 0]
-                    and k_mask[0, 0, 0] >= mrad[0, 0]
-                ):
-                    dz = zl[0, 0, 1] - zl[0, 0, 0]
-                    tem = 0.5 * xlamde[0, 0, 0] * dz
-                    factor = 1.0 + tem
-                    qcdo[0, 0, 0][n1] = (
-                        (1.0 - tem) * qcdo[0, 0, 1][n1]
-                        + tem * (q1[0, 0, 0][n1] + q1[0, 0, 1][n1])
-                    ) / factor
+        if (
+            cnvflg[0, 0]
+            and k_mask[0, 0, 0] < krad[0, 0]
+            and k_mask[0, 0, 0] >= mrad[0, 0]
+        ):
+            dz = zl[0, 0, 1] - zl[0, 0, 0]
+            tem = 0.5 * xlamde[0, 0, 0] * dz
+            factor = 1.0 + tem
+            qcdo[0, 0, 0][n_tracer] = (
+                (1.0 - tem) * qcdo[0, 0, 1][n_tracer]
+                + tem * (q1[0, 0, 0][n_tracer] + q1[0, 0, 1][n_tracer])
+            ) / factor
 
 
 def mfscu_s0(
@@ -495,7 +477,7 @@ def mfscu_s9(
                 qcdo[0, 0, 0][ntcw - 1] = qld
                 tcdo = tld + constants.ELOCP * qld
             else:
-                qcdo[0, 0, 0] = qtd[0, 0, 0]
+                qcdo[0, 0, 0][0] = qtd[0, 0, 0]
                 qcdo[0, 0, 0][ntcw - 1] = 0.0
                 tcdo = tld
 
@@ -648,15 +630,12 @@ class StratocumulusMassFlux:
             domain=(idx.iec, idx.jec, kmscu),
         )
 
-        self._mfscu_10 = stencil_factory.from_origin_domain(
-            func=mfscu_10,
-            externals={
-                "ntcw": ntcw,
-                "ntrac1": ntrac1,
-            },
-            origin=idx.origin_compute(),
-            domain=(idx.iec, idx.jec, kmscu),
-        )
+        if (self._ntcw > 2) or (self._ntrac1 > self._ntcw):
+            self._mfscu_10 = stencil_factory.from_origin_domain(
+                func=mfscu_10,
+                origin=idx.origin_compute(),
+                domain=(idx.iec, idx.jec, kmscu),
+            )
 
     def __call__(
         self,
@@ -873,13 +852,30 @@ class StratocumulusMassFlux:
             zl,
         )
 
-        mfscu_10(
-            cnvflg,
-            krad,
-            mrad,
-            k_mask,
-            zl,
-            xlamde,
-            qcdo,
-            q1,
-        )
+        if self._ntcw > 2:
+            for n in range(1, self._ntcw):
+                mfscu_10(
+                    cnvflg,
+                    krad,
+                    mrad,
+                    k_mask,
+                    zl,
+                    xlamde,
+                    qcdo,
+                    q1,
+                    n,
+                )
+
+        if self._ntrac1 > self._ntcw:
+            for n in range(self._ntcw, self._ntrac1):
+                mfscu_10(
+                    cnvflg,
+                    krad,
+                    mrad,
+                    k_mask,
+                    zl,
+                    xlamde,
+                    qcdo,
+                    q1,
+                    n,
+                )
