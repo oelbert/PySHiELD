@@ -69,6 +69,7 @@ def tridin(
     au: FloatField,
     a1: FloatField,
     a2: FloatField,
+    n_tracer: int
 ):
     from __externals__ import nt
 
@@ -77,30 +78,28 @@ def tridin(
             fk = 1.0 / cm[0, 0, 0]
             au = fk * cu[0, 0, 0]
             a1 = fk * r1[0, 0, 0]
-            for n0 in range(nt):
-                a2[0, 0, 0][n0] = fk * r2[0, 0, 0][n0]
+            a2[0, 0, 0][n_tracer] = fk * r2[0, 0, 0][n_tracer]
 
         with interval(1, -1):
             fkk = 1.0 / (cm[0, 0, 0] - cl[0, 0, -1] * au[0, 0, -1])
             au = fkk * cu[0, 0, 0]
             a1 = fkk * (r1[0, 0, 0] - cl[0, 0, -1] * a1[0, 0, -1])
 
-            for n1 in range(nt):
-                a2[0, 0, 0][n1] = fkk * (
-                    r2[0, 0, 0][n1] - cl[0, 0, -1] * a2[0, 0, -1][n1]
-                )
+            a2[0, 0, 0][n_tracer] = fkk * (
+                r2[0, 0, 0][n_tracer] - cl[0, 0, -1] * a2[0, 0, -1][n_tracer]
+            )
 
         with interval(-1, None):
             fk = 1.0 / (cm[0, 0, 0] - cl[0, 0, -1] * au[0, 0, -1])
             a1 = fk * (r1[0, 0, 0] - cl[0, 0, -1] * a1[0, 0, -1])
 
-            for n2 in range(nt):
-                a2[0, 0, 0][n2] = fk * (
-                    r2[0, 0, 0][n2] - cl[0, 0, -1] * a2[0, 0, -1][n2]
-                )
+            a2[0, 0, 0][n_tracer] = fk * (
+                r2[0, 0, 0][n_tracer] - cl[0, 0, -1] * a2[0, 0, -1][n_tracer]
+            )
 
     with computation(BACKWARD):
         with interval(0, -1):
             a1 = a1[0, 0, 0] - au[0, 0, 0] * a1[0, 0, 1]
-            for n3 in range(nt):
-                a2[0, 0, 0][n3] = a2[0, 0, 0][n3] - au[0, 0, 0] * a2[0, 0, 1][n3]
+            a2[0, 0, 0][n_tracer] = (
+                a2[0, 0, 0][n_tracer] - au[0, 0, 0] * a2[0, 0, 1][n_tracer]
+            )

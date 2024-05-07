@@ -1005,7 +1005,6 @@ def tke_up_down_prop(
     mrad: IntFieldIJ,
     xlamde: FloatField,
 ):
-    from __externals__ import kmpbl, kmscu
 
     with computation(PARALLEL), interval(...):
         if pcnvflg[0, 0]:
@@ -1014,7 +1013,7 @@ def tke_up_down_prop(
             qcdo[0, 0, 0][7] = tke[0, 0, 0]
 
     with computation(FORWARD), interval(1, None):
-        if k_mask[0, 0, 0] < kmpbl:
+        if k_mask[0, 0, 0] < kpbl:
             tem = 0.5 * xlamue[0, 0, -1] * (zl[0, 0, 0] - zl[0, 0, -1])
             if pcnvflg[0, 0] and k_mask[0, 0, 0] <= kpbl[0, 0]:
                 qcko[0, 0, 0][7] = (
@@ -1023,7 +1022,7 @@ def tke_up_down_prop(
                 ) / (1.0 + tem)
 
     with computation(BACKWARD), interval(...):
-        if k_mask[0, 0, 0] < kmscu:
+        if k_mask[0, 0, 0] < krad:
             tem = 0.5 * xlamde[0, 0, 0] * (zl[0, 0, 1] - zl[0, 0, 0])
             if (
                 scuflg[0, 0]
@@ -1035,7 +1034,7 @@ def tke_up_down_prop(
                 ) / (1.0 + tem)
 
     with computation(PARALLEL), interval(0, 1):
-        if k_mask[0, 0, 0] < kmscu:
+        if k_mask[0, 0, 0] < krad:
             ad = 1.0
             f1 = tke[0, 0, 0]
 
@@ -1328,33 +1327,61 @@ def setup_multi_tracer_tridiag(
 ):
     from __externals__ import dt2
 
-    with computation(FORWARD), interval(0, -1):
-        if k_mask[0, 0, 0] > 0:
-            if pcnvflg[0, 0] and k_mask[0, 0, -1] < kpbl[0, 0]:
-                dtodsu = dt2 / delta[0, 0, 0]
-                dsig = prsl[0, 0, -1] - prsl[0, 0, 0]
-                tem = dsig * rdzt[0, 0, -1]
-                ptem = 0.5 * tem * xmf[0, 0, -1]
-                ptem2 = dtodsu * ptem
-                tem1 = qcko[0, 0, -1][n_index] + qcko[0, 0, 0][n_index]
-                tem2 = q1[0, 0, -1][n_index] + q1[0, 0, 0][n_index]
-                f2[0, 0, 0][n_index] = q1[0, 0, 0][n_index] + (tem1 - tem2) * ptem2
-            else:
-                f2[0, 0, 0][n_index] = q1[0, 0, 0][n_index]
+    with computation(FORWARD), interval(0, 1):
+        if pcnvflg[0, 0] and k_mask[0, 0, 0] < kpbl[0, 0]:
+            dtodsd = dt2 / delta[0, 0, 0]
+            dtodsu = dt2 / delta[0, 0, 1]
+            dsig = prsl[0, 0, 0] - prsl[0, 0, 1]
+            tem = dsig * rdzt[0, 0, 0]
+            ptem = 0.5 * tem * xmf[0, 0, 0]
+            ptem1 = dtodsd * ptem
+            ptem2 = dtodsu * ptem
+            tem1 = qcko[0, 0, 0][n_index] + qcko[0, 0, 1][n_index]
+            tem2 = q1[0, 0, 0][n_index] + q1[0, 0, 1][n_index]
+            f2[0, 0, 0][n_index] = f2[0, 0, 0][n_index] - (tem1 - tem2) * ptem1
 
-            if (
-                scuflg[0, 0]
-                and k_mask[0, 0, -1] >= mrad[0, 0]
-                and k_mask[0, 0, -1] < krad[0, 0]
-            ):
-                dtodsu = dt2 / delta[0, 0, 0]
-                dsig = prsl[0, 0, -1] - prsl[0, 0, 0]
-                tem = dsig * rdzt[0, 0, -1]
-                ptem = 0.5 * tem * xmfd[0, 0, -1]
-                ptem2 = dtodsu * ptem
-                tem1 = qcdo[0, 0, -1][n_index] + qcdo[0, 0, 0][n_index]
-                tem2 = q1[0, 0, -1][n_index] + q1[0, 0, 0][n_index]
-                f2[0, 0, 0][n_index] = f2[0, 0, 0][n_index] - (tem1 - tem2) * ptem2
+        if (
+            scuflg[0, 0]
+            and k_mask[0, 0, 0] >= mrad[0, 0]
+            and k_mask[0, 0, 0] < krad[0, 0]
+        ):
+            dtodsd = dt2 / delta[0, 0, 0]
+            dtodsu = dt2 / delta[0, 0, 1]
+            dsig = prsl[0, 0, 0] - prsl[0, 0, 1]
+            tem = dsig * rdzt[0, 0, 0]
+            ptem = 0.5 * tem * xmfd[0, 0, 0]
+            ptem1 = dtodsd * ptem
+            ptem2 = dtodsu * ptem
+            tem1 = qcdo[0, 0, 0][n_index] + qcdo[0, 0, 1][n_index]
+            tem2 = q1[0, 0, 0][n_index] + q1[0, 0, 1][n_index]
+            f2[0, 0, 0][n_index] = f2[0, 0, 0][n_index] + (tem1 - tem2) * ptem1
+
+    with computation(FORWARD), interval(1, -1):
+        if pcnvflg[0, 0] and k_mask[0, 0, -1] < kpbl[0, 0]:
+            dtodsu = dt2 / delta[0, 0, 0]
+            dsig = prsl[0, 0, -1] - prsl[0, 0, 0]
+            tem = dsig * rdzt[0, 0, -1]
+            ptem = 0.5 * tem * xmf[0, 0, -1]
+            ptem2 = dtodsu * ptem
+            tem1 = qcko[0, 0, -1][n_index] + qcko[0, 0, 0][n_index]
+            tem2 = q1[0, 0, -1][n_index] + q1[0, 0, 0][n_index]
+            f2[0, 0, 0][n_index] = q1[0, 0, 0][n_index] + (tem1 - tem2) * ptem2
+        else:
+            f2[0, 0, 0][n_index] = q1[0, 0, 0][n_index]
+
+        if (
+            scuflg[0, 0]
+            and k_mask[0, 0, -1] >= mrad[0, 0]
+            and k_mask[0, 0, -1] < krad[0, 0]
+        ):
+            dtodsu = dt2 / delta[0, 0, 0]
+            dsig = prsl[0, 0, -1] - prsl[0, 0, 0]
+            tem = dsig * rdzt[0, 0, -1]
+            ptem = 0.5 * tem * xmfd[0, 0, -1]
+            ptem2 = dtodsu * ptem
+            tem1 = qcdo[0, 0, -1][n_index] + qcdo[0, 0, 0][n_index]
+            tem2 = q1[0, 0, -1][n_index] + q1[0, 0, 0][n_index]
+            f2[0, 0, 0][n_index] = f2[0, 0, 0][n_index] - (tem1 - tem2) * ptem2
 
         if pcnvflg[0, 0] and k_mask[0, 0, 0] < kpbl[0, 0]:
             dtodsd = dt2 / delta[0, 0, 0]
@@ -1908,10 +1935,6 @@ class ScaleAwareTKEMoistEDMF:
 
         self._tke_up_down_prop = stencil_factory.from_origin_domain(
             func=tke_up_down_prop,
-            externals={
-                "kmpbl": self._kmpbl,
-                "kmscu": self._kmscu,
-            },
             origin=idx.origin_compute(),
             domain=idx.domain_compute(),
         )
@@ -2511,18 +2534,19 @@ class ScaleAwareTKEMoistEDMF:
                     n
                 )
 
-        self._tridin(
-            self._al,
-            self._ad,
-            self._au,
-            self._f1,
-            self._f2,
-            self._au,
-            self._f1,
-            self._f2,
-        )
-
         for n in range(self._ntrac1):
+            self._tridin(
+                self._al,
+                self._ad,
+                self._au,
+                self._f1,
+                self._f2,
+                self._au,
+                self._f1,
+                self._f2,
+                n
+            )
+
             self._recover_moisture_tendency(
                 self._f2,
                 q1,
