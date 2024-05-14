@@ -12,6 +12,7 @@ requirements = [
     "f90nml>=1.1.0",
     "numpy",
     "xarray",
+    "types-pyyaml",
 ]
 
 test_requirements = ["pytest", "pytest-subtests", "serialbox"]
