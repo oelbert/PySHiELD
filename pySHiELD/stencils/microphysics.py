@@ -1510,9 +1510,9 @@ def fields_update(
         # to dry mixing ratios
         omq = dp1 / dp0
         qv_dt = qv_dt + rdt * (qvz - qv0) * omq
-        ql_dt = ql_dt + rdt * (qlz - ql0) * omq # failing in dace orchestration
-        qr_dt = qr_dt + rdt * (qrz - qr0) * omq # failing in dace orchestration
-        qi_dt = qi_dt + rdt * (qiz - qi0) * omq # failing in dace orchestration
+        ql_dt = ql_dt + rdt * (qlz - ql0) * omq
+        qr_dt = qr_dt + rdt * (qrz - qr0) * omq
+        qi_dt = qi_dt + rdt * (qiz - qi0) * omq
         qs_dt = qs_dt + rdt * (qsz - qs0) * omq
         qg_dt = qg_dt + rdt * (qgz - qg0) * omq
 
