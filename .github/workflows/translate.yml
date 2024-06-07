@@ -53,3 +53,8 @@ jobs:
               --backend=dace:cpu \
               --threshold_overrides_file=./tests/savepoint/translate/overrides/standard.yaml \
               ./tests/savepoint
+
+        - name: Output code coverage
+          run: |
+            coverage combine
+            coverage report
