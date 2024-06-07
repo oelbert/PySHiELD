@@ -14,8 +14,8 @@ requirements = [
     "xarray",
 ]
 
-test_requirements = ["pytest", "pytest-subtests", "serialbox"]
-ndsl_requirements = ["ndsl @ git+https://github.com/NOAA-GFDL/NDSL.git@2024.04.00"]
+test_requirements = ["pytest", "pytest-subtests", "serialbox", "coverage"]
+ndsl_requirements = ["ndsl @ git+https://github.com/fmalatino/NDSL.git@fix/computegridoption"]
 pyFV3_requirements = ["pyFV3 @ git+https://github.com/NOAA-GFDL/PyFV3.git@develop"]
 develop_requirements = (
     test_requirements + ndsl_requirements + pyFV3_requirements + ["pre-commit"]
