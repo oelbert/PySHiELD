@@ -13,7 +13,7 @@ jobs:
   all_tests:
     runs-on: ubuntu-latest
     container:
-      image: ghcr.io/noaa-gfdl/miniforge:mpich    
+      image: ghcr.io/noaa-gfdl/miniforge:mpich
     steps:
         - name: Checkout repository
           uses: actions/checkout@v4
