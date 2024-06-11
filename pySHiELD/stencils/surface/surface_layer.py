@@ -26,9 +26,10 @@ from ndsl.dsl.typing import (
 )
 from ndsl.grid import GridData
 from ndsl.initialization.allocator import QuantityFactory
-from pySHiELD._config import COND_DIM, TRACER_DIM, SFC_CONFIG
+from pySHiELD._config import COND_DIM, SFC_CONFIG, TRACER_DIM
 from pySHiELD.functions.physics_functions import fpvs
 from pySHiELD.stencils.surface.sfc_diff import SurfaceExchange
+
 
 class SurfaceLayers:
     def __init__(

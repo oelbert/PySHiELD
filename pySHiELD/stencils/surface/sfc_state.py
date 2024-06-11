@@ -8,6 +8,7 @@ from ndsl import GridSizer, Quantity, QuantityFactory
 from ndsl.constants import X_DIM, Y_DIM
 from ndsl.dsl.typing import Float
 
+
 @dataclass()
 class SurfaceState:
     tsfc: Quantity = field(
@@ -28,7 +29,7 @@ class SurfaceState:
         }
     )
 
-    zorl: Quantity = field(
+    z0rl: Quantity = field(
         metadata={
             "name": "composite_surface_roughness",
             "dims": [X_DIM, Y_DIM],
@@ -50,7 +51,8 @@ class SurfaceState:
 
     @classmethod
     def init_zeros(
-        cls, quantity_factory,
+        cls,
+        quantity_factory,
     ) -> "SurfaceState":
         initial_arrays = {}
         for _field in fields(cls):
