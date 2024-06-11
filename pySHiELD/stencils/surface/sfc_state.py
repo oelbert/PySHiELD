@@ -20,7 +20,7 @@ class SurfaceState:
         }
     )
 
-    snowd: Quantity = field(
+    snowdepth: Quantity = field(
         metadata={
             "name": "snow_depth_water_equivalent",
             "dims": [X_DIM, Y_DIM],
@@ -44,6 +44,15 @@ class SurfaceState:
             "dims": [X_DIM, Y_DIM],
             "units": "cm",
             "intent": "in",
+        }
+    )
+
+    wind: Quantity = field(
+        metadata={
+            "name": "wind_speed",
+            "dims": [X_DIM, Y_DIM],
+            "units": "m/s",
+            "intent": "out",
         }
     )
 

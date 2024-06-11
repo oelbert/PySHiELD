@@ -19,6 +19,14 @@ class PHYSICS_PACKAGES(Enum, metaclass=MetaEnumStr):
 
 
 @dataclasses.dataclass
+class SurfaceConfig:
+    do_z0_hwrf15: bool = DEFAULT_BOOL
+    do_z0_hwrf17: bool = DEFAULT_BOOL
+    do_z0_hwrf17_hwonly: bool = DEFAULT_BOOL
+    do_z0_moon: bool = DEFAULT_BOOL
+
+
+@dataclasses.dataclass
 class PhysicsConfig:
     dt_atmos: int = DEFAULT_INT
     hydrostatic: bool = DEFAULT_BOOL
@@ -28,6 +36,10 @@ class PhysicsConfig:
     nwat: int = DEFAULT_INT
     schemes: List = None
     do_qa: bool = DEFAULT_BOOL
+    do_z0_hwrf15: bool = DEFAULT_BOOL
+    do_z0_hwrf17: bool = DEFAULT_BOOL
+    do_z0_hwrf17_hwonly: bool = DEFAULT_BOOL
+    do_z0_moon: bool = DEFAULT_BOOL
     c_cracw: float = NamelistDefaults.c_cracw
     c_paut: float = NamelistDefaults.c_paut
     c_pgacs: float = NamelistDefaults.c_pgacs
@@ -197,4 +209,13 @@ class PhysicsConfig:
             tice=namelist.tice,
             alin=namelist.alin,
             clin=namelist.clin,
+        )
+
+    @property
+    def surface(self) -> SurfaceConfig:
+        return SurfaceConfig(
+            do_z0_hwrf15=self.do_z0_hwrf15,
+            do_z0_hwrf17=self.do_z0_hwrf17,
+            do_z0_hwrf17_hwonly=self.do_z0_hwrf17_hwonly,
+            do_z0_moon=self.do_z0_moon,
         )

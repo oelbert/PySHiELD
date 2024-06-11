@@ -376,7 +376,6 @@ def cal_zt_hwrf17(ws10m):
         zt = p60
     return zt
 
-
 def cal_z0_moon(ws10m):
     # coded by Kun Gao (Kun.Gao@noaa.gov)
     charnock = 0.014
@@ -417,6 +416,15 @@ def sfc_diff(
     ztrl: FloatFieldIJ,
     z0s_max: Float,
     wind_th_hwrf: Float,
+    cm: FloatFieldIJ,
+    ch: FloatFieldIJ,
+    rb: FloatFieldIJ,
+    stress: FloatFieldIJ,
+    fm: FloatFieldIJ,
+    fh: FloatFieldIJ,
+    wind: FloatFieldIJ,
+    fm10: FloatFieldIJ,
+    fh2: FloatFieldIJ,
     islimsk: IntFieldIJ,
     ivegsrc: IntFieldIJ,
     vegtype: IntFieldIJ,
@@ -424,9 +432,7 @@ def sfc_diff(
     redrag: Bool,
 ):
     """
-    Need a check that exactly one of:
-    [do_z0_hwrf15, do_z0_hwrf17, do_z0_hwrf17_hwonly, do_z0_moon] are true
-    Probably want to split this into functions too
+    Probably want to split this into functions and rename a bunch
     """
     from __externals__ import (
         do_z0_hwrf15,
@@ -579,13 +585,13 @@ class SurfaceExchange:
     def __init__(
         self,
         stencil_factory: StencilFactory,
-        quantity_factory: QuantityFactory,
         config: SFC_CONFIG,
     ):
         """
         Calculates surface exchanges and near-surface winds.
         Fortran name is sfc_diff_gfdl
         """
+        # TODO: This should be an enum in the config and only one gets passed here
         assert (
             sum(
                 [
@@ -613,42 +619,70 @@ class SurfaceExchange:
 
     def __call__(
         self,
-        ps: FloatField,
         u1: FloatFieldIJ,
         v1: FloatFieldIJ,
-        t1: FloatField,
-        q1: FloatField,
-        z1: FloatField,
-        snowd: FloatFieldIJ,
-        tsfc: FloatFieldIJ,
-        zorl: FloatFieldIJ,
-        ztrl: FloatFieldIJ,
-        cm: FloatField,
-        ch: FloatField,
-        rb: FloatField,
-        prsl1: FloatField,
-        prslki: FloatField,
-        islimsk: FloatField,
-        stress: FloatField,
-        fm: FloatField,
-        fh: FloatField,
-        ustar: FloatField,
-        wind: FloatField,
+        t1: FloatFieldIJ,
+        q1: FloatFieldIJ,
         ddvel: FloatFieldIJ,
-        fm10: FloatField,
-        fh2: FloatField,
-        sigmaf: FloatField,
-        vegtype: FloatField,
-        shdmax: FloatField,
-        ivegsrc: FloatField,
-        tsurf: FloatField,
-        redrag: FloatField,
-        z0s_max: FloatField,
-        do_z0_moon: FloatField,
-        do_z0_hwrf15: FloatField,
-        do_z0_hwrf17: FloatField,
-        do_z0_hwrf17_hwonly: FloatField,
-        wind_th_hwrf: FloatField,
+        tsurf: FloatFieldIJ,
+        tsfc: FloatFieldIJ,
+        prslki: FloatFieldIJ,
+        prsl1: FloatFieldIJ,
+        z0rl: FloatFieldIJ,
+        z1: FloatFieldIJ,
+        shdmax: FloatFieldIJ,
+        sigmaf: FloatFieldIJ,
+        ustar: FloatFieldIJ,
+        snowdepth: FloatFieldIJ,
+        ztrl: FloatFieldIJ,
+        z0s_max: Float,
+        wind_th_hwrf: Float,
+        cm: FloatFieldIJ,
+        ch: FloatFieldIJ,
+        rb: FloatFieldIJ,
+        stress: FloatFieldIJ,
+        fm: FloatFieldIJ,
+        fh: FloatFieldIJ,
+        wind: FloatFieldIJ,
+        fm10: FloatFieldIJ,
+        fh2: FloatFieldIJ,
+        islimsk: IntFieldIJ,
+        ivegsrc: IntFieldIJ,
+        vegtype: IntFieldIJ,
         flag_iter: BoolFieldIJ,
+        redrag: Bool,
     ):
-        pass
+        self._sfc_diff(
+            u1,
+            v1,
+            t1,
+            q1,
+            ddvel,
+            tsurf,
+            tsfc,
+            prslki,
+            prsl1,
+            z0rl,
+            z1,
+            shdmax,
+            sigmaf,
+            ustar,
+            snowdepth,
+            ztrl,
+            z0s_max,
+            wind_th_hwrf,
+            cm,
+            ch,
+            rb,
+            stress,
+            fm,
+            fh,
+            wind,
+            fm10,
+            fh2,
+            islimsk,
+            ivegsrc,
+            vegtype,
+            flag_iter,
+            redrag,
+        )
