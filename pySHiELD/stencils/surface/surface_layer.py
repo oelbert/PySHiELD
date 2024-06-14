@@ -33,6 +33,50 @@ from pySHiELD.stencils.surface.sfc_diff import SurfaceExchange
 from pySHiELD.stencils.surface.sfc_state import SurfaceState
 
 
+def init_step_vars(
+    tsfc: FloatFieldIJ,
+    phil: FloatField,
+    tsurf: FloatFieldIJ,
+    flag_guess: BoolFieldIJ,
+    flag_iter: BoolFieldIJ,
+    drain: FloatFieldIJ,
+    ep1d: FloatFieldIJ,
+    runof: FloatFieldIJ,
+    hflx: FloatFieldIJ,
+    evap: FloatFieldIJ,
+    evbs: FloatFieldIJ,
+    evcw: FloatFieldIJ,
+    trans: FloatFieldIJ,
+    sbsno: FloatFieldIJ,
+    snowc: FloatFieldIJ,
+    snohf: FloatFieldIJ,
+    qss: FloatFieldIJ,
+    gflx: FloatFieldIJ,
+    zlvl: FloatFieldIJ,
+    smcwlt2: FloatFieldIJ,
+    smcref2: FloatFieldIJ,
+):
+    with computation(PARALLEL), interval(-1, None):
+        tsurf = tsfc
+        flag_guess = False
+        flag_iter = True
+        drain = 0.0
+        ep1d = 0.0
+        runof = 0.0
+        hflx = 0.0
+        evap = 0.0
+        evbs = 0.0
+        evcw = 0.0
+        trans = 0.0
+        sbsno = 0.0
+        snowc = 0.0
+        snohf = 0.0
+        qss = 0.0
+        gflx = 0.0
+        zlvl = phil * constants.RGRAV
+        smcwlt2 = 0.0
+        smcref2 = 0.0
+
 def update_guess(
     wind: FloatFieldIJ,
     iter: Int,

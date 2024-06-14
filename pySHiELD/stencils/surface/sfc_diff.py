@@ -1,5 +1,5 @@
 from gt4py.cartesian import gtscript
-from gt4py.cartesian.gtscript import PARALLEL, computation, exp, interval, log, sqrt
+from gt4py.cartesian.gtscript import FORWARD, computation, exp, interval, log, sqrt
 
 import ndsl.constants as constants
 import pySHiELD.constants as physcons
@@ -17,7 +17,7 @@ from ndsl.dsl.typing import (
 )
 from ndsl.initialization.allocator import QuantityFactory
 from ndsl.stencils.basic_operations import sign
-from pySHiELD._config import COND_DIM, SFC_CONFIG, TRACER_DIM
+from pySHiELD._config import COND_DIM, SurfaceConfig, TRACER_DIM
 from pySHiELD.functions.physics_functions import fpvs
 
 
@@ -441,7 +441,7 @@ def sfc_diff(
         do_z0_moon,
     )
 
-    with computation(PARALLEL), interval(...):
+    with computation(FORWARD), interval(...):
 
         if flag_iter[0, 0]:
             # Get lowest atmospheric level variables:
@@ -585,7 +585,7 @@ class SurfaceExchange:
     def __init__(
         self,
         stencil_factory: StencilFactory,
-        config: SFC_CONFIG,
+        config: SurfaceConfig,
     ):
         """
         Calculates surface exchanges and near-surface winds.
