@@ -10,14 +10,12 @@ setup_requirements: List[str] = []
 
 requirements = [
     "f90nml>=1.1.0",
-    "numpy",
+    "numpy==1.26.4",
     "xarray",
 ]
 
 test_requirements = ["pytest", "pytest-subtests", "serialbox", "coverage"]
-ndsl_requirements = [
-    "ndsl @ git+https://github.com/fmalatino/NDSL.git@fix/computegridoption"
-]
+ndsl_requirements = ["ndsl @ git+https://github.com/NOAA-GFDL/NDSL.git@develop"]
 pyFV3_requirements = ["pyFV3 @ git+https://github.com/NOAA-GFDL/PyFV3.git@develop"]
 develop_requirements = (
     test_requirements + ndsl_requirements + pyFV3_requirements + ["pre-commit"]
