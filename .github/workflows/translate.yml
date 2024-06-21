@@ -63,7 +63,7 @@ jobs:
           cd ${GITHUB_WORKSPACE}/PySHiELD
           pip3 install --upgrade pip setuptools wheel
           cd PyFV3 && pip3 install .[test]
-          cd ../ && pip3 intall .[ndsl, test]
+          cd ../ && pip3 install .[ndsl, test]
 
       - name: Install PySHiELD Python packages
         if: ${{ !inputs.fv3_trigger && !inputs.ndsl_trigger}}
