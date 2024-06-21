@@ -68,13 +68,13 @@ jobs:
       - name: Install packages for pyFV3 trigger
         if: ${{inputs.fv3_trigger}}
         run: |
-        cd ${GITHUB_WORKSPACE}/pySHiELD
-        pip3 install --upgrade pip setuptools wheel
-        cd pyFV3 && pip3 install .[test]
-        cd ../ && pip3 intall .[ndsl, test]
+          cd ${GITHUB_WORKSPACE}/pySHiELD
+          pip3 install --upgrade pip setuptools wheel
+          cd pyFV3 && pip3 install .[test]
+          cd ../ && pip3 intall .[ndsl, test]
 
       - name: Install pySHiELD Python packages
-        if ${{ !inputs.fv3_trigger && !inputs.ndsl_trigger}}
+        if: ${{ !inputs.fv3_trigger && !inputs.ndsl_trigger}}
         run: |
           cd ${GITHUB_WORKSPACE}/pySHiELD
           python -m pip3 install --upgrade pip setuptools wheel
