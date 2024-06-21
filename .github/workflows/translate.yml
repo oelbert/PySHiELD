@@ -47,7 +47,7 @@ jobs:
         if: ${{inputs.ndsl_trigger || inputs.fv3_trigger}}
         run : |
           cd ${GITHUB_WORKSPACE}
-          mv "${{env.github_repository}} pySHiELD/.
+          mv ${{env.github_repository}} pySHiELD/.
 
       - name: Doesn't work without this step
         if: ${{ !inputs.ndsl_trigger && !inputs.fv3_trigger}}
