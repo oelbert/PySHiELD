@@ -33,9 +33,9 @@ jobs:
         if: ${{inputs.ndsl_trigger || inputs.fv3_trigger}}
         uses: actions/checkout@v4
         with:
-          repository: 'noaa-gfdl/pySHiELD'
+          repository: 'noaa-gfdl/PySHiELD'
           submodules: 'recursive'
-          path: pySHiELD
+          path: PySHiELD
 
       - name: Checkout repository 
         uses: actions/checkout@v4
