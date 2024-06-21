@@ -2,14 +2,6 @@ name: "Translate test"
 on:
   workflow_call:
     inputs:
-      fv3_hash:
-        type: string
-        default: 'None'
-        required: false
-      ndsl_hash:
-        type: string
-        default: 'None'
-        required: false
       fv3_trigger:
         type: boolean
         default: false
