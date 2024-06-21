@@ -28,7 +28,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  github_repository = ${{github.event.repository.name}}
+  github_repository: ${{github.event.repository.name}}
 
 jobs:
   all_tests:
