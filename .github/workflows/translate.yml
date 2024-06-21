@@ -47,7 +47,7 @@ jobs:
         if: ${{inputs.ndsl_trigger || inputs.fv3_trigger}}
         run : |
           cd ${GITHUB_WORKSPACE}
-          mv ${{env.github_repository}} pySHiELD/.
+          mv ${{env.github_repository}} PySHiELD/.
 
       - name:  Install packages for ndsl_trigger
         if : ${{inputs.ndsl_trigger}} 
