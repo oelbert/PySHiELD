@@ -81,7 +81,7 @@ jobs:
         if: ${{ !inputs.fv3_trigger && !inputs.ndsl_trigger}}
         run: |
           cd ${GITHUB_WORKSPACE}/pySHiELD
-          python -m pip3 install --upgrade pip setuptools wheel
+          pip3 install --upgrade pip setuptools wheel
           pip3 install .[ndsl,pyFV3,test]
 
       - name: Download data
