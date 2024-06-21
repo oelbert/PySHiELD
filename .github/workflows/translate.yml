@@ -10,7 +10,6 @@ on:
         type: boolean
         default: false
         required: false
-  push:
   pull_request:
       types: [opened, synchronize, reopened, ready_for_review, labeled, unlabeled]
 
@@ -55,7 +54,7 @@ jobs:
           cd ${GITHUB_WORKSPACE}/PySHiELD/
           pip3 install --upgrade pip setuptools wheel
           cd NDSL && pip3 install .[test]
-          cd ../  && pip3 install .[pyFV3, test]
+          cd ../  && pip3 install .[pyFV3,test]
   
       - name: Install packages for pyFV3 trigger
         if: ${{inputs.fv3_trigger}}
@@ -63,7 +62,7 @@ jobs:
           cd ${GITHUB_WORKSPACE}/PySHiELD
           pip3 install --upgrade pip setuptools wheel
           cd PyFV3 && pip3 install .[test]
-          cd ../ && pip3 install .[ndsl, test]
+          cd ../ && pip3 install .[ndsl,test]
 
       - name: Install PySHiELD Python packages
         if: ${{ !inputs.fv3_trigger && !inputs.ndsl_trigger}}
