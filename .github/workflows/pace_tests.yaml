@@ -6,6 +6,6 @@ on:
 
 jobs:
   pace_unit_tests:
-    uses: mlee03/pace/.github/workflows/main_unit_tests.yaml@reusable_workflow
+    uses: NOAA-GFDL/pace/.github/workflows/main_unit_tests.yaml@develop
     with:
       shield_trigger:  true

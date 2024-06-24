@@ -29,7 +29,7 @@ jobs:
       image: ghcr.io/noaa-gfdl/miniforge:mpich
     steps:
 
-      - name: Checkout repository for externally triggered workflow
+      - name: Checkout pyshield for externally triggered workflow
         if: ${{inputs.ndsl_trigger || inputs.fv3_trigger}}
         uses: actions/checkout@v4
         with:
@@ -37,7 +37,7 @@ jobs:
           submodules: 'recursive'
           path: PySHiELD
 
-      - name: Checkout repository 
+      - name: Checkout repository that triggers workflow
         uses: actions/checkout@v4
         with:
           submodules: 'recursive'
