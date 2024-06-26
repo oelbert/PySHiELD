@@ -5,6 +5,6 @@ on:
 
 jobs:
   pace_unit_tests:
-    uses: NOAA-GFDL/pace/.github/workflows/main_unit_tests.yaml@develop
+    uses: NOAA-GFDL/pace/.github/workflows/main_unit_tests_mpich.yaml@develop
     with:
       shield_trigger:  true
