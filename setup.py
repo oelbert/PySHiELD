@@ -10,7 +10,7 @@ setup_requirements: List[str] = []
 
 requirements = [
     "f90nml>=1.1.0",
-    "numpy",
+    "numpy==1.26.4",
     "xarray",
 ]
 
