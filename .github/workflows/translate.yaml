@@ -7,7 +7,7 @@ on:
         default: false
         required: false
       component_repository:
-      	type: string
+        type: string
         default: 'None'
         required: false
       component_branch:
