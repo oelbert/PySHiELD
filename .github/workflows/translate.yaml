@@ -73,10 +73,10 @@ jobs:
           pip3 install .[test]
           cd ../ && pip3 install .[pyFV3,test]
 
-      - name: Install PySHiELD Python packages
+      - name: Install pySHiELD Python packages
         if: ${{ !inputs.component_trigger}}
         run: |
-          cd ${GITHUB_WORKSPACE}/PySHiELD
+          cd ${GITHUB_WORKSPACE}/pySHiELD
           pip3 install --upgrade pip setuptools wheel
           pip3 install .[ndsl,pyFV3,test]
 
