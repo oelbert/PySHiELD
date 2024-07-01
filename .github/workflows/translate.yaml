@@ -6,15 +6,7 @@ on:
         type:  boolean
         default: false
         required: false
-      component_repository:
-        type: string
-        default: 'None'
-        required: false
-      component_branch:
-        type: string
-        default: 'None'
-        required: false
-      component_location:
+      component_name:
         type: string
         default: 'None'
         required: false
@@ -34,13 +26,13 @@ jobs:
       image: ghcr.io/noaa-gfdl/miniforge:mpich
     steps:
 
-      - name: Checkout pace for externally triggered
+      - name: Checkout pySHiELD for externally triggered
         if: ${{inputs.component_trigger}}
         uses: actions/checkout@v4
         with:
           submodules: 'recursive'
-          repository: NOAA-GFDL/pace
-          path: pace
+          repository: NOAA-GFDL/PySHiELD
+          path: pySHiELD
           ref: develop
 
       - name: Checkout component for externally triggered
@@ -48,7 +40,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           submodules: 'recursive'
-          path: pace/${{inputs.component_location}}
+          path: pySHiELD/${{inputs.component_name}}
 
       - name: Checkout pyshield repository for internally triggered
         if: ${{!inputs.component_trigger}}
@@ -58,17 +50,17 @@ jobs:
           path: pySHiELD
 
       - name:  Install packages for FV3 triggered
-        if : ${{contains(inputs.component_location, 'FV3')}} 
+        if : ${{contains(inputs.component_name, 'FV3')}} 
         run : |
-          cd ${GITHUB_WORKSPACE}/pySHiELD/${{inputs.component_location}}
+          cd ${GITHUB_WORKSPACE}/pySHiELD/${{inputs.component_name}}
           pip3 install --upgrade pip setuptools wheel
           pip3 install .[test]
           cd ../  && pip3 install .[ndsl,test]
   
       - name: Install packages for NDSL trigger
-        if : ${{contains(inputs.component_location, 'NDSL')}} 
+        if : ${{contains(inputs.component_name, 'NDSL')}} 
         run: |
-          cd ${GITHUB_WORKSPACE}/pySHiELD/${{inputs.component_location}}
+          cd ${GITHUB_WORKSPACE}/pySHiELD/${{inputs.component_name}}
           pip3 install --upgrade pip setuptools wheel
           pip3 install .[test]
           cd ../ && pip3 install .[pyFV3,test]
