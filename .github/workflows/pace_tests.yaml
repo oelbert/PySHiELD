@@ -9,6 +9,6 @@ jobs:
     uses: mlee03/pace/.github/workflows/main_unit_tests.yaml@reusable_workflow
     with:
       component_trigger: true
-      component_repository: ${{github.ref}}
-      component_branch: ${{github.head_ref}}
+      component_repository: ${{github.repository}}
+      component_branch: ${{github.sha}}
       
