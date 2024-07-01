@@ -11,4 +11,5 @@ jobs:
       component_trigger: true
       component_repository: ${{github.repository}}
       component_branch: ${{github.sha}}
+      component_location: PySHiELD
       
