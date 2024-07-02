@@ -32,7 +32,7 @@ extras_requires = {
 setup(
     author="Vulcan Technologies LLC",
     author_email="elynnw@vulcan.com",
-    python_requires=">=3.8",
+    python_requires=">=3.11.7",
     classifiers=[
         "Development Status :: 2 - Pre-Alpha",
         "Intended Audience :: Developers",

@@ -1,4 +1,4 @@
-name: "pySHiELD Translate test"
+name: "PySHiELD Translate Tests"
 on:
   workflow_call:
     inputs:
@@ -8,7 +8,7 @@ on:
         required: false
       component_name:
         type: string
-        default: 'None'
+        default: ''
         required: false
   push:
   pull_request:
@@ -26,7 +26,7 @@ jobs:
       image: ghcr.io/noaa-gfdl/miniforge:mpich
     steps:
 
-      - name: Checkout pySHiELD for externally triggered
+      - name: external trigger Checkout pySHiELD
         if: ${{inputs.component_trigger}}
         uses: actions/checkout@v4
         with:
@@ -35,37 +35,29 @@ jobs:
           path: pySHiELD
           ref: develop
 
-      - name: Checkout component for externally triggered
-        if: ${{inputs.component_trigger}}
+      - name: Checkout hash that triggered CI
         uses: actions/checkout@v4
         with:
           submodules: 'recursive'
           path: pySHiELD/${{inputs.component_name}}
 
-      - name: Checkout pyshield repository for internally triggered
-        if: ${{!inputs.component_trigger}}
-        uses: actions/checkout@v4
-        with:
-          submodules: 'recursive'
-          path: pySHiELD
-
-      - name:  Install packages for FV3 triggered
+      - name:  external trigger Install packages for FV3 component
         if : ${{contains(inputs.component_name, 'FV3')}} 
         run : |
-          cd ${GITHUB_WORKSPACE}/pySHiELD/${{inputs.component_name}}
+          cd ${GITHUB_WORKSPACE}/pySHiELD
           pip3 install --upgrade pip setuptools wheel
-          pip3 install .[test]
+          cd ${{inputs.component_name}} && pip3 install .[test] && cd ..
           cd ../  && pip3 install .[ndsl,test]
   
-      - name: Install packages for NDSL trigger
+      - name: external trigger Install packages for NDSL component
         if : ${{contains(inputs.component_name, 'NDSL')}} 
         run: |
-          cd ${GITHUB_WORKSPACE}/pySHiELD/${{inputs.component_name}}
+          cd ${GITHUB_WORKSPACE}/pySHiELD
           pip3 install --upgrade pip setuptools wheel
-          pip3 install .[test]
+          cd ${{inputs.component_name}} && pip3 install .[test] && cd ..
           cd ../ && pip3 install .[pyFV3,test]
 
-      - name: Install pySHiELD Python packages
+      - name: Install pySHiELD packages
         if: ${{ !inputs.component_trigger}}
         run: |
           cd ${GITHUB_WORKSPACE}/pySHiELD
