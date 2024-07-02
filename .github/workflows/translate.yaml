@@ -47,7 +47,7 @@ jobs:
           cd ${GITHUB_WORKSPACE}/pySHiELD
           pip3 install --upgrade pip setuptools wheel
           cd ${{inputs.component_name}} && pip3 install .[test] && cd ..
-          cd ../  && pip3 install .[ndsl,test]
+          pip3 install .[ndsl,test]
   
       - name: external trigger Install packages for NDSL component
         if : ${{contains(inputs.component_name, 'NDSL')}} 
@@ -55,7 +55,7 @@ jobs:
           cd ${GITHUB_WORKSPACE}/pySHiELD
           pip3 install --upgrade pip setuptools wheel
           cd ${{inputs.component_name}} && pip3 install .[test] && cd ..
-          cd ../ && pip3 install .[pyFV3,test]
+          pip3 install .[pyFV3,test]
 
       - name: Install pySHiELD packages
         if: ${{ !inputs.component_trigger}}
