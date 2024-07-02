@@ -10,7 +10,6 @@ on:
         type: string
         default: ''
         required: false
-  push:
   pull_request:
 
 # cancel running jobs if theres a newer push
