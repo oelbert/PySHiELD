@@ -1,4 +1,4 @@
-name: "PySHiELD Translate Tests"
+name: "PySHiELD translate tests"
 on:
   workflow_call:
     inputs:
@@ -12,7 +12,6 @@ on:
         required: false
   push:
   pull_request:
-      types: [opened, synchronize, reopened, ready_for_review, labeled, unlabeled]
 
 # cancel running jobs if theres a newer push
 concurrency:
