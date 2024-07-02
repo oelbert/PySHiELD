@@ -8,4 +8,3 @@ jobs:
     with:
       component_trigger: true
       component_name: pySHiELD
-      
