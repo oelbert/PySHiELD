@@ -19,6 +19,17 @@ class PHYSICS_PACKAGES(Enum, metaclass=MetaEnumStr):
 
 
 @dataclasses.dataclass
+class LSMConfig:
+    bare: int = DEFAULT_INT
+    defined_veg: int = DEFAULT_INT
+    defined_soil: int = DEFAULT_INT
+    defined_slope: int = DEFAULT_INT
+
+    def __post_init__(self):
+        pass
+
+
+@dataclasses.dataclass
 class SurfaceConfig:
     do_z0_hwrf15: bool = DEFAULT_BOOL
     do_z0_hwrf17: bool = DEFAULT_BOOL

@@ -4,6 +4,7 @@ from gt4py.cartesian.gtscript import FORWARD, PARALLEL, computation, exp, interv
 import ndsl.constants as constants
 import numpy as np
 import pySHiELD.constants as physcons
+import pySHiELD.stencils.surface.sfc_params as sfc
 from ndsl.constants import X_DIM, Y_DIM, Z_DIM
 
 # from pace.dsl.dace.orchestration import orchestrate
@@ -97,22 +98,17 @@ def canres_fn(
     cpx1,
     sfcprs,
     sfcems,
-    sh2o0,
-    sh2o1,
-    sh2o2,
-    sh2o3,
+    sh2o,
     smcwlt,
     smcref,
-    zsoil0,
-    zsoil1,
-    zsoil2,
-    zsoil3,
+    zsoil,
     rsmin,
     rsmax,
     topt,
     rgl,
     hs,
     xlai,
+    kmask,
 ):
     # --- ... subprograms called: none
 
@@ -132,26 +128,10 @@ def canres_fn(
     rcq = max(rcq, 0.01)
 
     # contribution due to soil moisture availability.
-    if nroot > 0:
-        gx0 = max(0.0, min(1.0, (sh2o0 - smcwlt) / (smcref - smcwlt)))
-        zsoil = zsoil0
-    else:
-        gx0 = 0.0
-    if nroot > 1:
-        gx1 = max(0.0, min(1.0, (sh2o1 - smcwlt) / (smcref - smcwlt)))
-        zsoil = zsoil1
-    else:
-        gx1 = 0.0
-    if nroot > 2:
-        gx2 = max(0.0, min(1.0, (sh2o2 - smcwlt) / (smcref - smcwlt)))
-        zsoil = zsoil2
-    else:
-        gx2 = 0.0
-    if nroot > 3:
-        gx3 = max(0.0, min(1.0, (sh2o3 - smcwlt) / (smcref - smcwlt)))
-        zsoil = zsoil3
-    else:
-        gx3 = 0.0
+    gx = 0.
+    z_root = zsoil[0, 0, ]
+    if (kmask >= 1) and (kmask < nroot):
+        gx0 = max(0.0, min(1.0, (sh2o - smcwlt) / (smcref - smcwlt)))
 
     # use soil depth as weighting factor
     sum = (
@@ -245,37 +225,41 @@ def penman_fn(
     return t24, etp, rch, epsca, rr, flx2
 
 
-@gtscript.function
-def redprm_fn(
-    vegtyp,
-    dksat,
-    smcmax,
-    smcref,
+# @gtscript.function
+def redprm(
+    vegtyp: IntFieldIJ,
+    dksat: FloatFieldIJ,
+    smcmax: FloatFieldIJ,
+    smcref: FloatFieldIJ,
     nroot: IntFieldIJ,
-    sldpth,
-    zsoil,
-    shdfac,
+    sldpth: FloatField,
+    zroot: FloatFieldIJ,
     k_mask: IntField,
+    shdfac: FloatFieldIJ,
+    kdt: FloatFieldIJ,
+    frzx: FloatFieldIJ,
+    rtdis: FloatField,
 ):
-    from __externals__ import zroot_bot
+    """
+    Sets soil and vegetation parameters
+    """
     # --- ... subprograms called: none
 
-    kdt = refkdt * dksat / refdk
+    kdt = physcons.REFKDT * dksat / physcons.REFDK
 
     frzfact = (smcmax / smcref) * (0.412 / 0.468)
 
     # to adjust frzk parameter to actual soil type: frzk * frzfact
-    frzx = frzk * frzfact
+    frzx = physcons.FRZK * frzfact
 
-    if vegtyp + 1 == bare:
+    if vegtyp + 1 == sfc.BARE:
         shdfac = 0.0
 
     # calculate root distribution.  present version assumes uniform
     # distribution based on soil layer depths.
 
-    if nroot[0, 0] > k_mask[0, 0]:
-        rootlev = nroot[0, 0]
-        rtdis = -sldpth * zsoil.A[0, 0, rootlev]
+    if nroot[0, 0] > k_mask[0, 0, 0]:
+        rtdis = -sldpth * zroot
     else:
         rtdis = 0.
 
@@ -2515,19 +2499,6 @@ def snopac_fn(
     )
 
 
-def set_soil_depth(
-    zsoil: FloatFieldK,
-    sldpth: FloatField,
-    land: BoolFieldIJ,
-    flag_iter: BoolFieldIJ,
-):
-    with computation(PARALLEL), interval(0, 1):
-        if flag_iter and land:
-            sldpth = -zsoil
-    with computation(PARALLEL), interval(1, None):
-        if flag_iter and land:
-            sldpth = zsoil[-1] - zsoil
-
 def init_lsm(
     ps: FloatFieldIJ,
     t1: FloatFieldIJ,
@@ -2589,7 +2560,7 @@ def init_lsm(
     smcref2: FloatFieldIJ,
     wet1: FloatFieldIJ,
     zsoil: FloatFieldK,
-    sldpth: FloatField,
+    sldpth: FloatFieldK,
     delt: Float,
     lheatstrg: Int,
     ivegsrc: Int,
@@ -2680,7 +2651,8 @@ def sflx(
     ice,
     ffrozp,
     dt,
-    zsoil,
+    zsoil: FloatField,
+    zroot: FloatFieldIJ,
     sldpth,
     dksat,
     smcmax,
@@ -2730,6 +2702,7 @@ def sflx(
     z0,
     shdfac,
     snowh,
+    kmask: IntField,
     flag_iter: BoolFieldIJ,
     land: BoolFieldIJ,
 ):
@@ -2750,15 +2723,16 @@ def sflx(
                 ice = -1
                 shdfac = 0.0
 
-            kdt, shdfac, frzx, rtdis0, rtdis1, rtdis2, rtdis3 = redprm_fn(
+            kdt, shdfac, frzx, rtdis = redprm(
                 vegtyp,
                 dksat,
                 smcmax,
                 smcref,
                 nroot,
                 sldpth,
-                zsoil,
+                zroot,
                 shdfac,
+                kmask,
             )
 
             if ivegsrc == 1 and vegtyp == 12:
@@ -2786,15 +2760,11 @@ def sflx(
             # for sea-ice and glacial-ice cases, set smc and sh2o values = 1
             # as a flag for non-soil medium
             if ice != 0:
-                smc0 = 1.0
-                smc1 = 1.0
-                smc2 = 1.0
-                smc3 = 1.0
-                sh2o0 = 1.0
-                sh2o1 = 1.0
-                sh2o2 = 1.0
-                sh2o3 = 1.0
+                smc = 1.0
+                sh2o = 1.0
 
+    with computation(FORWARD), interval(0, 1):
+        if flag_iter and land:
             # if input snowpack is nonzero, then compute snow density "sndens"
             # and snow thermal conductivity "sncond"
             if sneqv == 0.0:
@@ -2859,7 +2829,7 @@ def sflx(
                 else:
                     # determine snow fraction cover.
                     # determine surface albedo modification due to snowdepth state.
-                    sncovr = snfrac_fn(sneqv, snup, salp)
+                    sncovr = snfrac_fn(sneqv, snup, physcons.SALP)
                     albedo = alcalc_fn(alb, snoalb, sncovr)
 
             # thermal conductivity for sea-ice case, glacial-ice case
@@ -2869,17 +2839,19 @@ def sflx(
             else:
                 # calculate the subsurface heat flux, which first requires calculation
                 # of the thermal diffusivity.
-                df1 = tdfcnd_fn(smc0, quartz, smcmax, sh2o0)
+                df1 = tdfcnd_fn(smc, quartz, smcmax, sh2o)
                 if ivegsrc == 1 and vegtyp == 12:
-                    df1 = 3.24 * (1.0 - shdfac) + shdfac * df1 * exp(sbeta * shdfac)
+                    df1 = 3.24 * (1.0 - shdfac) + shdfac * df1 * exp(
+                        physcons.SBETA * shdfac
+                    )
                 else:
-                    df1 = df1 * exp(sbeta * shdfac)
+                    df1 = df1 * exp(physcons.SBETA * shdfac)
 
-            dsoil = -0.5 * zsoil0
+            dsoil = -0.5 * zsoil
 
             # df1 = 0.41081215623353906
             if sneqv == 0.0:
-                ssoil = df1 * (t1 - stc0) / dsoil
+                ssoil = df1 * (t1 - stc) / dsoil
             else:
                 dtot = snowh + dsoil
                 frcsno = snowh / dtot
@@ -2892,7 +2864,7 @@ def sflx(
                 df1 = df1a * sncovr + df1 * (1.0 - sncovr)
 
                 # calculate subsurface heat flux
-                ssoil = df1 * (t1 - stc0) / dtot
+                ssoil = df1 * (t1 - stc) / dtot
 
             # calc virtual temps and virtual potential temps needed by
             # subroutines sfcdif and penman.
@@ -2940,6 +2912,7 @@ def sflx(
             rct = 0.0
             rcq = 0.0
             rcsoil = 0.0
+            # TODO: rename these runoff variables
             runoff1 = 0.0
             runoff2 = 0.0
             runoff3 = 0.0
@@ -2947,6 +2920,8 @@ def sflx(
 
             pc = 0.0
 
+    with computation(PARALLEL), interval(...):
+        if flag_iter and land:
             if shdfac > 0.0:
 
                 # frozen ground extension: total soil water "smc" was replaced
@@ -2962,19 +2937,13 @@ def sflx(
                     cpx1,
                     sfcprs,
                     sfcems,
-                    sh2o0,
-                    sh2o1,
-                    sh2o2,
-                    sh2o3,
+                    sh2o,
                     smcwlt,
                     smcref,
-                    zsoil0,
-                    zsoil1,
-                    zsoil2,
-                    zsoil3,
+                    zsoil,
                     rsmin,
-                    rsmax,
-                    topt,
+                    physcons.RSMAX,
+                    physcons.TOPT,
                     rgl,
                     hs,
                     xlai,
@@ -3029,7 +2998,7 @@ def sflx(
                     cmcmax,
                     dt,
                     shdfac,
-                    sbeta,
+                    physcons.SBETA,
                     sfctmp,
                     sfcems,
                     t24,
@@ -3374,7 +3343,7 @@ def finalize_outputs(
     smcref2: FloatFieldIJ,
     wet1: FloatFieldIJ,
     zsoil: FloatFieldK,
-    sldpth: FloatField,
+    sldpth: FloatFieldK,
     delt: Float,
     lheatstrg: Int,
     ivegsrc: Int,
@@ -3445,8 +3414,28 @@ class NoahLSM:
         config: SurfaceConfig
     ):
         zsoil = np.array([-0.1, -0.4, -1.0, -2.0])
-        zroot_bot = zsoil[config.nroot]
-        self._zsoil_noah = quantity_factory.from_array(zsoil, dims=Z_DIM, units="m")
+        zroot = zsoil[config.nroot - 1]
+        sldpth = [zsoil[k + 1] - zsoil[k] for k in range(len(zsoil) - 1)]
+        sldpth = np.array(
+            sldpth.insert(0, -zsoil[0])
+        )
+
+        self._zsoil_noah = quantity_factory.from_array(
+            zsoil[:-1], dims=Z_DIM, units="m"
+        )
+        self._zroot = quantity_factory.from_array(
+            zroot, dims=[X_DIM, Y_DIM], units="m"
+        )
+        self._sldpth = quantity_factory.from_array(
+            sldpth, dims=Z_DIM, units="m"
+        )
+
+        def make_quantity() -> Quantity:
+            return quantity_factory.zeros(
+                [X_DIM, Y_DIM, Z_DIM],
+                units="unknown",
+                dtype=Float,
+            )
 
         def make_quantity_2d() -> Quantity:
             return quantity_factory.zeros(
@@ -3455,19 +3444,7 @@ class NoahLSM:
                 dtype=Float,
             )
 
-        self._sldpth = quantity_factory.zeros(
-            [X_DIM, Y_DIM, Z_DIM],
-            units="m",
-            dtype=Float
-        )
-
         grid_indexing = stencil_factory.grid_indexing
-
-        self._set_soil_depth = stencil_factory.from_origin_domain(
-            func=set_soil_depth,
-            origin=grid_indexing.origin_compute(),
-            domain=grid_indexing.domain_compute(),
-        )
 
         self._init_lsm = stencil_factory.from_origin_domain(
             func=init_lsm,

@@ -55,6 +55,8 @@ CPH2O2 = 4.2e6
 CPICE = 2.1060e+3
 CPICE1 = 2.106e6
 SIGMA1 = 5.67e-8
+
+# Noah LSM-specific
 ZBOT = -8.0
 SALP = 4.0
 CFACTR = 0.5
