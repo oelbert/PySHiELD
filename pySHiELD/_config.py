@@ -8,6 +8,7 @@ from ndsl import MetaEnumStr
 from ndsl.namelist import Namelist, NamelistDefaults
 
 
+DEFAULT_FLOAT = 0.0
 DEFAULT_INT = 0
 DEFAULT_BOOL = False
 DEFAULT_SCHEMES = ["GFS_microphysics"]
@@ -24,6 +25,7 @@ class SurfaceConfig:
     do_z0_hwrf17: bool = DEFAULT_BOOL
     do_z0_hwrf17_hwonly: bool = DEFAULT_BOOL
     do_z0_moon: bool = DEFAULT_BOOL
+    dt_atmos: float = DEFAULT_FLOAT
 
 
 @dataclasses.dataclass
@@ -218,4 +220,5 @@ class PhysicsConfig:
             do_z0_hwrf17=self.do_z0_hwrf17,
             do_z0_hwrf17_hwonly=self.do_z0_hwrf17_hwonly,
             do_z0_moon=self.do_z0_moon,
+            dt_atmos=self.dt_atmos,
         )

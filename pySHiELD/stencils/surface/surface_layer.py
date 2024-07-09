@@ -1,16 +1,11 @@
 from gt4py.cartesian.gtscript import (
-    __INLINED,
-    BACKWARD,
-    FORWARD,
     PARALLEL,
     computation,
-    exp,
     interval,
-    sqrt,
 )
 
 import ndsl.constants as constants
-from ndsl.constants import X_DIM, Y_DIM, Z_DIM
+from ndsl.constants import X_DIM, Y_DIM
 from ndsl.quantity import Quantity
 
 # from pace.dsl.dace.orchestration import orchestrate
@@ -22,14 +17,14 @@ from ndsl.dsl.typing import (
     FloatField,
     FloatFieldIJ,
     Int,
-    IntField,
     IntFieldIJ,
 )
-from ndsl.grid import GridData
 from ndsl.initialization.allocator import QuantityFactory
-from pySHiELD._config import COND_DIM, SurfaceConfig, TRACER_DIM
-from pySHiELD.functions.physics_functions import fpvs
+from pySHiELD._config import SurfaceConfig
+from pySHiELD.functions.set_sfc_params import set_sfc_arrays
 from pySHiELD.stencils.surface.sfc_diff import SurfaceExchange
+from pySHiELD.stencils.surface.sfc_ocean import SurfaceOcean
+from pySHiELD.stencils.surface.sfc_sice import SurfaceSeaIce
 from pySHiELD.stencils.surface.sfc_state import SurfaceState
 
 
@@ -77,14 +72,32 @@ def init_step_vars(
         smcwlt2 = 0.0
         smcref2 = 0.0
 
-def update_guess(
+def update_guess_0(
     wind: FloatFieldIJ,
-    iter: Int,
+    iteration: Int,
     flag_guess: BoolFieldIJ,
 ):
-    with computation(PARALLEL), interval(...):
-        if (iter == 1) and (wind < 2.0):
+    with computation(PARALLEL), interval(0, 1):
+        if (iteration == 0) and (wind < 2.0):
             flag_guess[0, 0] = True
+
+def update_guess_1(
+    wind: FloatFieldIJ,
+    iteration: Int,
+    flag_guess: BoolFieldIJ,
+    flag_iter: BoolFieldIJ,
+    islmsk: IntFieldIJ
+):
+    from __externals__ import nsstm_coupling
+
+    with computation(PARALLEL), interval(0, 1):
+        flag_iter = False
+        flag_guess = False
+
+        if (iteration == 0) and (wind < 2.0):
+            if (islmsk == 1) or ((islmsk == 0) and (nsstm_coupling > 0)):
+                flag_iter = True
+
 
 class SurfaceLayer:
     def __init__(
@@ -94,6 +107,14 @@ class SurfaceLayer:
         config: SurfaceConfig,
     ):
         grid_indexing = stencil_factory.grid_indexing
+
+        islmsk = set_sfc_arrays(config.sfc_data)
+        self._islmsk = quantity_factory.from_array(
+            islmsk,
+            [X_DIM, Y_DIM],
+            units="None",
+            dtype=Int,
+        )
 
         def make_quantity_2d() -> Quantity:
             return quantity_factory.zeros(
@@ -106,7 +127,13 @@ class SurfaceLayer:
 
         self._flag_guess = quantity_factory.zeros(
             [X_DIM, Y_DIM],
-            units="unknown",
+            units="None",
+            dtype=Bool,
+        )
+
+        self._flag_iter = quantity_factory.ones(
+            [X_DIM, Y_DIM],
+            units="None",
             dtype=Bool,
         )
 
@@ -114,15 +141,47 @@ class SurfaceLayer:
             stencil_factory=stencil_factory,
             config=config
         )
-        self._update_guess = stencil_factory.from_origin_domain(
-            update_guess,
+        self._update_guess_0 = stencil_factory.from_origin_domain(
+            update_guess_0,
             origin=grid_indexing.origin_compute(),
             domain=grid_indexing.domain_compute(),
         )
-        pass
+        self._sfc_ocean = SurfaceOcean(
+            stencil_factory=stencil_factory,
+        )
+        self._sfc_sice = SurfaceSeaIce(
+            stencil_factory=stencil_factory,
+            config=config,
+        )
+        self._update_guess_1 = stencil_factory.from_origin_domain(
+            update_guess_1,
+            externals={
+                "nsstm_coupling": config.nstf_name[0]
+            },
+            origin=grid_indexing.origin_compute(),
+            domain=grid_indexing.domain_compute(),
+        )
 
     def __call__(self, state: SurfaceState):
-        for iter in range(2):
+        for iteration in range(2):
             self._exchange()
-            self._update_guess(state.wind, iter, self._flag_guess)
-        pass
+
+            self._update_guess_0(
+                state.wind,
+                iteration,
+                self._flag_guess
+            )
+
+            self._sfc_ocean()
+
+            #  TODO: LSM here
+
+            self._sfc_sice()
+
+            self._update_guess_1(
+                state.wind,
+                iteration,
+                self._flag_guess,
+                self._flag_iter,
+                self._islmsk,
+            )

@@ -3,7 +3,6 @@ from gt4py.cartesian.gtscript import FORWARD, computation, exp, interval, log, s
 
 import ndsl.constants as constants
 import pySHiELD.constants as physcons
-from ndsl.constants import X_DIM, Y_DIM, Z_DIM
 
 # from pace.dsl.dace.orchestration import orchestrate
 from ndsl.dsl.stencil import StencilFactory
@@ -11,14 +10,12 @@ from ndsl.dsl.typing import (
     Bool,
     BoolFieldIJ,
     Float,
-    FloatField,
     FloatFieldIJ,
     IntFieldIJ,
 )
-from ndsl.initialization.allocator import QuantityFactory
 from ndsl.stencils.basic_operations import sign
-from pySHiELD._config import COND_DIM, SurfaceConfig, TRACER_DIM
-from pySHiELD.functions.physics_functions import fpvs
+from pySHiELD._config import SurfaceConfig
+from pySHiELD.functions.physics_functions import fpvsx
 
 
 @gtscript.function
@@ -449,7 +446,7 @@ def sfc_diff(
             tem1 = 1.0 + constants.ZVIR * max(q1, 1.0e-8)
             thv1 = t1 * prslki * tem1
             tvs = 0.5 * (tsurf + tskin) * tem1
-            qs1 = fpvs(t1)
+            qs1 = fpvsx(t1)
             qs1 = max(1.0e-8, constants.EPS * qs1 / (prsl1 + (constants.EPS - 1) * qs1))
 
             # Get surface level variables:

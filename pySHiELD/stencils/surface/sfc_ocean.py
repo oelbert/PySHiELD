@@ -1,24 +1,16 @@
-from gt4py.cartesian import gtscript
-from gt4py.cartesian.gtscript import FORWARD, PARALLEL, computation, exp, interval, log, sqrt
+from gt4py.cartesian.gtscript import PARALLEL, computation, interval, sqrt
 
 import ndsl.constants as constants
 import pySHiELD.constants as physcons
-from ndsl.constants import X_DIM, Y_DIM, Z_DIM
 
 # from pace.dsl.dace.orchestration import orchestrate
 from ndsl.dsl.stencil import StencilFactory
 from ndsl.dsl.typing import (
-    Bool,
     BoolFieldIJ,
-    Float,
-    FloatField,
     FloatFieldIJ,
     IntFieldIJ,
 )
-from ndsl.initialization.allocator import QuantityFactory
-from ndsl.stencils.basic_operations import sign
-from pySHiELD._config import COND_DIM, SurfaceConfig, TRACER_DIM
-from pySHiELD.functions.physics_functions import fpvs, fpvsx
+from pySHiELD.functions.physics_functions import fpvsx
 
 
 def sfc_ocean(
@@ -72,10 +64,11 @@ def sfc_ocean(
             hflx = hflx * tem / constants.CP
             evap = evap * tem / constants.HLV
 
-class SFC_Ocean:
+
+class SurfaceOcean:
     def __init__(self, stencil_factory: StencilFactory,):
         grid_indexing = stencil_factory.grid_indexing
-        self._sfc_diff = stencil_factory.from_origin_domain(
+        self._sfc_ocean = stencil_factory.from_origin_domain(
             sfc_ocean,
             origin=grid_indexing.origin_compute(),
             domain=grid_indexing.domain_compute(),
@@ -104,7 +97,7 @@ class SFC_Ocean:
         islimsk: IntFieldIJ,
         flag_iter: BoolFieldIJ,
     ):
-        self._sfc_diff(
+        self._sfc_ocean(
             ps,
             u1,
             v1,

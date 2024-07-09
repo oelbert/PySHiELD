@@ -15,7 +15,6 @@ TF = 258.16
 TCRF = 1.0 / (constants.TICE - TF)
 CONT = constants.CP_AIR / constants.GRAV
 CONQ = constants.HLV / constants.GRAV
-RHOH2O = 1000.0
 
 # SFC_DIFF Constants
 ALPHA = 5.0
@@ -70,3 +69,24 @@ REFKDT = 3.0
 CZIL = 0.075
 CSOIL = 2.00e6
 PSAT = 6.1078e2  # Pressure at H20 3pt (Pa)
+
+# sfc_sice constants
+FLOAT_EPS = 1.0e-8
+HIMAX = 8.0  # maximum ice thickness allowed
+HIMIN = 0.1  # minimum ice thickness required
+HSMAX = 2.0  # maximum snow depth allowed
+TIMIN = 173.0  # minimum temperature allowed for snow/ice
+ALBFW = 0.06  # albedo for lead
+DSI = 1.0 / 0.33
+TSICE = 2.7120e+2  # temp freezing sea (K)
+TFW = -1.8  # TFW - seawater freezing temp (c)
+CIMIN = 0.15  # Minimum ice concentration
+RHO_SNO = 330.0  # Density of snow over sea ice (kg/m^3)
+RHO_ICE = 917.0  # Density of ice   (kg/m^3)
+CI = 2054.0  # heat capacity of fresh ice (j/kg/k)
+LI = 3.34e5  # latent heat of fusion of fresh ice (j/kg-ice)
+SI = 1.0  # salinity of sea ice
+MU = 0.054  # relates freezing temp to salinity
+KI = 2.03  # conductivity of ice  (w/mk)
+KS = 0.31  # conductivity of snow   (w/mk)
+I0 = 0.3  # ice surface penetrating solar fraction
