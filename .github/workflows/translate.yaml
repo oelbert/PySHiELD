@@ -1,25 +1,21 @@
-name: "pySHiELD Translate test"
+name: "PySHiELD translate tests"
 on:
   workflow_call:
     inputs:
-      fv3_trigger:
-        type: boolean
+      component_trigger:
+        type:  boolean
         default: false
         required: false
-      ndsl_trigger:
-        type: boolean
-        default: false
+      component_name:
+        type: string
+        default: ''
         required: false
   pull_request:
-      types: [opened, synchronize, reopened, ready_for_review, labeled, unlabeled]
 
 # cancel running jobs if theres a newer push
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
-
-env:
-  github_repository: ${{github.event.repository.name}}
 
 jobs:
   pyshield_translate_tests:
@@ -28,52 +24,47 @@ jobs:
       image: ghcr.io/noaa-gfdl/miniforge:mpich
     steps:
 
-      - name: Checkout pyshield for externally triggered workflow
-        if: ${{inputs.ndsl_trigger || inputs.fv3_trigger}}
-        uses: actions/checkout@v4
-        with:
-          repository: 'noaa-gfdl/PySHiELD'
-          submodules: 'recursive'
-          path: PySHiELD
-
-      - name: Checkout repository that triggers workflow
+      - name: external trigger Checkout pySHiELD
+        if: ${{inputs.component_trigger}}
         uses: actions/checkout@v4
         with:
           submodules: 'recursive'
-          path: ${{env.github_repository}}
+          repository: NOAA-GFDL/PySHiELD
+          path: pySHiELD
+          ref: develop
 
-      - name: prep directory for externally triggered workflow
-        if: ${{inputs.ndsl_trigger || inputs.fv3_trigger}}
+      - name: Checkout hash that triggered CI
+        uses: actions/checkout@v4
+        with:
+          submodules: 'recursive'
+          path: pySHiELD/${{inputs.component_name}}
+
+      - name:  external trigger Install packages for FV3 component
+        if : ${{contains(inputs.component_name, 'FV3')}}
         run : |
-          cd ${GITHUB_WORKSPACE}
-          mv ${{env.github_repository}} PySHiELD/.
-
-      - name:  Install packages for ndsl_trigger
-        if : ${{inputs.ndsl_trigger}}
-        run : |
-          cd ${GITHUB_WORKSPACE}/PySHiELD/
+          cd ${GITHUB_WORKSPACE}/pySHiELD
           pip3 install --upgrade pip setuptools wheel
-          cd NDSL && pip3 install .[test]
-          cd ../  && pip3 install .[pyFV3,test]
+          cd ${{inputs.component_name}} && pip3 install .[test] && cd ..
+          pip3 install .[ndsl,test]
 
-      - name: Install packages for pyFV3 trigger
-        if: ${{inputs.fv3_trigger}}
+      - name: external trigger Install packages for NDSL component
+        if : ${{contains(inputs.component_name, 'NDSL')}}
         run: |
-          cd ${GITHUB_WORKSPACE}/PySHiELD
+          cd ${GITHUB_WORKSPACE}/pySHiELD
           pip3 install --upgrade pip setuptools wheel
-          cd PyFV3 && pip3 install .[test]
-          cd ../ && pip3 install .[ndsl,test]
+          cd ${{inputs.component_name}} && pip3 install .[test] && cd ..
+          pip3 install .[pyFV3,test]
 
-      - name: Install PySHiELD Python packages
-        if: ${{ !inputs.fv3_trigger && !inputs.ndsl_trigger}}
+      - name: Install pySHiELD packages
+        if: ${{ !inputs.component_trigger}}
         run: |
-          cd ${GITHUB_WORKSPACE}/PySHiELD
+          cd ${GITHUB_WORKSPACE}/pySHiELD
           pip3 install --upgrade pip setuptools wheel
           pip3 install .[ndsl,pyFV3,test]
 
       - name: Download data
         run: |
-          cd ${GITHUB_WORKSPACE}/PySHiELD
+          cd ${GITHUB_WORKSPACE}/pySHiELD
           mkdir -p test_data
           cd test_data
           wget https://portal.nccs.nasa.gov/datashare/astg/smt/pace-regression-data/8.1.3_c12_6ranks_baroclinic.physics.tar.gz
@@ -81,7 +72,7 @@ jobs:
 
       - name: Numpy Translate Test
         run: |
-          cd ${GITHUB_WORKSPACE}/PySHiELD
+          cd ${GITHUB_WORKSPACE}/pySHiELD
           pytest \
             -v -s --data_path=./test_data/8.1.3/c12_6ranks_baroclinic/physics \
             --backend=numpy \
@@ -90,7 +81,7 @@ jobs:
 
       - name: Orchestrated dace:cpu Translate Test
         run: |
-          cd ${GITHUB_WORKSPACE}/PySHiELD
+          cd ${GITHUB_WORKSPACE}/pySHiELD
           export FV3_DACEMODE=BuildAndRun
           export PACE_FLOAT_PRECISION=64
           export PACE_TEST_N_THRESHOLD_SAMPLES=0
