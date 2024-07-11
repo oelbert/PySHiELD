@@ -1,27 +1,140 @@
-import ndsl.constants as constants
 import numpy as np
 import pySHiELD.constants as physcons
-from pySHiELD._config import SurfaceConfig
 
+# Assuming isot = ivet = 1
 
-BARE = 15
+BARE = 16
 DEFINED_SLOPE = 9
 DEFINED_SOIL = 19
 DEFINED_VEG = 20
 
 ZSOIL = np.array([-0.1, -0.4, -1.0, -2.0])
 
+
+# Vegetation tables, assuming ivet = 1 from Fortran
+
+SLOPE_DATA = np.zeros(30)
+SLOPE_DATA[:20] = 1.0
+SNUPX = np.array([
+    0.080, 0.080, 0.080, 0.080, 0.080, 0.020,
+    0.020, 0.060, 0.040, 0.020, 0.010, 0.020,
+    0.020, 0.020, 0.013, 0.013, 0.010, 0.020,
+    0.020, 0.020, 0.000, 0.000, 0.000, 0.000,
+    0.000, 0.000, 0.000, 0.000, 0.000, 0.000
+])
+RSMTBL = np.array([
+    300.0, 300.0, 70.0, 175.0, 175.0, 70.0,
+    70.0, 70.0, 70.0, 20.0, 40.0, 20.0,
+    400.0, 35.0, 200.0, 70.0, 100.0, 70.0,
+    150.0, 200.0, 0.0, 0.0, 0.0, 0.0,
+    0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+])
+RGLTBL = np.array([
+    30.0, 30.0, 30.0, 30.0, 30.0, 100.0,
+    100.0, 65.0, 65.0, 100.0, 100.0, 100.0,
+    100.0, 100.0, 100.0, 100.0, 30.0, 100.0,
+    100.0, 100.0, 0.0, 0.0, 0.0, 0.0,
+    0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+])
+HSTBL = np.array([
+    47.35, 41.69, 47.35, 54.53, 51.93, 42.00,
+    42.00, 42.00, 42.00, 36.35, 60.00, 36.25,
+    42.00, 36.25, 42.00, 42.00, 51.75, 42.00,
+    42.00, 42.00, 0.00, 0.00, 0.00, 0.00,
+    0.00, 0.00, 0.00, 0.00, 0.00, 0.00
+])
+Z0_DATA = np.array([
+    1.089, 2.653, 0.854, 0.826, 0.80, 0.05,
+    0.03, 0.856, 0.856, 0.15, 0.04, 0.13,
+    1.00, 0.25, 0.011, 0.011, 0.001, 0.076,
+    0.05, 0.03, 0.000, 0.000, 0.000, 0.000,
+    0.000, 0.000, 0.000, 0.000, 0.000, 0.000
+])
+LAI_DATA = np.array([
+    3.0, 3.0, 3.0, 3.0, 3.0, 3.0,
+    3.0, 3.0, 3.0, 3.0, 3.0, 3.0,
+    3.0, 3.0, 3.0, 3.0, 3.0, 3.0,
+    3.0, 3.0, 0.0, 0.0, 0.0, 0.0,
+    0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+])
+
 NROOT_DATA = np.array([4, 4, 4, 4, 4, 3, 3, 3, 3, 3, 3, 3, 1, 3, 2,
                        3, 1, 3, 3, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
 
+
+# Soil tables, assuming isot = 1 from Fortran
+REFSMC = np.array([
+    0.236, 0.283, 0.312, 0.360, 0.360, 0.329,
+    0.315, 0.387, 0.382, 0.338, 0.404, 0.403,
+    0.348, 0.283, 0.133, 0.283, 0.403, 0.133,
+    0.236, 0.000, 0.000, 0.000, 0.000, 0.000,
+    0.000, 0.000, 0.000, 0.000, 0.000, 0.000
+])
+BB = np.array([
+    4.05, 4.26, 4.74, 5.33, 5.33, 5.25,
+    6.77, 8.72, 8.17, 10.73, 10.39, 11.55,
+    5.25, 4.26, 4.05, 4.26, 11.55, 4.05,
+    4.05, 0.00, 0.00, 0.00, 0.00, 0.00,
+    0.00, 0.00, 0.00, 0.00, 0.00, 0.00
+])
+DRYSMC = np.array([
+    0.010, 0.025, 0.010, 0.010, 0.010, 0.010,
+    0.010, 0.010, 0.010, 0.010, 0.010, 0.010,
+    0.010, 0.010, 0.010, 0.010, 0.010, 0.010,
+    0.010, 0.000, 0.000, 0.000, 0.000, 0.000,
+    0.000, 0.000, 0.000, 0.000, 0.000, 0.000
+])
+F11 = np.array([
+    -1.090, -1.041, -0.568, 0.162, 0.162, -0.327,
+    -1.535, -1.118, -1.297, -3.211, -1.916, -2.258,
+    -0.201, -1.041, -2.287, -1.041, -2.258, -2.287,
+    -1.090, 0.000, 0.000, 0.000, 0.000, 0.000,
+    0.000, 0.000, 0.000, 0.000, 0.000, 0.000
+])
+MAXSMC = np.array([
+    0.395, 0.421, 0.434, 0.476, 0.476, 0.439,
+    0.404, 0.464, 0.465, 0.406, 0.468, 0.457,
+    0.464, 0.421, 0.200, 0.421, 0.457, 0.200,
+    0.395, 0.000, 0.000, 0.000, 0.000, 0.000,
+    0.000, 0.000, 0.000, 0.000, 0.000, 0.00
+])
+SATPSI = np.array([
+    0.035, 0.0363, 0.1413, 0.7586, 0.7586, 0.3548,
+    0.1349, 0.6166, 0.2630, 0.0977, 0.3236, 0.4677,
+    0.3548, 0.0363, 0.0350, 0.0363, 0.4677, 0.0350,
+    0.0350, 0.00, 0.00, 0.00, 0.00, 0.00,
+    0.00, 0.00, 0.00, 0.00, 0.00, 0.00
+])
 SATDK = np.array(
     1.41e-5, 0.20e-5, 0.10e-5, 0.52e-5, 0.72e-5,
     0.25e-5, 0.45e-5, 0.34e-5, 1.41e-5, 0.00,
-    0.00   , 0.00   , 0.00   , 0.00   , 0.00,
-    0.00   , 0.00   , 0.00   , 0.00   , 0.00,
-    0.00   , 0.00   , 0.00   , 0.00   , 0.00,
-    0.00   , 0.00   , 0.00   , 0.00   , 0.00
+    0.00, 0.00, 0.00, 0.00, 0.00,
+    0.00, 0.00, 0.00, 0.00, 0.00,
+    0.00, 0.00, 0.00, 0.00, 0.00,
+    0.00, 0.00, 0.00, 0.00, 0.00
 )
+WLTSMC = np.array([
+    0.023, 0.028, 0.047, 0.084, 0.084, 0.066,
+    0.069, 0.120, 0.103, 0.100, 0.126, 0.135,
+    0.069, 0.028, 0.012, 0.028, 0.135, 0.012,
+    0.023, 0.000, 0.000, 0.000, 0.000, 0.000,
+    0.000, 0.000, 0.000, 0.000, 0.000, 0.000
+])
+SATDW = np.array([
+    0.6316e-4, 0.5171e-5, 0.8072e-5, 0.2386e-4, 0.2386e-4,
+    0.1433e-4, 0.1006e-4, 0.2358e-4, 0.1130e-4, 0.1864e-04,
+    0.9658e-05, 0.1151e-04, 0.1356e-04, 0.5171e-05, 0.9978e-05,
+    0.5171e-05, 0.1151e-04, 0.9978e-05, 0.6316e-04, 0.00,
+    0.00, 0.00, 0.00, 0.00, 0.00,
+    0.00, 0.00, 0.00, 0.00, 0.00
+])
+QTZ = np.array([
+    0.92, 0.82, 0.25, 0.15, 0.10, 0.20,
+    0.60, 0.10, 0.35, 0.52, 0.10, 0.25,
+    0.05, 0.25, 0.07, 0.25, 0.60, 0.52,
+    0.92, 0.00, 0.00, 0.00, 0.00, 0.00,
+    0.00, 0.00, 0.00, 0.00, 0.00, 0.00
+])
 
 def parse_veg_data(
     veg_data: np.ndarray,
@@ -31,26 +144,14 @@ def parse_veg_data(
 
     return nroot
 
-def redprm(
-    config: SurfaceConfig,
+def set_soil_veg(
+    land_mask: np.ndarray,
     veg_data: np.ndarray,
     soil_data: np.ndarray,
-    zbot_data: np.ndarray,
-    salp_data: np.ndarray,
-    cfactr_data: np.ndarray,
-    cmcmax_data: np.ndarray,
-    sbeta_data: np.ndarray,
-    rsmax_data: np.ndarray,
-    topt_data: np.ndarray,
-    refdk_data: np.ndarray,
-    frzk_data: np.ndarray,
-    fxexp_data: np.ndarray,
-    refkdt_data: np.ndarray,
-    czil_data: np.ndarray,
-    csoil_data: np.ndarray,
     vegfrac_data: np.ndarray,
 ):
     '''
+    Fortran name is redprm
     ! ===================================================================== !
     !  description:                                                         !
     !                                                                       !
@@ -214,49 +315,65 @@ def redprm(
     !  ====================    end of description    =====================  !
     '''
 
-    zbot = zbot_data
-    salp = salp_data
-    cfactr = cfactr_data
-    cmcmax = cmcmax_data
-    sbeta = sbeta_data
-    rsmax = rsmax_data
-    topt = topt_data
-    refdk = refdk_data
-    frzk = frzk_data
-    fxexp = fxexp_data
-    refkdt = refkdt_data
-    czil = czil_data
-    csoil = csoil_data
+    bexp = np.zeros_like(soil_data)
+    dksat = np.zeros_like(soil_data)
+    dwsat = np.zeros_like(soil_data)
+    f1 = np.zeros_like(soil_data)
+    psisat = np.zeros_like(soil_data)
+    quartz = np.zeros_like(soil_data)
+    smcdry = np.zeros_like(soil_data)
+    smcmax = np.zeros_like(soil_data)
+    smcref = np.zeros_like(soil_data)
+    smcwlt = np.zeros_like(soil_data)
+    frzfact = np.zeros_like(soil_data)
 
-    nroot = config.nroot_data[veg_data]
-    zroot = ZSOIL[nroot - 1]
+    nroot = np.zeros_like(veg_data)
+    zroot = np.zeros_like(veg_data)
+    snup = np.zeros_like(veg_data)
+    rsmin = np.zeros_like(veg_data)
+    rgl = np.zeros_like(veg_data)
+    hs = np.zeros_like(veg_data)
+    xlai = np.zeros_like(veg_data)
+    shdfac = np.zeros_like(veg_data)
+
+    bexp[land_mask == 1] = BB[soil_data[land_mask == 1]]
+    dksat[land_mask == 1] = SATDK[soil_data[land_mask == 1]]
+    dwsat[land_mask == 1] = SATDW[soil_data[land_mask == 1]]
+    f1[land_mask == 1] = F11[soil_data[land_mask == 1]]
+
+    psisat[land_mask == 1] = SATPSI[soil_data[land_mask == 1]]
+    quartz[land_mask == 1] = QTZ[soil_data[land_mask == 1]]
+    smcdry[land_mask == 1] = DRYSMC[soil_data[land_mask == 1]]
+    smcmax[land_mask == 1] = MAXSMC[soil_data[land_mask == 1]]
+    smcref[land_mask == 1] = REFSMC[soil_data[land_mask == 1]]
+    smcwlt[land_mask == 1] = WLTSMC[soil_data[land_mask == 1]]
+
+    kdt = physcons.REFKDT * dksat / physcons.REFDK
+
+    frzfact[land_mask == 1] = (
+        smcmax[land_mask == 1] / smcref[land_mask == 1]
+    ) * (0.412 / 0.468)
+
+    # to adjust frzk parameter to actual soil type: frzk * frzfact
+    frzx = physcons.FRZK * frzfact
+
+    nroot[land_mask == 1] = NROOT_DATA[veg_data[land_mask == 1]]
+    zroot[land_mask == 1] = ZSOIL[nroot[land_mask == 1] - 1]
     sldpth = [ZSOIL[k + 1] - ZSOIL[k] for k in range(len(ZSOIL) - 1)]
     sldpth = np.array(
         sldpth.insert(0, -ZSOIL[0])
     )
 
-    bexp = config.bb[soil_data]
-    dksat = config.satdk[soil_data]
-    dwsat = config.satdw[soil_data]
-    f1 = config.f11[soil_data]
-    kdt = refkdt * dksat / refdk
+    snup[land_mask == 1] = SNUPX[veg_data[land_mask == 1]]
+    rsmin[land_mask == 1] = RSMTBL[veg_data[land_mask == 1]]
 
-    psisat = config.satpsi[soil_data]
-    quartz = config.qtz[soil_data]
-    smcdry = config.drysmc[soil_data]
-    smcmax = config.maxsmc[soil_data]
-    smcref = config.refsmc[soil_data]
-    smcwlt = config.wltsmc[soil_data]
+    rgl[land_mask == 1] = RGLTBL[veg_data[land_mask == 1]]
+    hs[land_mask == 1] = HSTBL[veg_data[land_mask == 1]]
+    # roughness length is not set here
+    # z0[land_mask == 1] = Z0_DATA[veg_data[land_mask == 1]]
+    xlai[land_mask == 1] = LAI_DATA[veg_data[land_mask == 1]]
 
     shdfac = max(vegfrac_data, 0.01)
-
-    kdt = physcons.REFKDT * dksat / physcons.REFDK
-
-    frzfact = (smcmax / smcref) * (0.412 / 0.468)
-
-    # to adjust frzk parameter to actual soil type: frzk * frzfact
-    frzx = physcons.FRZK * frzfact
-
     shdfac[veg_data == BARE] = 0.0
 
     # calculate root distribution.  present version assumes uniform
@@ -266,28 +383,19 @@ def redprm(
 
     for i in range(nroot.shape[0]):
         for j in range(nroot.shape[1]):
-            for k in range[nroot[i, j]]:
-                rtdis[i, j, k] = -sldpth[k] * zroot[k]
-
-    pass
+            if land_mask == 1:
+                for k in range[nroot[i, j]]:
+                    rtdis[i, j, k] = -sldpth[k] * zroot[i, j]
 
     return (
-        zbot,
-        salp,
-        cfactr,
-        cmcmax,
-        sbeta,
-        rsmax,
-        topt,
-        refdk,
-        frzk,
-        fxexp,
-        refkdt,
-        czil,
-        csoil,
         nroot,
         zroot,
         sldpth,
+        snup,
+        rsmin,
+        rgl,
+        hs,
+        xlai,
         bexp,
         dksat,
         dwsat,
@@ -299,7 +407,6 @@ def redprm(
         smcmax,
         smcref,
         smcwlt,
-        kdt,
         shdfac,
         frzx,
         rtdis,

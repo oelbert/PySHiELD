@@ -1,16 +1,14 @@
 from gt4py.cartesian import gtscript
-from gt4py.cartesian.gtscript import FORWARD, PARALLEL, computation, exp, interval, log, sqrt
+from gt4py.cartesian.gtscript import FORWARD, PARALLEL, computation, exp, interval, log
 
 import ndsl.constants as constants
-import numpy as np
 import pySHiELD.constants as physcons
-import pySHiELD.stencils.surface.sfc_params as sfc
+from pySHiELD.stencils.surface.noah_lsm.sfc_params import set_soil_veg
 from ndsl.constants import X_DIM, Y_DIM, Z_DIM
 
 # from pace.dsl.dace.orchestration import orchestrate
 from ndsl.dsl.stencil import StencilFactory
 from ndsl.dsl.typing import (
-    Bool,
     BoolFieldIJ,
     Float,
     FloatField,
@@ -22,8 +20,7 @@ from ndsl.dsl.typing import (
 )
 from ndsl.initialization.allocator import QuantityFactory
 from ndsl.quantity import Quantity
-from ndsl.stencils.basic_operations import sign
-from pySHiELD._config import COND_DIM, SurfaceConfig, TRACER_DIM
+from pySHiELD._config import SurfaceConfig
 from pySHiELD.functions.physics_functions import fpvs
 
 
@@ -31,7 +28,8 @@ from pySHiELD.functions.physics_functions import fpvs
 def tdfcnd_fn(smc, qz, smcmax, sh2o):
     # --- ... subprograms called: none
 
-    # calculates thermal diffusivity and conductivity of the soil for a given point and time
+    # calculates thermal diffusivity and conductivity of the soil
+    # for a given point and time
 
     # saturation ratio
     satratio = smc / smcmax
@@ -102,6 +100,7 @@ def canres_fn(
     smcwlt,
     smcref,
     zsoil,
+    zroot,
     rsmin,
     rsmax,
     topt,
@@ -128,25 +127,28 @@ def canres_fn(
     rcq = max(rcq, 0.01)
 
     # contribution due to soil moisture availability.
-    gx = 0.
-    z_root = zsoil[0, 0, ]
-    if (kmask >= 1) and (kmask < nroot):
-        gx0 = max(0.0, min(1.0, (sh2o - smcwlt) / (smcref - smcwlt)))
+
+    TODO: Split this into a separate function to do inside a 3d forward loop
+    rcsoil = 0.
 
     # use soil depth as weighting factor
-    sum = (
-        zsoil0 / zsoil * gx0
-        + (zsoil1 - zsoil0) / zsoil * gx1
-        + (zsoil2 - zsoil1) / zsoil * gx2
-        + (zsoil3 - zsoil2) / zsoil * gx3
-    )
+    gx = 0.
+    if (kmask < nroot):
+        gx = max(0.0, min(1.0, (sh2o - smcwlt) / (smcref - smcwlt)))
+        if kmask == 0:
+            rcsoil = rcsoil + (zsoil / zroot * gx)
+        else:
+            rcsoil = rcsoil + ((zsoil - zsoil[0, 0, -1]) / zroot * gx)
 
-    rcsoil = max(sum, 0.0001)
+    TODO: put this back in a 2d loop
+    rcsoil = max(rcsoil, 0.0001)
 
     # determine canopy resistance due to all factors
 
     rc = rsmin / (xlai * rcs * rct * rcq * rcsoil)
-    rr = (4.0 * sfcems * physcons.SIGMA1 * physcons.RD1 / cpx1) * (sfctmp ** 4.0) / (sfcprs * ch) + 1.0
+    rr = (4.0 * sfcems * physcons.SIGMA1 * physcons.RD1 / cpx1) * (
+        sfctmp ** 4.0
+    ) / (sfcprs * ch) + 1.0
     delta = (physcons.LSUBC / cpx1) * dqsdt2
 
     pc = (rr + delta) / (rr * (1.0 + rc * ch) + delta)
@@ -225,47 +227,6 @@ def penman_fn(
     return t24, etp, rch, epsca, rr, flx2
 
 
-# @gtscript.function
-def redprm(
-    vegtyp: IntFieldIJ,
-    dksat: FloatFieldIJ,
-    smcmax: FloatFieldIJ,
-    smcref: FloatFieldIJ,
-    nroot: IntFieldIJ,
-    sldpth: FloatField,
-    zroot: FloatFieldIJ,
-    k_mask: IntField,
-    shdfac: FloatFieldIJ,
-    kdt: FloatFieldIJ,
-    frzx: FloatFieldIJ,
-    rtdis: FloatField,
-):
-    """
-    Sets soil and vegetation parameters
-    """
-    # --- ... subprograms called: none
-
-    kdt = physcons.REFKDT * dksat / physcons.REFDK
-
-    frzfact = (smcmax / smcref) * (0.412 / 0.468)
-
-    # to adjust frzk parameter to actual soil type: frzk * frzfact
-    frzx = physcons.FRZK * frzfact
-
-    if vegtyp + 1 == sfc.BARE:
-        shdfac = 0.0
-
-    # calculate root distribution.  present version assumes uniform
-    # distribution based on soil layer depths.
-
-    if nroot[0, 0] > k_mask[0, 0, 0]:
-        rtdis = -sldpth * zroot
-    else:
-        rtdis = 0.
-
-    return kdt, shdfac, frzx, rtdis
-
-
 @gtscript.function
 def snfrac_fn(sneqv, snup, salp):
     # --- ... subprograms called: none
@@ -326,10 +287,7 @@ def devap_fn(etp1, smc, shdfac, smcmax, smcdry, fxexp):
 def transp_fn(
     nroot,
     etp1,
-    smc0,
-    smc1,
-    smc2,
-    smc3,
+    smc,
     smcwlt,
     smcref,
     cmc,
@@ -337,10 +295,7 @@ def transp_fn(
     shdfac,
     pc,
     cfactr,
-    rtdis0,
-    rtdis1,
-    rtdis2,
-    rtdis3,
+    rtdis,
 ):
     # initialize plant transp to zero for all soil layers.
     et1_0 = 0.0
@@ -2651,25 +2606,8 @@ def sflx(
     ice,
     ffrozp,
     dt,
-    zsoil: FloatField,
-    zroot: FloatFieldIJ,
-    sldpth,
-    dksat,
-    smcmax,
-    smcref,
-    smcwlt,
-    smcdry,
-    bexp,
-    xlai,
-    snup,
-    quartz,
-    rgl,
-    hs,
+    zsoil: FloatFieldK,
     slope,
-    psisat,
-    dwsat,
-    nroot,
-    rsmin,
     swdn,
     swnet,
     lwdn,
@@ -2700,15 +2638,36 @@ def sflx(
     ch,
     cm,
     z0,
-    shdfac,
     snowh,
+    nroot: FloatFieldIJ,
+    zroot: FloatFieldIJ,
+    sldpth: FloatFieldIJ,
+    snup: FloatFieldIJ,
+    rsmin: FloatFieldIJ,
+    rgl: FloatFieldIJ,
+    hs: FloatFieldIJ,
+    xlai: FloatFieldIJ,
+    bexp: FloatFieldIJ,
+    dksat: FloatFieldIJ,
+    dwsat: FloatFieldIJ,
+    f1: FloatFieldIJ,
+    kdt: FloatFieldIJ,
+    psisat: FloatFieldIJ,
+    quartz: FloatFieldIJ,
+    smcdry: FloatFieldIJ,
+    smcmax: FloatFieldIJ,
+    smcref: FloatFieldIJ,
+    smcwlt: FloatFieldIJ,
+    shdfac: FloatFieldIJ,
+    frzx: FloatFieldIJ,
+    rtdis: FloatFieldIJ,
     kmask: IntField,
     flag_iter: BoolFieldIJ,
     land: BoolFieldIJ,
 ):
-    with computation(PARALLEL), interval(...):
+    with computation(PARALLEL), interval(0, 1):
         if flag_iter and land:
-            # --- ... subprograms called: redprm, snow_new, csnow, snfrac, alcalc,
+            # --- ... subprograms called: snow_new, csnow, snfrac, alcalc,
             # tdfcnd, snowz0, sfcdif, penman, canres, nopac, snopac.
 
             # initialization
@@ -2722,18 +2681,6 @@ def sflx(
             if ivegsrc == 1 and vegtyp == 14:
                 ice = -1
                 shdfac = 0.0
-
-            kdt, shdfac, frzx, rtdis = redprm(
-                vegtyp,
-                dksat,
-                smcmax,
-                smcref,
-                nroot,
-                sldpth,
-                zroot,
-                shdfac,
-                kmask,
-            )
 
             if ivegsrc == 1 and vegtyp == 12:
                 rsmin = 400.0 * (1 - shdfac0) + 40.0 * shdfac0
@@ -2763,8 +2710,6 @@ def sflx(
                 smc = 1.0
                 sh2o = 1.0
 
-    with computation(FORWARD), interval(0, 1):
-        if flag_iter and land:
             # if input snowpack is nonzero, then compute snow density "sndens"
             # and snow thermal conductivity "sncond"
             if sneqv == 0.0:
@@ -3411,24 +3356,12 @@ class NoahLSM:
         self,
         stencil_factory: StencilFactory,
         quantity_factory: QuantityFactory,
-        config: SurfaceConfig
+        config: SurfaceConfig,
+        land_mask,
+        veg_data,
+        soil_data,
+        vegfrac_data,
     ):
-        zsoil = np.array([-0.1, -0.4, -1.0, -2.0])
-        zroot = zsoil[config.nroot - 1]
-        sldpth = [zsoil[k + 1] - zsoil[k] for k in range(len(zsoil) - 1)]
-        sldpth = np.array(
-            sldpth.insert(0, -zsoil[0])
-        )
-
-        self._zsoil_noah = quantity_factory.from_array(
-            zsoil[:-1], dims=Z_DIM, units="m"
-        )
-        self._zroot = quantity_factory.from_array(
-            zroot, dims=[X_DIM, Y_DIM], units="m"
-        )
-        self._sldpth = quantity_factory.from_array(
-            sldpth, dims=Z_DIM, units="m"
-        )
 
         def make_quantity() -> Quantity:
             return quantity_factory.zeros(
@@ -3445,6 +3378,98 @@ class NoahLSM:
             )
 
         grid_indexing = stencil_factory.grid_indexing
+
+        (
+            nroot,
+            zroot,
+            sldpth,
+            snup,
+            rsmin,
+            rgl,
+            hs,
+            xlai,
+            bexp,
+            dksat,
+            dwsat,
+            f1,
+            kdt,
+            psisat,
+            quartz,
+            smcdry,
+            smcmax,
+            smcref,
+            smcwlt,
+            shdfac,
+            frzx,
+            rtdis,
+        ) = set_soil_veg(land_mask, veg_data, soil_data, vegfrac_data)
+
+        self._nroot = quantity_factory.from_array(
+            nroot, dims=[X_DIM, Y_DIM], units=""
+        )
+        self._zroot = quantity_factory.from_array(
+            zroot, dims=[X_DIM, Y_DIM], units=""
+        )
+        self._sldpth = quantity_factory.from_array(
+            sldpth, dims=[X_DIM, Y_DIM], units=""
+        )
+        self._snup = quantity_factory.from_array(
+            snup, dims=[X_DIM, Y_DIM], units=""
+        )
+        self._rsmin = quantity_factory.from_array(
+            rsmin, dims=[X_DIM, Y_DIM], units=""
+        )
+        self._rgl = quantity_factory.from_array(
+            rgl, dims=[X_DIM, Y_DIM], units=""
+        )
+        self._hs = quantity_factory.from_array(
+            hs, dims=[X_DIM, Y_DIM], units=""
+        )
+        self._xlai = quantity_factory.from_array(
+            xlai, dims=[X_DIM, Y_DIM], units=""
+        )
+        self._bexp = quantity_factory.from_array(
+            bexp, dims=[X_DIM, Y_DIM], units=""
+        )
+        self._dksat = quantity_factory.from_array(
+            dksat, dims=[X_DIM, Y_DIM], units=""
+        )
+        self._dwsat = quantity_factory.from_array(
+            dwsat, dims=[X_DIM, Y_DIM], units=""
+        )
+        self._f1 = quantity_factory.from_array(
+            f1, dims=[X_DIM, Y_DIM], units=""
+        )
+        self._kdt = quantity_factory.from_array(
+            kdt, dims=[X_DIM, Y_DIM], units=""
+        )
+        self._psisat = quantity_factory.from_array(
+            psisat, dims=[X_DIM, Y_DIM], units=""
+        )
+        self._quartz = quantity_factory.from_array(
+            quartz, dims=[X_DIM, Y_DIM], units=""
+        )
+        self._smcdry = quantity_factory.from_array(
+            smcdry, dims=[X_DIM, Y_DIM], units=""
+        )
+        self._smcmax = quantity_factory.from_array(
+            smcmax, dims=[X_DIM, Y_DIM], units=""
+        )
+        self._smcref = quantity_factory.from_array(
+            smcref, dims=[X_DIM, Y_DIM], units=""
+        )
+        self._smcwlt = quantity_factory.from_array(
+            smcwlt, dims=[X_DIM, Y_DIM], units=""
+        )
+        self._shdfac = quantity_factory.from_array(
+            shdfac, dims=[X_DIM, Y_DIM], units=""
+        )
+        self._frzx = quantity_factory.from_array(
+            frzx, dims=[X_DIM, Y_DIM], units=""
+        )
+        self._rtdis = quantity_factory.from_array(
+            rtdis, dims=[X_DIM, Y_DIM], units=""
+        )
 
         self._init_lsm = stencil_factory.from_origin_domain(
             func=init_lsm,
