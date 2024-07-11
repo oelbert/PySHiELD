@@ -8,10 +8,10 @@ import pySHiELD.constants as physcons
 from ndsl.dsl.stencil import StencilFactory
 from ndsl.dsl.typing import (
     BoolFieldIJ,
+    Float,
     FloatFieldIJ,
     IntFieldIJ,
 )
-from pySHiELD._config import SurfaceConfig
 from pySHiELD.functions.physics_functions import fpvsx
 
 
@@ -500,13 +500,13 @@ class SurfaceSeaIce:
     def __init__(
         self,
         stencil_factory: StencilFactory,
-        config: SurfaceConfig
+        dt_atmos: Float
     ):
         grid_indexing = stencil_factory.grid_indexing
         self._sfc_sice = stencil_factory.from_origin_domain(
             sfc_sice,
             externals={
-                "delt": config.dt_atmos
+                "delt": dt_atmos
             },
             origin=grid_indexing.origin_compute(),
             domain=grid_indexing.domain_compute(),

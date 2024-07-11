@@ -14,7 +14,6 @@ from ndsl.dsl.typing import (
     IntFieldIJ,
 )
 from ndsl.stencils.basic_operations import sign
-from pySHiELD._config import SurfaceConfig
 from pySHiELD.functions.physics_functions import fpvsx
 
 
@@ -582,7 +581,10 @@ class SurfaceExchange:
     def __init__(
         self,
         stencil_factory: StencilFactory,
-        config: SurfaceConfig,
+        do_z0_hwrf15: Bool,
+        do_z0_hwrf17: Bool,
+        do_z0_hwrf17_hwonly: Bool,
+        do_z0_moon: Bool,
     ):
         """
         Calculates surface exchanges and near-surface winds.
@@ -592,10 +594,10 @@ class SurfaceExchange:
         assert (
             sum(
                 [
-                    config.do_z0_hwrf15,
-                    config.do_z0_hwrf17,
-                    config.do_z0_hwrf17_hwonly,
-                    config.do_z0_moon,
+                    do_z0_hwrf15,
+                    do_z0_hwrf17,
+                    do_z0_hwrf17_hwonly,
+                    do_z0_moon,
                 ]
             )
             == 1
@@ -604,10 +606,10 @@ class SurfaceExchange:
         self._sfc_diff = stencil_factory.from_origin_domain(
             sfc_diff,
             externals={
-                "do_z0_hwrf15": config.do_z0_hwrf15,
-                "do_z0_hwrf17": config.do_z0_hwrf17,
-                "do_z0_hwrf17_hwonly": config.do_z0_hwrf17_hwonly,
-                "do_z0_moon": config.do_z0_moon,
+                "do_z0_hwrf15": do_z0_hwrf15,
+                "do_z0_hwrf17": do_z0_hwrf17,
+                "do_z0_hwrf17_hwonly": do_z0_hwrf17_hwonly,
+                "do_z0_moon": do_z0_moon,
             },
             origin=grid_indexing.origin_compute(),
             domain=grid_indexing.domain_compute(),

@@ -139,7 +139,10 @@ class SurfaceLayer:
 
         self._exchange = SurfaceExchange(
             stencil_factory=stencil_factory,
-            config=config
+            do_z0_hwrf15=config.do_z0_hwrf15,
+            do_z0_hwrf17=config.do_z0_hwrf17,
+            do_z0_hwrf17_hwonly=config.do_z0_hwrf17_hwonly,
+            do_z0_moon=config.do_z0_moon,
         )
         self._update_guess_0 = stencil_factory.from_origin_domain(
             update_guess_0,
