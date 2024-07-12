@@ -8,7 +8,7 @@ DEFINED_SLOPE = 9
 DEFINED_SOIL = 19
 DEFINED_VEG = 20
 
-ZSOIL = np.array([-0.1, -0.4, -1.0, -2.0])
+ZSOIL_DATA = np.array([-0.1, -0.4, -1.0, -2.0])
 
 
 # Vegetation tables, assuming ivet = 1 from Fortran
@@ -145,13 +145,14 @@ def parse_veg_data(
     return nroot
 
 def set_soil_veg(
-    land_mask: np.ndarray,
+    isl_mask: np.ndarray,
     veg_data: np.ndarray,
     soil_data: np.ndarray,
     vegfrac_data: np.ndarray,
 ):
     '''
-    Fortran name is redprm
+    Handles initialization of LSM fields. Includes redprm Fortran subroutine
+    idl_mask: mask for surface types. 0 is sea, 1, is land, 2 is ice
     ! ===================================================================== !
     !  description:                                                         !
     !                                                                       !
@@ -336,42 +337,38 @@ def set_soil_veg(
     xlai = np.zeros_like(veg_data)
     shdfac = np.zeros_like(veg_data)
 
-    bexp[land_mask == 1] = BB[soil_data[land_mask == 1]]
-    dksat[land_mask == 1] = SATDK[soil_data[land_mask == 1]]
-    dwsat[land_mask == 1] = SATDW[soil_data[land_mask == 1]]
-    f1[land_mask == 1] = F11[soil_data[land_mask == 1]]
+    bexp[isl_mask >= 1] = BB[soil_data[isl_mask >= 1]]
+    dksat[isl_mask >= 1] = SATDK[soil_data[isl_mask >= 1]]
+    dwsat[isl_mask >= 1] = SATDW[soil_data[isl_mask >= 1]]
+    f1[isl_mask >= 1] = F11[soil_data[isl_mask >= 1]]
 
-    psisat[land_mask == 1] = SATPSI[soil_data[land_mask == 1]]
-    quartz[land_mask == 1] = QTZ[soil_data[land_mask == 1]]
-    smcdry[land_mask == 1] = DRYSMC[soil_data[land_mask == 1]]
-    smcmax[land_mask == 1] = MAXSMC[soil_data[land_mask == 1]]
-    smcref[land_mask == 1] = REFSMC[soil_data[land_mask == 1]]
-    smcwlt[land_mask == 1] = WLTSMC[soil_data[land_mask == 1]]
+    psisat[isl_mask >= 1] = SATPSI[soil_data[isl_mask >= 1]]
+    quartz[isl_mask >= 1] = QTZ[soil_data[isl_mask >= 1]]
+    smcdry[isl_mask >= 1] = DRYSMC[soil_data[isl_mask >= 1]]
+    smcmax[isl_mask >= 1] = MAXSMC[soil_data[isl_mask >= 1]]
+    smcref[isl_mask >= 1] = REFSMC[soil_data[isl_mask >= 1]]
+    smcwlt[isl_mask >= 1] = WLTSMC[soil_data[isl_mask >= 1]]
 
     kdt = physcons.REFKDT * dksat / physcons.REFDK
 
-    frzfact[land_mask == 1] = (
-        smcmax[land_mask == 1] / smcref[land_mask == 1]
+    frzfact[isl_mask >= 1] = (
+        smcmax[isl_mask >= 1] / smcref[isl_mask >= 1]
     ) * (0.412 / 0.468)
 
     # to adjust frzk parameter to actual soil type: frzk * frzfact
     frzx = physcons.FRZK * frzfact
 
-    nroot[land_mask == 1] = NROOT_DATA[veg_data[land_mask == 1]]
-    zroot[land_mask == 1] = ZSOIL[nroot[land_mask == 1] - 1]
-    sldpth = [ZSOIL[k + 1] - ZSOIL[k] for k in range(len(ZSOIL) - 1)]
-    sldpth = np.array(
-        sldpth.insert(0, -ZSOIL[0])
-    )
+    nroot[isl_mask == 1] = NROOT_DATA[veg_data[isl_mask == 1]]
+    zroot[isl_mask == 1] = ZSOIL_DATA[nroot[isl_mask == 1] - 1]
 
-    snup[land_mask == 1] = SNUPX[veg_data[land_mask == 1]]
-    rsmin[land_mask == 1] = RSMTBL[veg_data[land_mask == 1]]
+    snup[isl_mask >= 1] = SNUPX[veg_data[isl_mask >= 1]]
+    rsmin[isl_mask >= 1] = RSMTBL[veg_data[isl_mask >= 1]]
 
-    rgl[land_mask == 1] = RGLTBL[veg_data[land_mask == 1]]
-    hs[land_mask == 1] = HSTBL[veg_data[land_mask == 1]]
+    rgl[isl_mask >= 1] = RGLTBL[veg_data[isl_mask >= 1]]
+    hs[isl_mask >= 1] = HSTBL[veg_data[isl_mask >= 1]]
     # roughness length is not set here
-    # z0[land_mask == 1] = Z0_DATA[veg_data[land_mask == 1]]
-    xlai[land_mask == 1] = LAI_DATA[veg_data[land_mask == 1]]
+    # z0[isl_mask >= 1] = Z0_DATA[veg_data[isl_mask >= 1]]
+    xlai[isl_mask >= 1] = LAI_DATA[veg_data[isl_mask >= 1]]
 
     shdfac = max(vegfrac_data, 0.01)
     shdfac[veg_data == BARE] = 0.0
@@ -379,18 +376,26 @@ def set_soil_veg(
     # calculate root distribution.  present version assumes uniform
     # distribution based on soil layer depths.
 
-    rtdis = np.zeros((nroot.shape[0], nroot.shape[1], ZSOIL.shape))
+    rtdis = np.zeros((nroot.shape[0], nroot.shape[1], ZSOIL_DATA.shape))
+    sldpth = np.zeros((nroot.shape[0], nroot.shape[1], ZSOIL_DATA.shape + 1))
+    zsoil = np.zeros((nroot.shape[0], nroot.shape[1], ZSOIL_DATA.shape))
 
     for i in range(nroot.shape[0]):
         for j in range(nroot.shape[1]):
-            if land_mask == 1:
-                for k in range[nroot[i, j]]:
-                    rtdis[i, j, k] = -sldpth[k] * zroot[i, j]
+            for k in range(len(ZSOIL_DATA)):
+                if isl_mask == 1:
+                    sldpth[i, j, k + 1] = ZSOIL_DATA[k] - ZSOIL_DATA[k - 1]
+                    zsoil[i, j] = ZSOIL_DATA[k]
+                    if k < nroot[i, j]:
+                        rtdis[i, j, k] = -sldpth[i, j, k] * zroot[i, j]
+                elif isl_mask == 2:
+                    zsoil[i, j, k] = -3.0 * (k + 1) / (len(ZSOIL_DATA) + 1)
 
     return (
         nroot,
         zroot,
         sldpth,
+        zsoil,
         snup,
         rsmin,
         rgl,
