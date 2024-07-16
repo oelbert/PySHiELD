@@ -284,171 +284,6 @@ def snow_new(sfctmp, sn_new, snowh, sndens):
 
 
 @gtscript.function
-def devap_fn(etp1, smc, shdfac, smcmax, smcdry, fxexp):
-    # --- ... subprograms called: none
-
-    # calculates direct soil evaporation
-    sratio = (smc - smcdry) / (smcmax - smcdry)
-
-    if sratio > 0.0:
-        fx = sratio ** fxexp
-        fx = max(min(fx, 1.0), 0.0)
-    else:
-        fx = 0.0
-
-    # allow for the direct-evap-reducing effect of shade
-    edir1 = fx * (1.0 - shdfac) * etp1
-    return edir1
-
-
-@gtscript.function
-def transp_fn(
-    nroot,
-    etp1,
-    smc,
-    smcwlt,
-    smcref,
-    cmc,
-    cmcmax,
-    shdfac,
-    pc,
-    cfactr,
-    rtdis,
-):
-    # initialize plant transp to zero for all soil layers.
-    et1_0 = 0.0
-    et1_1 = 0.0
-    et1_2 = 0.0
-    et1_3 = 0.0
-
-    if cmc != 0.0:
-        etp1a = shdfac * pc * etp1 * (1.0 - (cmc / cmcmax) ** cfactr)
-    else:
-        etp1a = shdfac * pc * etp1
-
-    if nroot > 0:
-        gx0 = max(0.0, min(1.0, (smc0 - smcwlt) / (smcref - smcwlt)))
-    else:
-        gx0 = 0.0
-    if nroot > 1:
-        gx1 = max(0.0, min(1.0, (smc1 - smcwlt) / (smcref - smcwlt)))
-    else:
-        gx1 = 0.0
-    if nroot > 2:
-        gx2 = max(0.0, min(1.0, (smc2 - smcwlt) / (smcref - smcwlt)))
-    else:
-        gx2 = 0.0
-    if nroot > 3:
-        gx3 = max(0.0, min(1.0, (smc3 - smcwlt) / (smcref - smcwlt)))
-    else:
-        gx3 = 0.0
-
-    sgx = (gx0 + gx1 + gx2 + gx3) / nroot
-
-    rtx0 = rtdis0 + gx0 - sgx
-    rtx1 = rtdis1 + gx1 - sgx
-    rtx2 = rtdis2 + gx2 - sgx
-    rtx3 = rtdis3 + gx3 - sgx
-
-    gx0 *= max(rtx0, 0.0)
-    gx1 *= max(rtx1, 0.0)
-    gx2 *= max(rtx2, 0.0)
-    gx3 *= max(rtx3, 0.0)
-
-    denom = gx0 + gx1 + gx2 + gx3
-
-    if denom <= 0.0:
-        denom = 1.0
-
-    et1_0 = etp1a * gx0 / denom
-    et1_1 = etp1a * gx1 / denom
-    et1_2 = etp1a * gx2 / denom
-    et1_3 = etp1a * gx3 / denom
-
-    return et1_0, et1_1, et1_2, et1_3
-
-
-@gtscript.function
-def evapo_fn(
-    nroot,
-    cmc,
-    cmcmax,
-    etp1,
-    dt,
-    sh2o0,
-    sh2o1,
-    sh2o2,
-    sh2o3,
-    smcmax,
-    smcwlt,
-    smcref,
-    smcdry,
-    pc,
-    shdfac,
-    cfactr,
-    rtdis0,
-    rtdis1,
-    rtdis2,
-    rtdis3,
-    fxexp,
-):
-    # --- ... subprograms called: devap, transp
-
-    ec1 = 0.0
-    ett1 = 0.0
-    edir1 = 0.0
-
-    et1_0, et1_1, et1_2, et1_3 = 0.0, 0.0, 0.0, 0.0
-
-    if etp1 > 0.0:
-        # retrieve direct evaporation from soil surface.
-        if shdfac < 1.0:
-            edir1 = devap_fn(etp1, sh2o0, shdfac, smcmax, smcdry, fxexp)
-            # edir1 = 4.250472271407341e-10
-
-        # initialize plant total transpiration, retrieve plant transpiration,
-        # and accumulate it for all soil layers.
-        if shdfac > 0.0:
-            # calculates transpiration for the veg class
-
-            et1_0, et1_1, et1_2, et1_3 = transp_fn(
-                nroot,
-                etp1,
-                sh2o0,
-                sh2o1,
-                sh2o2,
-                sh2o3,
-                smcwlt,
-                smcref,
-                cmc,
-                cmcmax,
-                shdfac,
-                pc,
-                cfactr,
-                rtdis0,
-                rtdis1,
-                rtdis2,
-                rtdis3,
-            )
-
-            ett1 = et1_0 + et1_1 + et1_2 + et1_3
-
-            # calculate canopy evaporation.
-            if cmc > 0.0:
-                ec1 = shdfac * ((cmc / cmcmax) ** cfactr) * etp1
-            else:
-                ec1 = 0.0
-
-            # ec should be limited by the total amount of available water on the canopy
-            cmc2ms = cmc / dt
-            ec1 = min(cmc2ms, ec1)
-
-    eta1 = edir1 + ett1 + ec1
-
-    return eta1, edir1, ec1, et1_0, et1_1, et1_2, et1_3, ett1
-
-
-@gtscript.function
 def tmpavg_fn(tup, tm, tdn, dz):
 
     dzh = dz * 0.5
@@ -1210,202 +1045,6 @@ def shflx_fn(
 
 
 @gtscript.function
-def wdfcnd_fn(smc, smcmax, bexp, dksat, dwsat, sicemax):
-    # calc the ratio of the actual to the max psbl soil h2o content of each layer
-    factr = min(1.0, max(0.0, 0.2 / smcmax))
-    factr0 = min(1.0, max(0.0, smc / smcmax))
-
-    # prep an expntl coef and calc the soil water diffusivity
-    expon = bexp + 2.0
-    wdf = dwsat * factr0 ** expon
-
-    # frozen soil hydraulic diffusivity.
-    if sicemax > 0.0:
-        vkwgt = 1.0 / (1.0 + (500.0 * sicemax) ** 3.0)
-        wdf = vkwgt * wdf + (1.0 - vkwgt) * dwsat * factr ** expon
-
-    # reset the expntl coef and calc the hydraulic conductivity
-    expon = (2.0 * bexp) + 3.0
-    wcnd = dksat * factr0 ** expon
-
-    return wdf, wcnd
-
-
-@gtscript.function
-def srt_fn(
-    edir,
-    et_0,
-    et_1,
-    et_2,
-    et_3,
-    sh2o0,
-    sh2o1,
-    sh2o2,
-    sh2o3,
-    pcpdrp,
-    zsoil0,
-    zsoil1,
-    zsoil2,
-    zsoil3,
-    dwsat,
-    dksat,
-    smcmax,
-    bexp,
-    dt,
-    smcwlt,
-    slope,
-    kdt,
-    frzx,
-    sice0,
-    sice1,
-    sice2,
-    sice3,
-):
-    # determine rainfall infiltration rate and runoff
-    cvfrz = 3
-
-    sicemax = max(max(max(max(sice0, sice1), sice2), sice3), 0.0)
-
-    pddum = pcpdrp
-    runoff1 = 0.0
-
-    if pcpdrp != 0:
-        # frozen ground version
-        dt1 = dt / 86400.0
-        smcav = smcmax - smcwlt
-        dd = (
-            -zsoil0 * (smcav - (sh2o0 + sice0 - smcwlt))
-            + (zsoil0 - zsoil1) * (smcav - (sh2o1 + sice1 - smcwlt))
-            + (zsoil1 - zsoil2) * (smcav - (sh2o2 + sice2 - smcwlt))
-            + (zsoil2 - zsoil3) * (smcav - (sh2o3 + sice3 - smcwlt))
-        )
-
-        dice = (
-            -zsoil0 * sice0
-            + (zsoil0 - zsoil1) * sice1
-            + (zsoil1 - zsoil2) * sice2
-            + (zsoil2 - zsoil3) * sice3
-        )
-
-        val = 1.0 - exp(-kdt * dt1)
-        ddt = dd * val
-
-        px = pcpdrp * dt
-
-        if px < 0.0:
-            px = 0.0
-
-        infmax = (px * (ddt / (px + ddt))) / dt
-
-        # reduction of infiltration based on frozen ground parameters
-        fcr = 1.0
-
-        if dice > 1.0e-2:
-            acrt = cvfrz * frzx / dice
-            ialp1 = cvfrz - 1  # = 2
-
-            # Hardcode for ialp1 = 2
-            sum = 1.0 + acrt ** 2.0 / 2.0 + acrt
-
-            fcr = 1.0 - exp(-acrt) * sum
-
-        infmax *= fcr
-
-        wdf0, wcnd0 = wdfcnd_fn(sh2o0, smcmax, bexp, dksat, dwsat, sicemax)
-
-        infmax = max(infmax, wcnd0)
-        infmax = min(infmax, px)
-
-        if pcpdrp > infmax:
-            runoff1 = pcpdrp - infmax
-            pddum = infmax
-
-    wdf0, wcnd0 = wdfcnd_fn(sh2o0, smcmax, bexp, dksat, dwsat, sicemax)
-    wdf1, wcnd1 = wdfcnd_fn(sh2o1, smcmax, bexp, dksat, dwsat, sicemax)
-    wdf2, wcnd2 = wdfcnd_fn(sh2o2, smcmax, bexp, dksat, dwsat, sicemax)
-    wdf3, wcnd3 = wdfcnd_fn(sh2o3, smcmax, bexp, dksat, dwsat, sicemax)
-
-    # calc the matrix coefficients ai, bi, and ci for the top layer
-    ddz = 1.0 / (-0.5 * zsoil1)
-    ai0 = 0.0
-    bi0 = wdf0 * ddz / (-zsoil0)
-    ci0 = -bi0
-
-    # calc rhstt for the top layer
-    dsmdz = (sh2o0 - sh2o1) / (-0.5 * zsoil1)
-    rhstt0 = (wdf0 * dsmdz + wcnd0 - pddum + edir + et_0) / zsoil0
-
-    # 2. Layer
-    denom2 = zsoil0 - zsoil1
-    denom = zsoil0 - zsoil2
-    dsmdz2 = (sh2o1 - sh2o2) / (denom * 0.5)
-    ddz2 = 2.0 / denom
-    ci1 = -wdf1 * ddz2 / denom2
-    slopx = 1.0
-    numer = wdf1 * dsmdz2 + slopx * wcnd1 - wdf0 * dsmdz - wcnd0 + et_1
-    rhstt1 = -numer / denom2
-
-    # calc matrix coefs
-    ai1 = -wdf0 * ddz / denom2
-    bi1 = -(ai1 + ci1)
-
-    dsmdz = dsmdz2
-    ddz = ddz2
-
-    # 3. Layer
-    denom2 = zsoil1 - zsoil2
-    denom = zsoil1 - zsoil3
-    dsmdz2 = (sh2o2 - sh2o3) / (denom * 0.5)
-    ddz2 = 2.0 / denom
-    ci2 = -wdf2 * ddz2 / denom2
-    slopx = 1.0
-    numer = wdf2 * dsmdz2 + slopx * wcnd2 - wdf1 * dsmdz - wcnd1 + et_2
-    rhstt2 = -numer / denom2
-
-    # calc matrix coefs
-    ai2 = -wdf1 * ddz / denom2
-    bi2 = -(ai2 + ci2)
-
-    dsmdz = dsmdz2
-    ddz = ddz2
-
-    # 4. Layer
-    denom2 = zsoil2 - zsoil3
-    dsmdz2 = 0.0
-    ci3 = 0.0
-    slopx = slope
-    numer = wdf3 * dsmdz2 + slopx * wcnd3 - wdf2 * dsmdz - wcnd2 + et_3
-    rhstt3 = -numer / denom2
-
-    # calc matrix coefs
-    ai3 = -wdf2 * ddz / denom2
-    bi3 = -(ai3 + ci3)
-
-    runoff2 = slope * wcnd3
-
-    return (
-        rhstt0,
-        rhstt1,
-        rhstt2,
-        rhstt3,
-        runoff1,
-        runoff2,
-        ai0,
-        ai1,
-        ai2,
-        ai3,
-        bi0,
-        bi1,
-        bi2,
-        bi3,
-        ci0,
-        ci1,
-        ci2,
-        ci3,
-    )
-
-
-@gtscript.function
 def sstep_fn(
     sh2o0,
     sh2o1,
@@ -1530,161 +1169,6 @@ def sstep_fn(
 
 
 @gtscript.function
-def smflx_fn(
-    dt,
-    kdt,
-    smcmax,
-    smcwlt,
-    cmcmax,
-    prcp1,
-    zsoil0,
-    zsoil1,
-    zsoil2,
-    zsoil3,
-    slope,
-    frzx,
-    bexp,
-    dksat,
-    dwsat,
-    shdfac,
-    edir1,
-    ec1,
-    et1_0,
-    et1_1,
-    et1_2,
-    et1_3,
-    cmc,
-    sh2o0,
-    sh2o1,
-    sh2o2,
-    sh2o3,
-    smc0,
-    smc1,
-    smc2,
-    smc3,
-):
-    # compute the right hand side of the canopy eqn term
-    rhsct = shdfac * prcp1 - ec1
-
-    drip = 0.0
-    trhsct = dt * rhsct
-    excess = cmc + trhsct
-
-    if excess > cmcmax:
-        drip = excess - cmcmax
-
-    # pcpdrp is the combined prcp1 and drip (from cmc) that goes into the soil
-    pcpdrp = (1.0 - shdfac) * prcp1 + drip / dt
-
-    # store ice content at each soil layer before calling srt and sstep
-    sice0 = smc0 - sh2o0
-    sice1 = smc1 - sh2o1
-    sice2 = smc2 - sh2o2
-    sice3 = smc3 - sh2o3
-
-    (
-        rhstt0,
-        rhstt1,
-        rhstt2,
-        rhstt3,
-        runoff1,
-        runoff2,
-        ai0,
-        ai1,
-        ai2,
-        ai3,
-        bi0,
-        bi1,
-        bi2,
-        bi3,
-        ci0,
-        ci1,
-        ci2,
-        ci3,
-    ) = srt_fn(
-        edir1,
-        et1_0,
-        et1_1,
-        et1_2,
-        et1_3,
-        sh2o0,
-        sh2o1,
-        sh2o2,
-        sh2o3,
-        pcpdrp,
-        zsoil0,
-        zsoil1,
-        zsoil2,
-        zsoil3,
-        dwsat,
-        dksat,
-        smcmax,
-        bexp,
-        dt,
-        smcwlt,
-        slope,
-        kdt,
-        frzx,
-        sice0,
-        sice1,
-        sice2,
-        sice3,
-    )
-
-    sh2o0, sh2o1, sh2o2, sh2o3, runoff3, smc0, smc1, smc2, smc3, cmc = sstep_fn(
-        sh2o0,
-        sh2o1,
-        sh2o2,
-        sh2o3,
-        rhsct,
-        dt,
-        smcmax,
-        cmcmax,
-        zsoil0,
-        zsoil1,
-        zsoil2,
-        zsoil3,
-        sice0,
-        sice1,
-        sice2,
-        sice3,
-        cmc,
-        rhstt0,
-        rhstt1,
-        rhstt2,
-        rhstt3,
-        ai0,
-        ai1,
-        ai2,
-        ai3,
-        bi0,
-        bi1,
-        bi2,
-        bi3,
-        ci0,
-        ci1,
-        ci2,
-        ci3,
-    )
-
-    return (
-        cmc,
-        sh2o0,
-        sh2o1,
-        sh2o2,
-        sh2o3,
-        smc0,
-        smc1,
-        smc2,
-        smc3,
-        runoff1,
-        runoff2,
-        runoff3,
-        drip,
-    )
-
-
-@gtscript.function
 def snowpack_fn(esd, dtsec, tsnow, tsoil, snowh, sndens):
     # --- ... subprograms called: none
 
@@ -1740,326 +1224,6 @@ def snowpack_fn(esd, dtsec, tsnow, tsoil, snowh, sndens):
 
 
 @gtscript.function
-def nopac_fn(
-    nroot,
-    etp,
-    prcp,
-    smcmax,
-    smcwlt,
-    smcref,
-    smcdry,
-    cmcmax,
-    dt,
-    shdfac,
-    sbeta,
-    sfctmp,
-    sfcems,
-    t24,
-    th2,
-    fdown,
-    epsca,
-    bexp,
-    pc,
-    rch,
-    rr,
-    cfactr,
-    slope,
-    kdt,
-    frzx,
-    psisat,
-    zsoil0,
-    zsoil1,
-    zsoil2,
-    zsoil3,
-    dksat,
-    dwsat,
-    zbot,
-    ice,
-    rtdis0,
-    rtdis1,
-    rtdis2,
-    rtdis3,
-    quartz,
-    fxexp,
-    csoil,
-    ivegsrc,
-    vegtype,
-    cmc,
-    t1,
-    stc0,
-    stc1,
-    stc2,
-    stc3,
-    sh2o0,
-    sh2o1,
-    sh2o2,
-    sh2o3,
-    tbot,
-    smc0,
-    smc1,
-    smc2,
-    smc3,
-):
-    # convert etp from kg m-2 s-1 to ms-1 and initialize dew.
-    prcp1 = prcp * 0.001
-    etp1 = etp * 0.001
-    dew = 0.0
-    edir = 0.0
-    edir1 = 0.0
-    ec = 0.0
-    ec1 = 0.0
-
-    ett = 0.0
-    ett1 = 0.0
-    eta = 0.0
-    eta1 = 0.0
-
-    et1_0, et1_1, et1_2, et1_3, = (
-        0.0,
-        0.0,
-        0.0,
-        0.0,
-    )
-    et_0, et_1, et_2, et_3, = (
-        0.0,
-        0.0,
-        0.0,
-        0.0,
-    )
-
-    if etp > 0.0:
-        eta1, edir1, ec1, et1_0, et1_1, et1_2, et1_3, ett1 = evapo_fn(
-            nroot,
-            cmc,
-            cmcmax,
-            etp1,
-            dt,
-            sh2o0,
-            sh2o1,
-            sh2o2,
-            sh2o3,
-            smcmax,
-            smcwlt,
-            smcref,
-            smcdry,
-            pc,
-            shdfac,
-            cfactr,
-            rtdis0,
-            rtdis1,
-            rtdis2,
-            rtdis3,
-            fxexp,
-        )
-
-        (
-            cmc,
-            sh2o0,
-            sh2o1,
-            sh2o2,
-            sh2o3,
-            smc0,
-            smc1,
-            smc2,
-            smc3,
-            runoff1,
-            runoff2,
-            runoff3,
-            drip,
-        ) = smflx_fn(
-            dt,
-            kdt,
-            smcmax,
-            smcwlt,
-            cmcmax,
-            prcp1,
-            zsoil0,
-            zsoil1,
-            zsoil2,
-            zsoil3,
-            slope,
-            frzx,
-            bexp,
-            dksat,
-            dwsat,
-            shdfac,
-            edir1,
-            ec1,
-            et1_0,
-            et1_1,
-            et1_2,
-            et1_3,
-            cmc,
-            sh2o0,
-            sh2o1,
-            sh2o2,
-            sh2o3,
-            smc0,
-            smc1,
-            smc2,
-            smc3,
-        )
-
-    else:
-        # if etp < 0, assume dew forms
-        eta1 = 0.0
-        dew = -etp1
-        prcp1 += dew
-
-        (
-            cmc,
-            sh2o0,
-            sh2o1,
-            sh2o2,
-            sh2o3,
-            smc0,
-            smc1,
-            smc2,
-            smc3,
-            runoff1,
-            runoff2,
-            runoff3,
-            drip,
-        ) = smflx_fn(
-            dt,
-            kdt,
-            smcmax,
-            smcwlt,
-            cmcmax,
-            prcp1,
-            zsoil0,
-            zsoil1,
-            zsoil2,
-            zsoil3,
-            slope,
-            frzx,
-            bexp,
-            dksat,
-            dwsat,
-            shdfac,
-            edir1,
-            ec1,
-            et1_0,
-            et1_1,
-            et1_2,
-            et1_3,
-            cmc,
-            sh2o0,
-            sh2o1,
-            sh2o2,
-            sh2o3,
-            smc0,
-            smc1,
-            smc2,
-            smc3,
-        )
-
-    # convert modeled evapotranspiration fm  m s-1  to  kg m-2 s-1
-    eta = eta1 * 1000.0
-    edir = edir1 * 1000.0
-    ec = ec1 * 1000.0
-    et_0 = et1_0 * 1000.0
-    et_1 = et1_1 * 1000.0
-    et_2 = et1_2 * 1000.0
-    et_3 = et1_3 * 1000.0
-    ett = ett1 * 1000.0
-
-    # based on etp and e values, determine beta
-    if etp < 0.0:
-        beta = 1.0
-    elif etp == 0.0:
-        beta = 0.0
-    else:
-        beta = eta / etp
-
-    # get soil thermal diffuxivity/conductivity for top soil lyr, calc.
-    df1 = tdfcnd(smc0, quartz, smcmax, sh2o0)
-
-    if (ivegsrc == 1) and (vegtype == 12):
-        df1 = 3.24 * (1.0 - shdfac) + shdfac * df1 * exp(sbeta * shdfac)
-    else:
-        df1 *= exp(sbeta * shdfac)
-
-    # compute intermediate terms passed to routine hrt
-    yynum = fdown - sfcems * physcons.SIGMA1 * t24
-    yy = sfctmp + (yynum / rch + th2 - sfctmp - beta * epsca) / rr
-    zz1 = df1 / (-0.5 * zsoil0 * rch * rr) + 1.0
-
-    ssoil, stc0, stc1, stc2, stc3, t1, tbot, sh2o0, sh2o1, sh2o2, sh2o3 = shflx_fn(
-        smc0,
-        smc1,
-        smc2,
-        smc3,
-        smcmax,
-        dt,
-        yy,
-        zz1,
-        zsoil0,
-        zsoil1,
-        zsoil2,
-        zsoil3,
-        zbot,
-        psisat,
-        bexp,
-        df1,
-        ice,
-        quartz,
-        csoil,
-        ivegsrc,
-        vegtype,
-        shdfac,
-        stc0,
-        stc1,
-        stc2,
-        stc3,
-        t1,
-        tbot,
-        sh2o0,
-        sh2o1,
-        sh2o2,
-        sh2o3,
-    )
-
-    flx1 = 0.0
-    flx3 = 0.0
-
-    return (
-        cmc,
-        t1,
-        stc0,
-        stc1,
-        stc2,
-        stc3,
-        sh2o0,
-        sh2o1,
-        sh2o2,
-        sh2o3,
-        tbot,
-        eta,
-        smc0,
-        smc1,
-        smc2,
-        smc3,
-        ssoil,
-        runoff1,
-        runoff2,
-        runoff3,
-        edir,
-        ec,
-        et_0,
-        et_1,
-        et_2,
-        et_3,
-        ett,
-        beta,
-        drip,
-        dew,
-        flx1,
-        flx3,
-    )
-
-
-@gtscript.function
 def snopac_fn(
     nroot,
     etp,
@@ -2069,7 +1233,6 @@ def snopac_fn(
     smcref,
     smcdry,
     cmcmax,
-    dt,
     df1,
     sfcems,
     sfctmp,
@@ -2132,6 +1295,8 @@ def snopac_fn(
     # calculates soil moisture and heat flux values and
     # update soil moisture content and soil heat content values for the
     # case when a snow pack is present.
+
+    from __externals__ import dt
 
     snoexp = 2.0
     esdmin = 1.0e-6
@@ -2534,7 +1699,7 @@ def init_lsm(
     wet1: FloatFieldIJ,
     zsoil: FloatFieldK,
     sldpth: FloatFieldK,
-    delt: Float,
+    lsm_mask: BoolFieldIJ,
     # bexp: DT_F,
     # dksat: DT_F,
     # dwsat: DT_F,
@@ -2552,7 +1717,7 @@ def init_lsm(
     # xlai: DT_F,
     # slope: DT_F,
 ):
-    from __externals__ import lheatstrg, ivegsrc
+    from __externals__ import delt
     # save land-related prognostic fields for guess run
     with computation(PARALLEL), interval(...):
         if land and flag_guess:
@@ -2570,6 +1735,8 @@ def init_lsm(
             srflag_old = srflag
 
         if flag_iter and land:
+            lsm_mask = True
+
             # initialization block
             ep = 0.0
             evap = 0.0
@@ -2674,8 +1841,8 @@ def sflx_1(
     frzx: FloatFieldIJ,
     rtdis: FloatFieldIJ,
     kmask: IntField,
-    flag_iter: BoolFieldIJ,
-    land: BoolFieldIJ,
+    lsm_mask: BoolFieldIJ,
+    snopac_mask: BoolFieldIJ,
 ):
     """
     Fortran docs:
@@ -2822,7 +1989,7 @@ def sflx_1(
     """
     from __externals__ import lheatstrg, ivegsrc, dt
     with computation(PARALLEL), interval(0, 1):
-        if flag_iter and land:
+        if lsm_mask:
 
             # initialization
             shdfac0 = shdfac
@@ -2862,7 +2029,7 @@ def sflx_1(
                 snowh = 1.00
 
     with computation(PARALLEL), interval(...):
-        if flag_iter and land:
+        if lsm_mask:
             # for sea-ice and glacial-ice cases, set smc and sh2o values = 1
             # as a flag for non-soil medium
             if ice != 0:
@@ -2870,7 +2037,7 @@ def sflx_1(
                 sh2o = 1.0
 
     with computation(PARALLEL), interval(0, 1):
-        if flag_iter and land:
+        if lsm_mask:
             # if input snowpack is nonzero, then compute snow density "sndens"
             # and snow thermal conductivity "sncond"
             if sneqv == 0.0:
@@ -3047,7 +2214,7 @@ def sflx_1(
 
     # TODO: Split these out completely
     with computation(PARALLEL), interval(...):
-        if flag_iter and land:
+        if lsm_mask:
             if shdfac > 0.0:
 
                 # frozen ground extension: total soil water "smc" was replaced
@@ -3079,6 +2246,12 @@ def sflx_1(
             esnow = 0.0
 
             if sneqv == 0.0:
+                snopac_mask = False
+            else:
+                snopac_mask = True
+                
+                
+                
                 (
                     cmc,
                     t1,
@@ -3261,12 +2434,12 @@ def sflx_1(
 def sflx_2():
     with computation(PARALLEL), interval(...):
         from __externals__ import dt
-        if flag_iter and land:
+        if lsm_mask:
             et = et * physcons.LSUBC
 
     with computation(FORWARD):
         with interval(0, 1):
-            if flag_iter and land:
+            if lsm_mask:
 
                 # prepare sensible heat (h) for return to parent model
                 sheat = -(ch * physcons.CP1 * sfcprs) / (physcons.RD1 * t2v) * (
@@ -3317,17 +2490,17 @@ def sflx_2():
                 soilww = -(smc - smcwlt) * zsoil
                 soilwm = -(smcmax - smcwlt) * zsoil
         with interval(1, -1):
-            if flag_iter and land:
+            if lsm_mask:
                 soilm = soilm + smc * (zsoil[0, 0, -1] - zsoil)
                 if kmask < nroot:
                     soilww = soilww + (smc - smcwlt) * (zsoil[0, 0, -1] - zsoil)
         with interval(-1, None):
-            if flag_iter and land:
+            if lsm_mask:
                 soilm = soilm + smc * (zsoil[0, 0, -1] - zsoil)
                 if kmask < nroot:
                     soilww = soilww + (smc - smcwlt) * (zsoil[0, 0, -1] - zsoil)
     with computation(FORWARD), interval(0, 1):
-        if flag_iter and land:
+        if lsm_mask:
             soilw = soilww / soilwm
 
             # return (
@@ -3399,14 +2572,12 @@ def finalize_outputs(
     prsl1: FloatFieldIJ,
     prslki: FloatFieldIJ,
     zf: FloatFieldIJ,
-    land: BoolFieldIJ,
     wind: FloatFieldIJ,
     slopetype: IntFieldIJ,
     shdmin: FloatFieldIJ,
     shdmax: FloatFieldIJ,
     snoalb: FloatFieldIJ,
     sfalb: FloatFieldIJ,
-    flag_iter: BoolFieldIJ,
     flag_guess: BoolFieldIJ,
     bexppert: FloatFieldIJ,
     xlaipert: FloatFieldIJ,
@@ -3444,12 +2615,13 @@ def finalize_outputs(
     wet1: FloatFieldIJ,
     zsoil: FloatFieldK,
     sldpth: FloatFieldK,
-    delt: Float,
-    lheatstrg: Int,
-    ivegsrc: Int,
+    lsm_mask: BoolFieldIJ,
+    land: BoolFieldIJ,
 ):
+    from __externals__ import delt, lheatstrg, ivegsrc
+
     with computation(PARALLEL), interval(...):
-        if flag_iter and land:
+        if lsm_mask:
             # output
             evap = eta
             hflx = sheat
@@ -3635,6 +2807,7 @@ class NoahLSM:
 
         self._init_lsm = stencil_factory.from_origin_domain(
             func=init_lsm,
+            externals={"delt": dt},
             origin=grid_indexing.origin_compute(),
             domain=grid_indexing.domain_compute(),
         )
@@ -3658,12 +2831,14 @@ class NoahLSM:
 
         self._snopac = stencil_factory.from_origin_domain(
             func=snopac,
+            externals={"dt": dt},
             origin=grid_indexing.origin_compute(),
             domain=grid_indexing.domain_compute(),
         )
 
         self._nopac = stencil_factory.from_origin_domain(
             func=nopac,
+            externals={"dt": dt},
             origin=grid_indexing.origin_compute(),
             domain=grid_indexing.domain_compute(),
         )
