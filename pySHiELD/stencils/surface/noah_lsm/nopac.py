@@ -3,12 +3,14 @@ from gt4py.cartesian.gtscript import FORWARD, PARALLEL, computation, exp, interv
 
 import ndsl.constants as constants
 import pySHiELD.constants as physcons
-from pySHiELD.stencils.surface.noah_lsm.evapo import Evaporation
+from pySHiELD.stencils.surface.noah_lsm.evapo import EvapoTranspiration
+from pySHiELD.stencils.surface.noah_lsm.smflx import SoilMoistureFlux
 from ndsl.constants import X_DIM, Y_DIM, Z_DIM, Z_INTERFACE_DIM
 
 # from pace.dsl.dace.orchestration import orchestrate
 from ndsl.dsl.stencil import StencilFactory
 from ndsl.dsl.typing import (
+    Bool,
     BoolFieldIJ,
     Float,
     FloatField,
@@ -24,7 +26,7 @@ from pySHiELD._config import SurfaceConfig
 from pySHiELD.functions.physics_functions import fpvs
 
 
-def nopac(
+def start_nopac(
     nroot: IntFieldIJ,
     etp: FloatFieldIJ,
     prcp: FloatFieldIJ,
@@ -50,7 +52,7 @@ def nopac(
     kdt: FloatFieldIJ,
     frzx: FloatFieldIJ,
     psisat: FloatFieldIJ,
-    zsoil: FloatField,
+    zsoil: FloatFieldK,
     dksat: FloatFieldIJ,
     dwsat: FloatFieldIJ,
     zbot: FloatFieldIJ,
@@ -75,7 +77,7 @@ def nopac(
     !  update soil moisture content and soil heat content values for the    !
     !  case when no snow pack is present.
     """
-    from __externals__ import dt, ivegsrc, lheatstrg
+    from __externals__ import dt
 
     with computation(FORWARD), interval(0, 1):
         if not snopac_mask:
@@ -93,23 +95,21 @@ def nopac(
             eta = 0.0
             eta1 = 0.0
 
-    with computation(FORWARD), interval(...):
+    with computation(PARALLEL), interval(...):
         if not snopac_mask:
             et1 = 0.0
             et = 0.0
 
-    with computation(FORWARD), interval(...):
-        if not snopac_mask:
-            evapo_mask = True if etp > 0.0 else False
-
-def nopac_2():
     with computation(FORWARD), interval(0, 1):
         if not snopac_mask:
-            if not evapo_mask:
-                # if etp < 0, assume dew forms
-                eta_1 = 0.0
-                dew = 0.0
+            if etp > 0.0:
+                evapo_mask = True
+            else:
+                evapo_mask = False
+                eta1 = 0.0
+                dew = -etp1
                 prcp1 += dew
+
             (
                 cmc,
                 sh2o0,
@@ -158,6 +158,9 @@ def nopac_2():
                 smc3,
             )
 
+def nopac_2():
+    with computation(FORWARD), interval(0, 1):
+        if not snopac_mask:
             # convert modeled evapotranspiration fm  m s-1  to  kg m-2 s-1
             eta = eta1 * 1000.0
             edir = edir1 * 1000.0
@@ -263,9 +266,55 @@ def nopac_2():
             )
 
 class NOPAC:
-    def __init__(self):
-        self._evapo = Evaporation()
+    def __init__(
+        self,
+        stencil_factory: StencilFactory,
+        quantity_factory: QuantityFactory,
+        ivegsrc: Int,
+        lheatstrg: Bool,
+        dt: Float,
+    ):
+        grid_indexing = stencil_factory.grid_indexing
+
+        self._evapo_mask = quantity_factory.zeros(
+            dims=[X_DIM, Y_DIM],
+            units="",
+            dtype=Bool,
+        )
+
+        self._start_nopac = stencil_factory.stencil_factory.from_origin_domain(
+            func=start_nopac,
+            externals={"dt": dt},
+            origin=grid_indexing.origin_compute(),
+            domain=grid_indexing.domain_compute(),
+        )
+
+        self._evapo = EvapoTranspiration(
+            stencil_factory,
+            quantity_factory,
+            dt,
+        )
+        self._smflx = SoilMoistureFlux(
+            stencil_factory,
+            quantity_factory,
+            dt,
+        )
+
         pass
 
-    def __call__(self):
+    def __call__(
+        self,
+        snopac_mask: BoolFieldIJ
+    ):
+        self._start_nopac(
+            snopac_mask,
+            self._evapo_mask
+        )
+        self._evapo(
+            self._evapo_mask
+        )
+        self._smflx(
+            snopac_mask
+        )
+
         pass

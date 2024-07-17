@@ -1,10 +1,7 @@
 from gt4py.cartesian import gtscript
-from gt4py.cartesian.gtscript import FORWARD, PARALLEL, computation, exp, interval, log
+from gt4py.cartesian.gtscript import FORWARD, PARALLEL, computation, exp, interval
 
-import ndsl.constants as constants
-import pySHiELD.constants as physcons
-from pySHiELD.stencils.surface.noah_lsm.sfc_params import set_soil_veg
-from ndsl.constants import X_DIM, Y_DIM, Z_DIM, Z_INTERFACE_DIM
+from ndsl.constants import X_DIM, Y_DIM, Z_DIM
 
 # from pace.dsl.dace.orchestration import orchestrate
 from ndsl.dsl.stencil import StencilFactory
@@ -15,12 +12,10 @@ from ndsl.dsl.typing import (
     FloatField,
     FloatFieldIJ,
     FloatFieldK,
-    Int,
-    IntField,
-    IntFieldIJ,
 )
 from ndsl.initialization.allocator import QuantityFactory
 from ndsl.quantity import Quantity
+from ndsl.stencils.basic_operations import average_in
 
 
 @gtscript.function
@@ -64,120 +59,35 @@ def start_smflx(
     cmc,
     sh2o,
     smc,
+    sh2o_in,
+    surface_mask: BoolFieldIJ,
+    frozen_ground: BoolFieldIJ,
 ):
     from __externals__ import dt
     with computation(FORWARD), interval(0, 1):
-        # compute the right hand side of the canopy eqn term
-        rhsct = shdfac * prcp1 - ec1
+        if surface_mask:
+            # compute the right hand side of the canopy eqn term
+            rhsct = shdfac * prcp1 - ec1
 
-        drip = 0.0
-        trhsct = dt * rhsct
-        excess = cmc + trhsct
+            drip = 0.0
+            trhsct = dt * rhsct
+            excess = cmc + trhsct
 
-        if excess > cmcmax:
-            drip = excess - cmcmax
+            if excess > cmcmax:
+                drip = excess - cmcmax
 
-        # pcpdrp is the combined prcp1 and drip (from cmc) that goes into the soil
-        pcpdrp = (1.0 - shdfac) * prcp1 + drip / dt
+            # pcpdrp is the combined prcp1 and drip (from cmc) that goes into the soil
+            pcpdrp = (1.0 - shdfac) * prcp1 + drip / dt
+
+            frozen_ground = (pcpdrp * dt) > (
+                0.001 * 1000.0 * (-zsoil) * smcmax
+            )
 
     with computation(PARALLEL), interval(...):
-        # store ice content at each soil layer before calling srt and sstep
-        sice = smc - sh2o
-
-        (
-            rhstt0,
-            rhstt1,
-            rhstt2,
-            rhstt3,
-            runoff1,
-            runoff2,
-            ai0,
-            ai1,
-            ai2,
-            ai3,
-            bi0,
-            bi1,
-            bi2,
-            bi3,
-            ci0,
-            ci1,
-            ci2,
-            ci3,
-        ) = srt_fn(
-            edir1,
-            et1_0,
-            et1_1,
-            et1_2,
-            et1_3,
-            sh2o0,
-            sh2o1,
-            sh2o2,
-            sh2o3,
-            pcpdrp,
-            zsoil0,
-            zsoil1,
-            zsoil2,
-            zsoil3,
-            dwsat,
-            dksat,
-            smcmax,
-            bexp,
-            dt,
-            smcwlt,
-            slope,
-            kdt,
-            frzx,
-            sice0,
-            sice1,
-            sice2,
-            sice3,
-        )
-
-        sh2o0, sh2o1, sh2o2, sh2o3, runoff3, smc0, smc1, smc2, smc3, cmc = sstep_fn(
-            sh2o0,
-            sh2o1,
-            sh2o2,
-            sh2o3,
-            rhsct,
-            dt,
-            smcmax,
-            cmcmax,
-            zsoil0,
-            zsoil1,
-            zsoil2,
-            zsoil3,
-            sice0,
-            sice1,
-            sice2,
-            sice3,
-            cmc,
-            rhstt0,
-            rhstt1,
-            rhstt2,
-            rhstt3,
-            ai0,
-            ai1,
-            ai2,
-            ai3,
-            bi0,
-            bi1,
-            bi2,
-            bi3,
-            ci0,
-            ci1,
-            ci2,
-            ci3,
-        )
-
-        # return (
-        #     cmc,
-        #     sh2o
-        #     smc,
-        #     runoff1,
-        #     runoff2,
-        #     runoff3,
-        #     drip,
-        # )
+        if surface_mask:
+            # store ice content at each soil layer before calling srt and sstep
+            sice = smc - sh2o
+            sh2o_in = sh2o
 
 
 def srt(
@@ -201,127 +111,262 @@ def srt(
     ai: FloatField,
     bi: FloatField,
     ci: FloatField,
-    dd: FloatFieldIJ,
-    dice: FloatFieldIJ,
+    surface_mask: BoolFieldIJ,
 ):
+    """
+    ! ===================================================================== !
+    !  description:                                                         !
+    !    subroutine srt calculates the right hand side of the time tendency !
+    !    term of the soil water diffusion equation.  also to compute        !
+    !    ( prepare ) the matrix coefficients for the tri-diagonal matrix    !
+    !    of the implicit time scheme.                                       !
+    !                                                                       !
+    !  subprogram called:  wdfcnd                                           !
+    !                                                                       !
+    !                                                                       !
+    !  ====================  defination of variables  ====================  !
+    !                                                                       !
+    !  inputs:                                                       size   !
+    !     nsoil    - integer, number of soil layers                    1    !
+    !     edir     - real, direct soil evaporation                     1    !
+    !     et       - real, plant transpiration                       nsoil  !
+    !     sh2o     - real, unfrozen soil moisture                    nsoil  !
+    !     sh2oa    - real,                                           nsoil  !
+    !     pcpdrp   - real, combined prcp and drip                      1    !
+    !     zsoil    - real, soil layer depth below ground             nsoil  !
+    !     dwsat    - real, saturated soil diffusivity                  1    !
+    !     dksat    - real, saturated soil hydraulic conductivity       1    !
+    !     smcmax   - real, porosity                                    1    !
+    !     bexp     - real, soil type "b" parameter                     1    !
+    !     dt       - real, time step                                   1    !
+    !     smcwlt   - real, wilting point                               1    !
+    !     slope    - real, linear reservoir coefficient                1    !
+    !     kdt      - real,                                             1    !
+    !     frzx     - real, frozen ground parameter                     1    !
+    !     sice     - real, ice content at each soil layer            nsoil  !
+    !                                                                       !
+    !  outputs:                                                             !
+    !     rhstt    - real, soil water time tendency                  nsoil  !
+    !     runoff1  - real, surface runoff not infiltrating sfc         1    !
+    !     runoff2  - real, sub surface runoff (baseflow)               1    !
+    !     ai       - real, matrix coefficients                       nsold  !
+    !     bi       - real, matrix coefficients                       nsold  !
+    !     ci       - real, matrix coefficients                       nsold  !
+    !                                                                       !
+    !  ====================    end of description    =====================  !
+    """
     from __externals__ import dt
     with computation(FORWARD), interval(0, 1):
-        # determine rainfall infiltration rate and runoff
-        cvfrz = 3
-        pddum = pcpdrp
-        runoff1 = 0.0
-        sicemax = 0.0
+        if surface_mask:
+            # determine rainfall infiltration rate and runoff
+            cvfrz = 3
+            pddum = pcpdrp
+            runoff1 = 0.0
+            sicemax = 0.0
 
     with computation(FORWARD), interval(...):
-        sicemax = max(sice, sicemax)
+        if surface_mask:
+            sicemax = max(sice, sicemax)
 
     with computation(FORWARD):
         with interval(0, 1):
-            if pcpdrp != 0:
-                # frozen ground version
-                dt1 = dt / 86400.0
-                smcav = smcmax - smcwlt
-                dd = -zsoil * (smcav - (sh2o + sice - smcwlt))
-                dice = -zsoil * sice
+            if surface_mask:
+                if pcpdrp != 0:
+                    # frozen ground version
+                    dt1 = dt / 86400.0
+                    smcav = smcmax - smcwlt
+                    dd = -zsoil * (smcav - (sh2o + sice - smcwlt))
+                    dice = -zsoil * sice
         with interval(1, None):
-            if pcpdrp != 0:
-                dd += (zsoil[-1] - zsoil) * (smcav - (sh2o + sice - smcwlt))
+            if surface_mask:
+                if pcpdrp != 0:
+                    dd += (zsoil[-1] - zsoil) * (smcav - (sh2o + sice - smcwlt))
 
-                dice += (zsoil[-1] - zsoil) * sice
+                    dice += (zsoil[-1] - zsoil) * sice
 
     with computation(FORWARD):
         with interval(0, 1):
-            if pcpdrp != 0:
-                val = 1.0 - exp(-kdt * dt1)
-                ddt = dd * val
+            if surface_mask:
+                if pcpdrp != 0:
+                    val = 1.0 - exp(-kdt * dt1)
+                    ddt = dd * val
 
-                px = pcpdrp * dt
+                    px = pcpdrp * dt
 
-                if px < 0.0:
-                    px = 0.0
+                    if px < 0.0:
+                        px = 0.0
 
-                infmax = (px * (ddt / (px + ddt))) / dt
+                    infmax = (px * (ddt / (px + ddt))) / dt
 
-                # reduction of infiltration based on frozen ground parameters
-                fcr = 1.0
+                    # reduction of infiltration based on frozen ground parameters
+                    fcr = 1.0
 
-                if dice > 1.0e-2:
-                    acrt = cvfrz * frzx / dice
-                    ialp1 = cvfrz - 1  # = 2
+                    if dice > 1.0e-2:
+                        acrt = cvfrz * frzx / dice
+                        ialp1 = cvfrz - 1  # = 2
 
-                    # Hardcode for ialp1 = 2
-                    sum = 1.0 + acrt ** 2.0 / 2.0 + acrt
+                        # Hardcode for ialp1 = 2
+                        sum = 1.0 + acrt ** 2.0 / 2.0 + acrt
 
-                    fcr = 1.0 - exp(-acrt) * sum
+                        fcr = 1.0 - exp(-acrt) * sum
 
-                infmax *= fcr
+                    infmax *= fcr
 
-                wdf0, wcnd0 = wdfcnd_fn(sh2o, smcmax, bexp, dksat, dwsat, sicemax)
+                    wdf0, wcnd0 = wdfcnd_fn(sh2o, smcmax, bexp, dksat, dwsat, sicemax)
 
-                infmax = max(infmax, wcnd0)
-                infmax = min(infmax, px)
+                    infmax = max(infmax, wcnd0)
+                    infmax = min(infmax, px)
 
-                if pcpdrp > infmax:
-                    runoff1 = pcpdrp - infmax
-                    pddum = infmax
+                    if pcpdrp > infmax:
+                        runoff1 = pcpdrp - infmax
+                        pddum = infmax
 
-            wdf, wcnd = wdfcnd_fn(sh2o, smcmax, bexp, dksat, dwsat, sicemax)
+                wdf, wcnd = wdfcnd_fn(sh2o, smcmax, bexp, dksat, dwsat, sicemax)
 
-            # calc the matrix coefficients ai, bi, and ci for the top layer
-            ddz = 1.0 / (-0.5 * zsoil[0, 0, 1])
-            ai0 = 0.0
-            bi0 = wdf0 * ddz / (-zsoil)
-            ci0 = -bi0
+                # calc the matrix coefficients ai, bi, and ci for the top layer
+                ddz = 1.0 / (-0.5 * zsoil[0, 0, 1])
+                ai0 = 0.0
+                bi0 = wdf0 * ddz / (-zsoil)
+                ci0 = -bi0
 
-            # calc rhstt for the top layer
-            dsmdz = (sh2o - sh2o[0, 0, 1]) / (-0.5 * zsoil[0, 0, 1])
-            rhstt = (wdf0 * dsmdz + wcnd0 - pddum + edir + et) / zsoil
+                # calc rhstt for the top layer
+                dsmdz = (sh2o - sh2o[0, 0, 1]) / (-0.5 * zsoil[0, 0, 1])
+                rhstt = (wdf0 * dsmdz + wcnd0 - pddum + edir + et) / zsoil
 
     with computation(FORWARD), interval(1, -1):
-        # 2. Interior Layers
-        wdf, wcnd = wdfcnd_fn(sh2o, smcmax, bexp, dksat, dwsat, sicemax)
-        denom2 = zsoil[0, 0, -1] - zsoil
-        denom = zsoil[0, 0, -1] - zsoil[0, 0, 1]
-        dsmdz = (sh2o - sh2o[0, 0, 1]) / (denom * 0.5)
-        ddz = 2.0 / denom
-        ci = -wdf * ddz / denom2
-        slopx = 1.0
-        numer = (
-            wdf * dsmdz + slopx * wcnd - wdf[0, 0, -1] * dsmdz[0, 0, -1] - wcnd[0, 0, -1] + et
-        )
-        rhstt = -numer / denom2
+        if surface_mask:
+            # 2. Interior Layers
+            wdf, wcnd = wdfcnd_fn(sh2o, smcmax, bexp, dksat, dwsat, sicemax)
+            denom2 = zsoil[0, 0, -1] - zsoil
+            denom = zsoil[0, 0, -1] - zsoil[0, 0, 1]
+            dsmdz = (sh2o - sh2o[0, 0, 1]) / (denom * 0.5)
+            ddz = 2.0 / denom
+            ci = -wdf * ddz / denom2
+            slopx = 1.0
+            numer = (
+                wdf * dsmdz
+            ) + slopx * wcnd - wdf[0, 0, -1] * dsmdz[0, 0, -1] - wcnd[0, 0, -1] + et
+            rhstt = -numer / denom2
 
-        # calc matrix coefs
-        ai = -wdf * ddz[0, 0, -1] / denom2
-        bi = -(ai + ci)
+            # calc matrix coefs
+            ai = -wdf * ddz[0, 0, -1] / denom2
+            bi = -(ai + ci)
 
     with computation(FORWARD), interval(-1, None):
-        # 3. Bottom Layer
-        denom2 = zsoil[0, 0, -1] - zsoil
-        slopx = slope
-        wdf, wcnd = wdfcnd_fn(sh2o, smcmax, bexp, dksat, dwsat, sicemax)
-        dsmdz = 0.0
-        ci = 0.0
-        numer = (
-            wdf * dsmdz + slopx * wcnd - wdf[0, 0, -1] * dsmdz[-1] - wcnd[0, 0, -1] + et
-        )
-        rhstt = -numer / denom2
+        if surface_mask:
+            # 3. Bottom Layer
+            denom2 = zsoil[0, 0, -1] - zsoil
+            slopx = slope
+            wdf, wcnd = wdfcnd_fn(sh2o, smcmax, bexp, dksat, dwsat, sicemax)
+            dsmdz = 0.0
+            ci = 0.0
+            numer = (
+                wdf * dsmdz
+            ) + slopx * wcnd - wdf[0, 0, -1] * dsmdz[-1] - wcnd[0, 0, -1] + et
+            rhstt = -numer / denom2
 
-        # calc matrix coefs
-        ai = -wdf * ddz / denom2
-        bi = -(ai + ci)
+            # calc matrix coefs
+            ai = -wdf * ddz / denom2
+            bi = -(ai + ci)
 
-        runoff2 = slope * wcnd
+            runoff2 = slope * wcnd
 
 
 class SoilMoistureFlux:
-    def __init__(self):
+    def __init__(
+        self,
+        stencil_factory: StencilFactory,
+        quantity_factory: QuantityFactory,
+        dt: Float,
+    ):
         """
         Fortran name is smflx
         """
-        pass
 
-    def __call__(self):
+        grid_indexing = stencil_factory.grid_indexing
+
+        def make_quantity() -> Quantity:
+            return quantity_factory.zeros(
+                [X_DIM, Y_DIM, Z_DIM],
+                units="unknown",
+                dtype=Float,
+            )
+
+        def make_quantity_2d() -> Quantity:
+            return quantity_factory.zeros(
+                [X_DIM, Y_DIM],
+                units="unknown",
+                dtype=Float,
+            )
+
+        self._frozen_ground = quantity_factory.zeros(
+            dims=[X_DIM, Y_DIM],
+            units="",
+            dtype=Bool,
+        )
+
+        self._mid_sh20 = make_quantity()
+        self._ai = make_quantity()
+        self._bi = make_quantity()
+        self._ci = make_quantity()
+        self._rhstt = make_quantity()
+        self._sice = make_quantity()
+        self._pcpdrp = make_quantity_2d()
+        self._rhsct = make_quantity_2d()
+        self._trhsct = make_quantity_2d()
+        
+        self._start_smflx = stencil_factory.stencil_factory.from_origin_domain(
+            func=start_smflx,
+            externals={"dt": dt},
+            origin=grid_indexing.origin_compute(),
+            domain=grid_indexing.domain_compute(),
+        )
+
+        self._average_in = stencil_factory.stencil_factory.from_origin_domain(
+            func=average_in,
+            origin=grid_indexing.origin_compute(),
+            domain=grid_indexing.domain_compute(),
+        )
+
+        self._srt = stencil_factory.stencil_factory.from_origin_domain(
+            func=srt,
+            externals={"dt": dt},
+            origin=grid_indexing.origin_compute(),
+            domain=grid_indexing.domain_compute(),
+        )
+
+        self._sstep = SoilMoistureFlux(
+            stencil_factory,
+            quantity_factory,
+            dt
+        )
+
+    def __call__(
+        self,
+        kdt: FloatFieldIJ,
+        smcmax: FloatFieldIJ,
+        smcwlt: FloatFieldIJ,
+        cmcmax: FloatFieldIJ,
+        prcp1: FloatFieldIJ,
+        zsoil: FloatFieldK,
+        slope: FloatFieldIJ,
+        frzx: FloatFieldIJ,
+        bexp: FloatFieldIJ,
+        dksat: FloatFieldIJ,
+        dwsat: FloatFieldIJ,
+        shdfac: FloatFieldIJ,
+        edir1: FloatFieldIJ,
+        ec1: FloatFieldIJ,
+        et1: FloatField,
+        cmc: FloatFieldIJ,
+        sh2o: FloatField,
+        smc: FloatField,
+        runoff1: FloatFieldIJ,
+        runoff2: FloatFieldIJ,
+        runoff3: FloatFieldIJ,
+        drip: FloatFieldIJ,
+        surface_mask: BoolFieldIJ,
+    ):
         """
         ! ===================================================================== !
         !  description:                                                         !
@@ -368,5 +413,114 @@ class SoilMoistureFlux:
         !     drip     - real, through-fall of precip and/or dew           1    !
         !                                                                       !
         !  ====================    end of description    =====================  !
-"""
-        pass
+    """
+        self._start_smflx(
+            kdt,
+            smcmax,
+            smcwlt,
+            cmcmax,
+            prcp1,
+            zsoil,
+            slope,
+            frzx,
+            bexp,
+            dksat,
+            dwsat,
+            shdfac,
+            edir1,
+            ec1,
+            et1,
+            cmc,
+            sh2o,
+            smc,
+            self._mid_sh20,
+            surface_mask,
+            self._frozen_ground,
+        )
+
+        self._srt(
+            edir1,
+            et1,
+            sh2o,
+            self._pcpdrp,
+            zsoil,
+            dwsat,
+            dksat,
+            smcmax,
+            bexp,
+            smcwlt,
+            slope,
+            kdt,
+            frzx,
+            self._sice,
+            self._rhstt,
+            runoff1,
+            runoff2,
+            self._ai,
+            self._bi,
+            self._ci,
+            self._frozen_ground,
+        )
+
+        self._sstep(
+            sh2o,
+            self._rhsct,
+            smcmax,
+            cmcmax,
+            zsoil,
+            self._sice,
+            cmc,
+            self._rhstt,
+            self._ai,
+            self._bi,
+            self._ci,
+            runoff3,
+            smc,
+            self._frozen_ground,
+        )
+
+        self._average_in(
+            sh2o,
+            self._mid_sh20
+        )
+
+        self._srt(
+            edir1,
+            et1,
+            sh2o,
+            self._pcpdrp,
+            zsoil,
+            dwsat,
+            dksat,
+            smcmax,
+            bexp,
+            smcwlt,
+            slope,
+            kdt,
+            frzx,
+            self._sice,
+            self._rhstt,
+            runoff1,
+            runoff2,
+            self._ai,
+            self._bi,
+            self._ci,
+            surface_mask,
+        )
+
+        self._sstep(
+            sh2o,
+            self._rhsct,
+            smcmax,
+            cmcmax,
+            zsoil,
+            self._sice,
+            cmc,
+            self._rhstt,
+            self._ai,
+            self._bi,
+            self._ci,
+            runoff3,
+            smc,
+            surface_mask,
+        )

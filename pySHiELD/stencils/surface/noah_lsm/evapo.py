@@ -197,7 +197,7 @@ def finish_evaporation(
             eta1 = edir1 + ett1 + ec1
 
 
-class Evaporation:
+class EvapoTranspiration:
     def __init__(
         self,
         stencil_factory: StencilFactory,
