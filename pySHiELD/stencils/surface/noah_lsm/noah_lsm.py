@@ -912,6 +912,7 @@ def sflx_1(
     kmask: IntField,
     lsm_mask: BoolFieldIJ,
     snopac_mask: BoolFieldIJ,
+    nopac_mask: BoolFieldIJ,
 ):
     """
     Fortran docs:
@@ -1315,8 +1316,10 @@ def sflx_1(
             esnow = 0.0
 
             if sneqv == 0.0:
+                nopac_mask = True
                 snopac_mask = False
             else:
+                nopac_mask = False
                 snopac_mask = True
                 
                 

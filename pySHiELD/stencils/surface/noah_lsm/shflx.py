@@ -227,7 +227,9 @@ def start_shflx(
 
             if ice != 0:  # sea-ice or glacial ice case
                 ice_mask = True
+                no_ice_mask = False
             else:
+                ice_mask = False
                 no_ice_mask = True
 
     with computation(PARALLEL), interval(...):
