@@ -16,6 +16,7 @@ from ndsl.dsl.typing import (
 from ndsl.initialization.allocator import QuantityFactory
 from ndsl.quantity import Quantity
 from ndsl.stencils.basic_operations import average_in
+from pySHiELD.stencils.surface.noah_lsm.sstep import SoilCanopyMoisture
 
 
 @gtscript.function
@@ -335,7 +336,7 @@ class SoilMoistureFlux:
             domain=grid_indexing.domain_compute(),
         )
 
-        self._sstep = SoilMoistureFlux(
+        self._sstep = SoilCanopyMoisture(
             stencil_factory,
             quantity_factory,
             dt

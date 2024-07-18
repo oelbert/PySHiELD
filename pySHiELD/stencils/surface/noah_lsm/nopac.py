@@ -159,16 +159,16 @@ def start_nopac(
             )
 
 def nopac_2():
+    from __externals__ import dt, lheatstrg, ivegsrc
+    with computation(FORWARD), interval(...):
+        if not snopac_mask:
+            et = et1 * 1000.0
     with computation(FORWARD), interval(0, 1):
         if not snopac_mask:
             # convert modeled evapotranspiration fm  m s-1  to  kg m-2 s-1
             eta = eta1 * 1000.0
             edir = edir1 * 1000.0
             ec = ec1 * 1000.0
-            et_0 = et1_0 * 1000.0
-            et_1 = et1_1 * 1000.0
-            et_2 = et1_2 * 1000.0
-            et_3 = et1_3 * 1000.0
             ett = ett1 * 1000.0
 
             # based on etp and e values, determine beta
@@ -180,9 +180,9 @@ def nopac_2():
                 beta = eta / etp
 
             # get soil thermal diffuxivity/conductivity for top soil lyr, calc.
-            df1 = tdfcnd(smc0, quartz, smcmax, sh2o0)
+            df1 = tdfcnd(smc, quartz, smcmax, sh2o)
 
-            if (ivegsrc == 1) and (vegtype == 12):
+            if (not lheatstrg) and (ivegsrc == 1) and (vegtype == 13):
                 df1 = 3.24 * (1.0 - shdfac) + shdfac * df1 * exp(sbeta * shdfac)
             else:
                 df1 *= exp(sbeta * shdfac)
@@ -190,7 +190,10 @@ def nopac_2():
             # compute intermediate terms passed to routine hrt
             yynum = fdown - sfcems * physcons.SIGMA1 * t24
             yy = sfctmp + (yynum / rch + th2 - sfctmp - beta * epsca) / rr
-            zz1 = df1 / (-0.5 * zsoil0 * rch * rr) + 1.0
+            zz1 = df1 / (-0.5 * zsoil * rch * rr) + 1.0
+
+            flx1 = 0.0
+            flx3 = 0.0
 
             ssoil, stc0, stc1, stc2, stc3, t1, tbot, sh2o0, sh2o1, sh2o2, sh2o3 = shflx_fn(
                 smc0,
@@ -227,8 +230,6 @@ def nopac_2():
                 sh2o3,
             )
 
-            flx1 = 0.0
-            flx3 = 0.0
 
             return (
                 cmc,
