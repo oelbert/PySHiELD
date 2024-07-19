@@ -80,7 +80,7 @@ def start_nopac(
                 prcp1 += dew
 
 
-def nopac_2(
+def prep_for_flux_calc(
     etp: FloatFieldIJ,
     etp1: FloatFieldIJ,
     dew: FloatFieldIJ,
@@ -213,8 +213,8 @@ class NOPAC:
             dt,
         )
 
-        self._nopac_2 = stencil_factory.stencil_factory.from_origin_domain(
-            func=nopac_2,
+        self._prep_for_flux_calc = stencil_factory.stencil_factory.from_origin_domain(
+            func=prep_for_flux_calc,
             externals={
                 "dt": dt,
                 "lheatstrg": lheatstrg,
@@ -441,7 +441,7 @@ class NOPAC:
             nopac_mask,
         )
 
-        self._nopac_2(
+        self._prep_for_flux_calc(
             etp,
             self._etp1,
             dew,
