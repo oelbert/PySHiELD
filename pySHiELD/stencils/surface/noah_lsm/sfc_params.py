@@ -336,23 +336,24 @@ def set_soil_veg(
     hs = np.zeros_like(veg_data)
     xlai = np.zeros_like(veg_data)
     shdfac = np.zeros_like(veg_data)
+    land_mask = isl_mask >= 1
 
-    bexp[isl_mask >= 1] = BB[soil_data[isl_mask >= 1]]
-    dksat[isl_mask >= 1] = SATDK[soil_data[isl_mask >= 1]]
-    dwsat[isl_mask >= 1] = SATDW[soil_data[isl_mask >= 1]]
-    f1[isl_mask >= 1] = F11[soil_data[isl_mask >= 1]]
+    bexp[land_mask] = BB[soil_data[land_mask]]
+    dksat[land_mask] = SATDK[soil_data[land_mask]]
+    dwsat[land_mask] = SATDW[soil_data[land_mask]]
+    f1[land_mask] = F11[soil_data[land_mask]]
 
-    psisat[isl_mask >= 1] = SATPSI[soil_data[isl_mask >= 1]]
-    quartz[isl_mask >= 1] = QTZ[soil_data[isl_mask >= 1]]
-    smcdry[isl_mask >= 1] = DRYSMC[soil_data[isl_mask >= 1]]
-    smcmax[isl_mask >= 1] = MAXSMC[soil_data[isl_mask >= 1]]
-    smcref[isl_mask >= 1] = REFSMC[soil_data[isl_mask >= 1]]
-    smcwlt[isl_mask >= 1] = WLTSMC[soil_data[isl_mask >= 1]]
+    psisat[land_mask] = SATPSI[soil_data[land_mask]]
+    quartz[land_mask] = QTZ[soil_data[land_mask]]
+    smcdry[land_mask] = DRYSMC[soil_data[land_mask]]
+    smcmax[land_mask] = MAXSMC[soil_data[land_mask]]
+    smcref[land_mask] = REFSMC[soil_data[land_mask]]
+    smcwlt[land_mask] = WLTSMC[soil_data[land_mask]]
 
     kdt = physcons.REFKDT * dksat / physcons.REFDK
 
-    frzfact[isl_mask >= 1] = (
-        smcmax[isl_mask >= 1] / smcref[isl_mask >= 1]
+    frzfact[land_mask] = (
+        smcmax[land_mask] / smcref[land_mask]
     ) * (0.412 / 0.468)
 
     # to adjust frzk parameter to actual soil type: frzk * frzfact
@@ -361,14 +362,14 @@ def set_soil_veg(
     nroot[isl_mask == 1] = NROOT_DATA[veg_data[isl_mask == 1]]
     zroot[isl_mask == 1] = ZSOIL_DATA[nroot[isl_mask == 1] - 1]
 
-    snup[isl_mask >= 1] = SNUPX[veg_data[isl_mask >= 1]]
-    rsmin[isl_mask >= 1] = RSMTBL[veg_data[isl_mask >= 1]]
+    snup[land_mask] = SNUPX[veg_data[land_mask]]
+    rsmin[land_mask] = RSMTBL[veg_data[land_mask]]
 
-    rgl[isl_mask >= 1] = RGLTBL[veg_data[isl_mask >= 1]]
-    hs[isl_mask >= 1] = HSTBL[veg_data[isl_mask >= 1]]
+    rgl[land_mask] = RGLTBL[veg_data[land_mask]]
+    hs[land_mask] = HSTBL[veg_data[land_mask]]
     # roughness length is not set here
-    # z0[isl_mask >= 1] = Z0_DATA[veg_data[isl_mask >= 1]]
-    xlai[isl_mask >= 1] = LAI_DATA[veg_data[isl_mask >= 1]]
+    # z0[land_mask] = Z0_DATA[veg_data[land_mask]]
+    xlai[land_mask] = LAI_DATA[veg_data[land_mask]]
 
     shdfac = max(vegfrac_data, 0.01)
     shdfac[veg_data == BARE] = 0.0
@@ -415,4 +416,5 @@ def set_soil_veg(
         shdfac,
         frzx,
         rtdis,
+        land_mask
     )
