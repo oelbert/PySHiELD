@@ -13,6 +13,7 @@ from ndsl.dsl.typing import (
 )
 from ndsl.initialization.allocator import QuantityFactory
 from ndsl.stencils.tridiag import tridiag_solve
+import pySHiELD.constants as physcons
 
 def init_sstep(
     rhstt: FloatField,
@@ -34,7 +35,6 @@ def finish_sstep(
     sh2o: FloatField,
     rhsct: FloatFieldIJ,
     smcmax: FloatFieldIJ,
-    cmcmax: FloatFieldIJ,
     zsoil: FloatFieldK,
     sice: FloatFieldIJ,
     cmc: FloatFieldIJ,
@@ -72,7 +72,7 @@ def finish_sstep(
             cmc += dt * rhsct
             if cmc < 1.0e-20:
                 cmc = 0.0
-            cmc = min(cmc, cmcmax)
+            cmc = min(cmc, physcons.CMCMAX)
 
 
 class SoilCanopyMoisture:
@@ -124,7 +124,6 @@ class SoilCanopyMoisture:
         sh2o: FloatField,
         rhsct: FloatFieldIJ,
         smcmax: FloatFieldIJ,
-        cmcmax: FloatFieldIJ,
         zsoil: FloatFieldK,
         sice: FloatField,
         cmc: FloatFieldIJ,
@@ -192,7 +191,6 @@ class SoilCanopyMoisture:
             sh2o,
             rhsct,
             smcmax,
-            cmcmax,
             zsoil,
             sice,
             cmc,

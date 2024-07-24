@@ -68,14 +68,10 @@ def canres(
     zsoil: FloatField,
     zroot: FloatFieldIJ,
     rsmin: FloatFieldIJ,
-    rsmax: FloatFieldIJ,
-    topt: FloatFieldIJ,
     rgl: FloatFieldIJ,
     hs: FloatFieldIJ,
     xlai: FloatFieldIJ,
     k_mask: IntFieldIJ,
-    flag_iter: BoolFieldIJ,
-    land: BoolFieldIJ,
     shdfac: FloatFieldIJ,
     rc: FloatFieldIJ,
     pc: FloatFieldIJ,
@@ -83,21 +79,22 @@ def canres(
     rct: FloatFieldIJ,
     rcq: FloatFieldIJ,
     rcsoil: FloatFieldIJ,
+    lsm_mask: BoolFieldIJ,
 ):
     with computation(FORWARD):
         with interval(0, 1):
-            if flag_iter and land:
+            if lsm_mask:
                 if shdfac > 0.0:
                     # calculates canopy resistance
 
                     # contribution due to incoming solar radiation
                     ff = 0.55 * 2.0 * swdn / (rgl * xlai)
-                    rcs = (ff + rsmin / rsmax) / (1.0 + ff)
+                    rcs = (ff + rsmin / physcons.RSMAX) / (1.0 + ff)
                     rcs = max(rcs, 0.0001)
 
                     # contribution due to air temperature
                     # at first model level above ground
-                    rct = 1.0 - 0.0016 * (topt - sfctmp) ** 2.0
+                    rct = 1.0 - 0.0016 * (physcons.TOPT - sfctmp) ** 2.0
                     rct = max(rct, 0.0001)
 
                     # contribution due to vapor pressure deficit at first model level.
@@ -113,13 +110,13 @@ def canres(
                         gx = max(0.0, min(1.0, (sh2o - smcwlt) / (smcref - smcwlt)))
                         rcsoil = rcsoil + (zsoil / zroot * gx)
         with interval(1, None):
-            if flag_iter and land:
+            if lsm_mask:
                 if shdfac > 0.0:
                     if (k_mask < nroot):
                         gx = max(0.0, min(1.0, (sh2o - smcwlt) / (smcref - smcwlt)))
                         rcsoil = rcsoil + ((zsoil - zsoil[0, 0, -1]) / zroot * gx)
     with computation(FORWARD), interval(0, 1):
-        if flag_iter and land:
+        if lsm_mask:
             if shdfac > 0.0:
                 rcsoil = max(rcsoil, 0.0001)
 
@@ -280,10 +277,18 @@ def init_lsm(
     snowc: FloatFieldIJ,
     snohf: FloatFieldIJ,
     q0: FloatFieldIJ,
+    qsi: FloatFieldIJ,
+    dqsdt2: FloatFieldIJ,
     theta1: FloatFieldIJ,
+    cmc: FloatFieldIJ,
     chh: FloatFieldIJ,
     cmm: FloatFieldIJ,
     z0: FloatFieldIJ,
+    prcp: FloatFieldIJ,
+    snowh: FloatFieldIJ,
+    sneqv: FloatFieldIJ,
+    rho: FloatFieldIJ,
+    ice: BoolFieldIJ,
     land: BoolFieldIJ,
     flag_guess: BoolFieldIJ,
     flag_iter: BoolFieldIJ,
@@ -379,13 +384,13 @@ def sflx_1(
     snoalb: FloatFieldIJ,
     bexpp: FloatFieldIJ,
     xlaip: FloatFieldIJ,
-    tbot: FloatFieldIJ,
     cmc: FloatFieldIJ,
     t1: FloatFieldIJ,
     stc: FloatField,
     smc: FloatField,
     sh2o: FloatField,
     sneqv: FloatFieldIJ,
+    sndens: FloatFieldIJ,
     ch: FloatFieldIJ,
     cm: FloatFieldIJ,
     z0: FloatFieldIJ,
@@ -412,6 +417,28 @@ def sflx_1(
     shdfac: FloatFieldIJ,
     frzx: FloatFieldIJ,
     rtdis: FloatFieldIJ,
+    df1: FloatFieldIJ,
+    t24: FloatFieldIJ,
+    fdown: FloatFieldIJ,
+    epsca: FloatFieldIJ,
+    etp: FloatFieldIJ,
+    rr: FloatFieldIJ,
+    rch: FloatFieldIJ,
+    flx2: FloatFieldIJ,
+    prcp1: FloatFieldIJ,
+    rc: FloatFieldIJ,
+    rcs: FloatFieldIJ,
+    rct: FloatFieldIJ,
+    rcq: FloatFieldIJ,
+    rcsoil: FloatFieldIJ,
+    runoff1: FloatFieldIJ,
+    runoff2: FloatFieldIJ,
+    runoff3: FloatFieldIJ,
+    snomlt: FloatFieldIJ,
+    pc: FloatFieldIJ,
+    esnow: FloatFieldIJ,
+    t2v: FloatFieldIJ,
+    snowng: BoolFieldIJ,
     k_mask: IntField,
     lsm_mask: BoolFieldIJ,
     snopac_mask: BoolFieldIJ,
@@ -708,7 +735,7 @@ def sflx_1(
                 else:
                     df1 = df1 * exp(physcons.SBETA * shdfac)
 
-            # finally "plane parallel" snowpack effect following 
+            # finally "plane parallel" snowpack effect following
             # v.j. linardini reference cited above. note that dtot is
             # combined depth of snowdepth and thickness of first soil layer
 
@@ -905,21 +932,12 @@ def sflx_2(
 
 
 def finalize_outputs(
-    eta: FloatFieldIJ,
-    sheat: FloatFieldIJ,
-    ssoil: FloatFieldIJ,
-    edir: FloatFieldIJ,
-    ec: FloatFieldIJ,
-    ett: FloatFieldIJ,
-    esnow: FloatFieldIJ,
-    sncovr: FloatFieldIJ,
     soilm: FloatFieldIJ,
     flx1: FloatFieldIJ,
     flx2: FloatFieldIJ,
     flx3: FloatFieldIJ,
     smcwlt: FloatFieldIJ,
     smcref: FloatFieldIJ,
-    etp: FloatFieldIJ,
     smcmax: FloatFieldIJ,
     runoff1: FloatFieldIJ,
     runoff2: FloatFieldIJ,
@@ -945,16 +963,11 @@ def finalize_outputs(
     evap: FloatFieldIJ,
     hflx: FloatFieldIJ,
     gflux: FloatFieldIJ,
-    vbs: FloatFieldIJ,
-    evcw: FloatFieldIJ,
-    trans: FloatFieldIJ,
-    sbsno: FloatFieldIJ,
     snowc: FloatFieldIJ,
     stm: FloatFieldIJ,
     snohf: FloatFieldIJ,
     smcwlt2: FloatFieldIJ,
     smcref2: FloatFieldIJ,
-    ep: FloatFieldIJ,
     wet1: FloatFieldIJ,
     runoff: FloatFieldIJ,
     drain: FloatFieldIJ,
@@ -976,23 +989,12 @@ def finalize_outputs(
 ):
     with computation(FORWARD), interval(0, 1):
         if lsm_mask:
-            # output
-            evap = eta
-            hflx = sheat
-            gflux = ssoil
-
-            evbs = edir
-            evcw = ec
-            trans = ett
-            sbsno = esnow
-            snowc = sncovr
-            stm = soilm * 1000.0
+            stm *= 1000.0
             snohf = flx1 + flx2 + flx3
 
             smcwlt2 = smcwlt
             smcref2 = smcref
 
-            ep = etp
             wet1 = smc / smcmax
 
             runoff = runoff1 * 1000.0
@@ -1001,7 +1003,7 @@ def finalize_outputs(
             canopy = cmc * 1000.0
             snwdph = snowh * 1000.0
             weasd = sneqv * 1000.0
-            sncovr1 = sncovr
+            sncovr1 = snowc
             zorl = z0 * 100.0
 
             # compute qsurf
@@ -1099,6 +1101,7 @@ class NoahLSM:
             frzx,
             rtdis,
             land,
+            ice,
         ) = set_soil_veg(land_data, veg_data, soil_data, vegfrac_data)
 
         self._vegtype = quantity_factory.from_array(
@@ -1125,6 +1128,12 @@ class NoahLSM:
             units="",
             dtype=Bool
         )
+        self._ice = quantity_factory.from_array(
+            ice,
+            dims=[X_DIM, Y_DIM],
+            units="",
+            dtype=Bool
+        )
         self._nroot = quantity_factory.from_array(
             nroot, dims=[X_DIM, Y_DIM], units=""
         )
@@ -1133,9 +1142,6 @@ class NoahLSM:
         )
         self._sldpth = quantity_factory.from_array(
             sldpth, dims=[X_DIM, Y_DIM, Z_INTERFACE_DIM], units="m"
-        )
-        self._zsoil = quantity_factory.from_array(
-            sldpth, dims=[X_DIM, Y_DIM, Z_DIM], units="m"
         )
         self._snup = quantity_factory.from_array(
             snup, dims=[X_DIM, Y_DIM], units=""
@@ -1194,8 +1200,29 @@ class NoahLSM:
         self._rtdis = quantity_factory.from_array(
             rtdis, dims=[X_DIM, Y_DIM, Z_DIM], units=""
         )
+        self._zsoil = quantity_factory.from_array(
+            zsoil, dims=[Z_DIM], units=""
+        )
 
         self._lsm_mask = quantity_factory.zeros(
+            dims=[X_DIM, Y_DIM],
+            units="",
+            dtype=Bool,
+        )
+
+        self._snopac_mask = quantity_factory.zeros(
+            dims=[X_DIM, Y_DIM],
+            units="",
+            dtype=Bool,
+        )
+
+        self._nopac_mask = quantity_factory.zeros(
+            dims=[X_DIM, Y_DIM],
+            units="",
+            dtype=Bool,
+        )
+
+        self._snowng = quantity_factory.zeros(
             dims=[X_DIM, Y_DIM],
             units="",
             dtype=Bool,
@@ -1204,7 +1231,9 @@ class NoahLSM:
         self._smc_old = make_quantity()
         self._stc_old = make_quantity()
         self._slc_old = make_quantity()
+        self._et = make_quantity()
 
+        self._rho = make_quantity_2d()
         self._q0 = make_quantity_2d()
         self._theta1 = make_quantity_2d()
         self._z0 = make_quantity_2d()
@@ -1214,6 +1243,39 @@ class NoahLSM:
         self._canopy_old = make_quantity_2d()
         self._tprcp_old = make_quantity_2d()
         self._srflag_old = make_quantity_2d()
+        self._prcp = make_quantity_2d()
+        self._qsi = make_quantity_2d()
+        self._dqsdt2 = make_quantity_2d()
+        self._cmc = make_quantity_2d()
+        self._snowh = make_quantity_2d()
+        self._sneqv = make_quantity_2d()
+        self._sndens = make_quantity_2d()
+        self._rc = make_quantity_2d()
+        self._pc = make_quantity_2d()
+        self._rcs = make_quantity_2d()
+        self._rct = make_quantity_2d()
+        self._rcq = make_quantity_2d()
+        self._rcsoil = make_quantity_2d()
+        self._df1 = make_quantity_2d()
+        self._t24 = make_quantity_2d()
+        self._fdown = make_quantity_2d()
+        self._epsca = make_quantity_2d()
+        self._rr = make_quantity_2d()
+        self._rch = make_quantity_2d()
+        self._flx2 = make_quantity_2d()
+        self._prcp1 = make_quantity_2d()
+        self._runoff1 = make_quantity_2d()
+        self._runoff2 = make_quantity_2d()
+        self._runoff3 = make_quantity_2d()
+        self._snomlt = make_quantity_2d()
+        self._esnow = make_quantity_2d()
+        self._drip = make_quantity_2d()
+        self._dew = make_quantity_2d()
+        self._flx1 = make_quantity_2d()
+        self._flx3 = make_quantity_2d()
+        self._beta = make_quantity_2d()
+        self._t2v = make_quantity_2d()
+        self._soilw = make_quantity_2d()
 
         self._init_lsm = stencil_factory.from_origin_domain(
             func=init_lsm,
@@ -1284,12 +1346,12 @@ class NoahLSM:
         prslki: FloatFieldIJ,
         zf: FloatFieldIJ,
         wind: FloatFieldIJ,
-        shdmin: FloatFieldIJ,
-        shdmax: FloatFieldIJ,
         snoalb: FloatFieldIJ,
         sfalb: FloatFieldIJ,
         flag_iter: BoolFieldIJ,
         flag_guess: BoolFieldIJ,
+        bexppert: FloatFieldIJ,
+        xlaipert: FloatFieldIJ,
         weasd: FloatFieldIJ,
         snwdph: FloatFieldIJ,
         tskin: FloatFieldIJ,
@@ -1321,6 +1383,7 @@ class NoahLSM:
         smcwlt2: FloatFieldIJ,
         smcref2: FloatFieldIJ,
         wet1: FloatFieldIJ,
+        k_mask: IntField,
     ):
         """
         !  ====================  defination of variables  ====================  !
@@ -1424,50 +1487,301 @@ class NoahLSM:
             snowc,
             snohf,
             self._q0,
+            self._qsi,
+            self._dqsdt2,
             self._theta1,
+            self._cmc,
             chh,
             cmm,
             self._z0,
+            self._prcp,
+            self._snowh,
+            self._sneqv,
+            self._rho,
+            self._ice,
             self._land,
             flag_guess,
             flag_iter,
             self._lsm_mask,
         )
 
-        self._sflx_1()
+        self._sflx_1(
+            self._ice,
+            srflag,
+            self._zsoil,
+            dswflx,
+            snet,
+            dlwflx,
+            sfcemis,
+            prsl1,
+            t1,
+            self._prcp,
+            self._q0,
+            self._qsi,
+            self._dqsdt2,
+            self._theta1,
+            self._vegtype,
+            self._soiltype,
+            self._slope,
+            sfalb,
+            snoalb,
+            bexppert,
+            xlaipert,
+            self._cmc,
+            t1,
+            stc,
+            smc,
+            slc,
+            self._sneqv,
+            self._sndens,
+            ch,
+            cm,
+            self._z0,
+            self._snowh,
+            self._nroot,
+            self._zroot,
+            self._sldpth,
+            self._snup,
+            self._rsmin,
+            self._rgl,
+            self._hs,
+            self._xlai,
+            self._bexp,
+            self._dksat,
+            self._dwsat,
+            self._f1,
+            self._kdt,
+            self._psisat,
+            self._quartz,
+            self._smcdry,
+            self._smcmax,
+            self._smcref,
+            self._smcwlt,
+            self._shdfac,
+            self._frzx,
+            self._rtdis,
+            self._df1,
+            self._t24,
+            self._fdown,
+            self._epsca,
+            ep,
+            self._rr,
+            self._rch,
+            self._flx2,
+            self._prcp1,
+            self._rc,
+            self._rcs,
+            self._rct,
+            self._rcq,
+            self._rcsoil,
+            self._runoff1,
+            self._runoff2,
+            self._runoff3,
+            self._snomlt,
+            self._pc,
+            self._esnow,
+            self._t2v,
+            self._snowng,
+            k_mask,
+            self._lsm_mask,
+            self._snopac_mask,
+            self._nopac_mask,
+        )
 
-        self._canres()
+        self._canres(
+            self._nroot,
+            dswflx,
+            ch,
+            self._q0,
+            self._qsi,
+            self._dqsdt2,
+            t1,
+            prsl1,
+            sfcemis,
+            slc,
+            self._smcwlt,
+            self._smcref,
+            self._zsoil,
+            self._zroot,
+            self._rsmin,
+            self._rgl,
+            self._hs,
+            self._xlai,
+            k_mask,
+            self._shdfac,
+            self._rc,
+            self._pc,
+            self._rcs,
+            self._rct,
+            self._rcq,
+            self._rcsoil,
+            self._lsm_mask,
+        )
 
-        self._snopac()
+        self._snopac(
+            self._nroot,
+            ep,
+            self._prcp,
+            self._smcmax,
+            self._smcwlt,
+            self._smcref,
+            self._smcdry,
+            self._df1,
+            sfcemis,
+            t1,
+            self._t24,
+            self._theta1,
+            self._fdown,
+            self._epsca,
+            self._bexp,
+            self._pc,
+            self._rch,
+            self._rr,
+            self._slope,
+            self._kdt,
+            self._frzx,
+            self._psisat,
+            self._zsoil,
+            self._dwsat,
+            self._dksat,
+            self._shdfac,
+            self._ice,
+            self._rtdis,
+            self._quartz,
+            self._flx2,
+            self._snowng,
+            srflag,
+            self._vegtype,
+            self._prcp1,
+            self._cmc,
+            t1,
+            stc,
+            snowc,
+            self._sneqv,
+            self._sndens,
+            self._snowh,
+            slc,
+            tg3,
+            smc,
+            gflux,
+            self._runoff1,
+            self._runoff2,
+            self._runoff3,
+            evbs,
+            evcw,
+            self._et,
+            trans,
+            self._snomlt,
+            self._drip,
+            self._dew,
+            self._flx1,
+            self._flx3,
+            sbsno,
+            self._snopac_mask,
+            k_mask,
+        )
 
-        self._nopac()
+        self._nopac(
+            self._nroot,
+            ep,
+            self._prcp,
+            self._smcmax,
+            self._smcwlt,
+            self._smcref,
+            self._smcdry,
+            self._shdfac,
+            t1,
+            sfcemis,
+            self._t24,
+            self._theta1,
+            self._fdown,
+            self._epsca,
+            self._bexp,
+            self._pc,
+            self._rch,
+            self._rr,
+            self._slope,
+            self._kdt,
+            self._frzx,
+            self._psisat,
+            self._zsoil,
+            self._dksat,
+            self._dwsat,
+            self._ice,
+            self._rtdis,
+            self._quartz,
+            self._vegtype,
+            self._cmc,
+            t1,
+            stc,
+            slc,
+            tg3,
+            smc,
+            evap,
+            gflux,
+            self._runoff1,
+            self._runoff2,
+            self._runoff3,
+            evbs,
+            evcw,
+            self._et,
+            trans,
+            self._beta,
+            self._drip,
+            self._dew,
+            self._flx1,
+            self._flx3,
+            k_mask,
+            self._nopac_mask,
+        )
 
-        self._sflx_2()
+        self._sflx_2(
+            self._nroot,
+            self._zsoil,
+            self._ice,
+            self._t2v,
+            self._theta1,
+            prsl1,
+            t1,
+            smc,
+            ch,
+            evap,
+            hflx,
+            evcw,
+            evbs,
+            self._et,
+            trans,
+            sbsno,
+            self._beta,
+            ep,
+            gflux,
+            self._runoff1,
+            self._runoff2,
+            self._runoff3,
+            self._snomlt,
+            snowc,
+            self._soilw,
+            stm,
+            self._smcwlt,
+            self._smcmax,
+            self._lsm_mask,
+            k_mask,
+        )
 
         self._finalize_outputs(
-            eta,
-            sheat,
-            ssoil,
-            edir,
-            ec,
-            ett,
-            esnow,
-            sncovr,
-            soilm,
-            flx1,
-            flx2,
-            flx3,
-            smcwlt,
-            smcref,
-            etp,
-            smcmax,
-            runoff1,
-            runoff2,
-            cmc,
-            snowh,
-            sneqv,
-            z0,
-            rho,
+            self._flx1,
+            self._flx2,
+            self._flx3,
+            self._smcwlt,
+            self._smcref,
+            self._smcmax,
+            self._runoff1,
+            self._runoff2,
+            self._cmc,
+            self._snowh,
+            self._sneqv,
+            self._z0,
+            self._rho,
             ch,
             wind,
             q1,
@@ -1485,16 +1799,11 @@ class NoahLSM:
             evap,
             hflx,
             gflux,
-            vbs,
-            evcw,
-            trans,
-            sbsno,
             snowc,
             stm,
             snohf,
             smcwlt2,
             smcref2,
-            ep,
             wet1,
             runoff,
             drain,
@@ -1503,7 +1812,7 @@ class NoahLSM:
             weasd,
             sncovr1,
             zorl,
-            rch,
+            self._rch,
             qsurf,
             stc,
             slc,

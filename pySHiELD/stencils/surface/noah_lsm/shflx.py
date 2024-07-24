@@ -319,12 +319,10 @@ def hrt(
     yy: FloatFieldIJ,
     zz1: FloatFieldIJ,
     tbot: FloatFieldIJ,
-    zbot: FloatFieldIJ,
     psisat: FloatFieldIJ,
     bexp: FloatFieldIJ,
     df1: FloatFieldIJ,
     quartz: FloatFieldIJ,
-    csoil: FloatFieldIJ,
     vegtype: IntFieldIJ,
     shdfac: FloatFieldIJ,
     sh2o: FloatField,
@@ -339,10 +337,10 @@ def hrt(
     with computation(FORWARD):
         with interval(0, 1):
             if surface_mask:
-                csoil_loc = csoil
+                csoil_loc = physcons.CSOIL
 
                 if (not lheatstrg) and (ivegsrc == 1) and (vegtype == 13):
-                    csoil_loc = 3.0e6 * (1.0 - shdfac) + csoil * shdfac
+                    csoil_loc = 3.0e6 * (1.0 - shdfac) + physcons.CSOIL * shdfac
 
                 # calc the heat capacity of the top soil layer
                 hcpct = (
@@ -451,10 +449,10 @@ def hrt(
                     df1k = 3.24 * (1.0 - shdfac) + shdfac * df1k
 
                 tbk = stc + (tbot - stc) * (zsoil[0, 0, -1] - zsoil) / (
-                    zsoil[0, 0, -1] + zsoil - 2.0 * zbot
+                    zsoil[0, 0, -1] + zsoil - 2.0 * physcons.ZBOT
                 )
 
-                denom = 0.5 * (zsoil[0, 0, -1] + zsoil) - zbot
+                denom = 0.5 * (zsoil[0, 0, -1] + zsoil) - physcons.ZBOT
                 dtsdz = (stc - tbot) / denom
                 ci = 0.0
 
@@ -642,13 +640,11 @@ class SoilHeatFlux:
         yy: FloatFieldIJ,
         zz1: FloatFieldIJ,
         zsoil: FloatFieldK,
-        zbot: FloatFieldIJ,
         psisat: FloatFieldIJ,
         bexp: FloatFieldIJ,
         df1: FloatFieldIJ,
         ice: IntFieldIJ,
         quartz: FloatFieldIJ,
-        csoil: FloatFieldIJ,
         vegtype: IntFieldIJ,
         shdfac: FloatFieldIJ,
         stc: FloatField,
@@ -739,12 +735,10 @@ class SoilHeatFlux:
             yy,
             zz1,
             tbot,
-            zbot,
             psisat,
             bexp,
             df1,
             quartz,
-            csoil,
             vegtype,
             shdfac,
             sh2o,

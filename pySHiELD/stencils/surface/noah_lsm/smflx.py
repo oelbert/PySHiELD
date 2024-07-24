@@ -17,6 +17,7 @@ from ndsl.initialization.allocator import QuantityFactory
 from ndsl.quantity import Quantity
 from ndsl.stencils.basic_operations import average_in
 from pySHiELD.stencils.surface.noah_lsm.sstep import SoilCanopyMoisture
+import pySHiELD.constants as physcons
 
 
 @gtscript.function
@@ -45,7 +46,6 @@ def start_smflx(
     kdt,
     smcmax,
     smcwlt,
-    cmcmax,
     prcp1,
     zsoil,
     slope,
@@ -74,8 +74,8 @@ def start_smflx(
             trhsct = dt * rhsct
             excess = cmc + trhsct
 
-            if excess > cmcmax:
-                drip = excess - cmcmax
+            if excess > physcons.CMCMAX:
+                drip = excess - physcons.CMCMAX
 
             # pcpdrp is the combined prcp1 and drip (from cmc) that goes into the soil
             pcpdrp = (1.0 - shdfac) * prcp1 + drip / dt
@@ -347,7 +347,6 @@ class SoilMoistureFlux:
         kdt: FloatFieldIJ,
         smcmax: FloatFieldIJ,
         smcwlt: FloatFieldIJ,
-        cmcmax: FloatFieldIJ,
         prcp1: FloatFieldIJ,
         zsoil: FloatFieldK,
         slope: FloatFieldIJ,
@@ -419,7 +418,6 @@ class SoilMoistureFlux:
             kdt,
             smcmax,
             smcwlt,
-            cmcmax,
             prcp1,
             zsoil,
             slope,
@@ -467,7 +465,6 @@ class SoilMoistureFlux:
             sh2o,
             self._rhsct,
             smcmax,
-            cmcmax,
             zsoil,
             self._sice,
             cmc,
@@ -513,7 +510,6 @@ class SoilMoistureFlux:
             sh2o,
             self._rhsct,
             smcmax,
-            cmcmax,
             zsoil,
             self._sice,
             cmc,

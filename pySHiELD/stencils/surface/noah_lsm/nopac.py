@@ -102,7 +102,6 @@ def prep_for_flux_calc(
     df1: FloatFieldIJ,
     vegtype: IntFieldIJ,
     shdfac: FloatFieldIJ,
-    sbeta: FloatFieldIJ,
     fdown: FloatFieldIJ,
     t24: FloatFieldIJ,
     th2: FloatFieldIJ,
@@ -141,9 +140,9 @@ def prep_for_flux_calc(
             df1 = tdfcnd(smc, quartz, smcmax, sh2o)
 
             if (not lheatstrg) and (ivegsrc == 1) and (vegtype == 13):
-                df1 = 3.24 * (1.0 - shdfac) + shdfac * df1 * exp(sbeta * shdfac)
+                df1 = 3.24 * (1.0 - shdfac) + shdfac * df1 * exp(physcons.SBETA * shdfac)
             else:
-                df1 *= exp(sbeta * shdfac)
+                df1 *= exp(physcons.SBETA * shdfac)
 
             # compute intermediate terms passed to routine hrt
             yynum = fdown - sfcems * physcons.SIGMA1 * t24
@@ -241,9 +240,7 @@ class NOPAC:
         smcwlt: FloatFieldIJ,
         smcref: FloatFieldIJ,
         smcdry: FloatFieldIJ,
-        cmcmax: FloatFieldIJ,
         shdfac: FloatFieldIJ,
-        sbeta: FloatFieldIJ,
         sfctmp: FloatFieldIJ,
         sfcems: FloatFieldIJ,
         t24: FloatFieldIJ,
@@ -254,7 +251,6 @@ class NOPAC:
         pc: FloatFieldIJ,
         rch: FloatFieldIJ,
         rr: FloatFieldIJ,
-        cfactr: FloatFieldIJ,
         slope: FloatFieldIJ,
         kdt: FloatFieldIJ,
         frzx: FloatFieldIJ,
@@ -262,12 +258,9 @@ class NOPAC:
         zsoil: FloatFieldK,
         dksat: FloatFieldIJ,
         dwsat: FloatFieldIJ,
-        zbot: FloatFieldIJ,
         ice: IntFieldIJ,
         rtdis: FloatField,
         quartz: FloatFieldIJ,
-        fxexp: FloatFieldIJ,
-        csoil: FloatFieldIJ,
         vegtype: IntFieldIJ,
         cmc: FloatFieldIJ,
         t1: FloatFieldIJ,
@@ -394,7 +387,6 @@ class NOPAC:
         self._evapo(
             nroot,
             cmc,
-            cmcmax,
             self._etp1,
             sh2o,
             smcmax,
@@ -403,9 +395,7 @@ class NOPAC:
             smcdry,
             pc,
             shdfac,
-            cfactr,
             rtdis,
-            fxexp,
             self._eta1,
             self._edir1,
             self._ec1,
@@ -419,7 +409,6 @@ class NOPAC:
             kdt,
             smcmax,
             smcwlt,
-            cmcmax,
             self._prcp1,
             zsoil,
             slope,
@@ -463,7 +452,6 @@ class NOPAC:
             self._df1,
             vegtype,
             shdfac,
-            sbeta,
             fdown,
             t24,
             th2,
@@ -485,13 +473,11 @@ class NOPAC:
             self._yy,
             self._zz1,
             zsoil,
-            zbot,
             psisat,
             bexp,
             self._df1,
             ice,
             quartz,
-            csoil,
             vegtype,
             shdfac,
             stc,

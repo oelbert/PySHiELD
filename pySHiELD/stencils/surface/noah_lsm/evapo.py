@@ -15,15 +15,16 @@ from ndsl.dsl.typing import (
     IntFieldIJ,
 )
 from ndsl.initialization.allocator import QuantityFactory
+import pySHiELD.constants as physcons
 
 
 @gtscript.function
-def devap_fn(etp1, smc, shdfac, smcmax, smcdry, fxexp):
+def devap_fn(etp1, smc, shdfac, smcmax, smcdry):
     # calculates direct soil evaporation
     sratio = (smc - smcdry) / (smcmax - smcdry)
 
     if sratio > 0.0:
-        fx = sratio ** fxexp
+        fx = sratio ** physcons.FXEXP
         fx = max(min(fx, 1.0), 0.0)
     else:
         fx = 0.0
@@ -39,7 +40,6 @@ def start_evaporation(
     smcmax: FloatFieldIJ,
     smcdry: FloatFieldIJ,
     shdfac: FloatFieldIJ,
-    fxexp: FloatFieldIJ,
     ec1: FloatFieldIJ,
     ett1: FloatFieldIJ,
     edir1: FloatFieldIJ,
@@ -60,7 +60,7 @@ def start_evaporation(
             if etp1 > 0.0:
                 # retrieve direct evaporation from soil surface.
                 if shdfac < 1.0:
-                    edir1 = devap_fn(etp1, sh2o, shdfac, smcmax, smcdry, fxexp)
+                    edir1 = devap_fn(etp1, sh2o, shdfac, smcmax, smcdry)
                     # edir1 = 4.250472271407341e-10
 
                 # initialize plant total transpiration, retrieve plant
@@ -75,10 +75,8 @@ def transpiration(
     smcwlt: FloatFieldIJ,
     smcref: FloatFieldIJ,
     cmc: FloatFieldIJ,
-    cmcmax: FloatFieldIJ,
     shdfac: FloatFieldIJ,
     pc: FloatFieldIJ,
-    cfactr: FloatFieldIJ,
     rtdis: FloatField,
     et1: FloatField,
     sgx: FloatFieldIJ,
@@ -126,7 +124,7 @@ def transpiration(
         if transp_mask:
             if cmc != 0.0:
                 etp1a = shdfac * pc * etp1 * (
-                    1.0 - (cmc / cmcmax) ** cfactr
+                    1.0 - (cmc / physcons.CMCMAX) ** physcons.CFACTR
                 )
             else:
                 etp1a = shdfac * pc * etp1
@@ -162,8 +160,6 @@ def transpiration(
 
 def finish_evaporation(
     cmc: FloatFieldIJ,
-    cmcmax: FloatFieldIJ,
-    cfactr: FloatFieldIJ,
     eta1: FloatFieldIJ,
     edir1: FloatFieldIJ,
     ec1: FloatFieldIJ,
@@ -185,7 +181,7 @@ def finish_evaporation(
                 if shdfac > 0.0:
                     # calculate canopy evaporation.
                     if cmc > 0.0:
-                        ec1 = shdfac * ((cmc / cmcmax) ** cfactr) * etp1
+                        ec1 = shdfac * ((cmc / physcons.CMCMAX) ** physcons.CFACTR) * etp1
                     else:
                         ec1 = 0.0
 
@@ -243,7 +239,6 @@ class EvapoTranspiration:
         self,
         nroot: IntFieldIJ,
         cmc: FloatFieldIJ,
-        cmcmax: FloatFieldIJ,
         etp1: FloatFieldIJ,
         sh2o: FloatField,
         smcmax: FloatFieldIJ,
@@ -252,9 +247,7 @@ class EvapoTranspiration:
         smcdry: FloatFieldIJ,
         pc: FloatFieldIJ,
         shdfac: FloatFieldIJ,
-        cfactr: FloatFieldIJ,
         rtdis: FloatField,
-        fxexp: FloatFieldIJ,
         eta1: FloatFieldIJ,
         edir1: FloatFieldIJ,
         ec1: FloatFieldIJ,
@@ -313,7 +306,6 @@ class EvapoTranspiration:
             smcmax,
             smcdry,
             shdfac,
-            fxexp,
             ec1,
             ett1,
             edir1,
@@ -329,10 +321,8 @@ class EvapoTranspiration:
             smcwlt,
             smcref,
             cmc,
-            cmcmax,
             shdfac,
             pc,
-            cfactr,
             rtdis,
             et1,
             self._sgx,
@@ -342,8 +332,6 @@ class EvapoTranspiration:
 
         self._finish_evaporation(
             cmc,
-            cmcmax,
-            cfactr,
             eta1,
             edir1,
             ec1,
