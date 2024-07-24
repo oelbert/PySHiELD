@@ -181,7 +181,9 @@ def finish_evaporation(
                 if shdfac > 0.0:
                     # calculate canopy evaporation.
                     if cmc > 0.0:
-                        ec1 = shdfac * ((cmc / physcons.CMCMAX) ** physcons.CFACTR) * etp1
+                        ec1 = shdfac * (
+                            (cmc / physcons.CMCMAX) ** physcons.CFACTR
+                        ) * etp1
                     else:
                         ec1 = 0.0
 

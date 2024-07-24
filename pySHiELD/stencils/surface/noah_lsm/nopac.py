@@ -140,7 +140,9 @@ def prep_for_flux_calc(
             df1 = tdfcnd(smc, quartz, smcmax, sh2o)
 
             if (not lheatstrg) and (ivegsrc == 1) and (vegtype == 13):
-                df1 = 3.24 * (1.0 - shdfac) + shdfac * df1 * exp(physcons.SBETA * shdfac)
+                df1 = 3.24 * (1.0 - shdfac) + shdfac * df1 * exp(
+                    physcons.SBETA * shdfac
+                )
             else:
                 df1 *= exp(physcons.SBETA * shdfac)
 
