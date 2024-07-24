@@ -1,11 +1,12 @@
 from ndsl import constants
 
+
 # Driver constants
 HOCP = constants.HLV / constants.CP_AIR
 QMIN = 1.0e-10
 RAINMIN = 1.0e-13
 P850 = 85000.0
-EPSQ = 1.e-20
+EPSQ = 1.0e-20
 HSUB = constants.HLV + constants.HLF
 CZMIN = 0.0001  # cos(89.994)
 ZERO = 0.0e0
@@ -44,16 +45,16 @@ A23M4 = A2 * (A3 - A4)
 NSOLD = 4
 GS1 = 9.8
 GS2 = 9.81
-LSUBC = 2.501e+6
+LSUBC = 2.501e6
 LSUBF = 3.335e5
-LSUBS = 2.83e+6
-ELCP = 2.4888e+3
+LSUBS = 2.83e6
+ELCP = 2.4888e3
 RD1 = 287.04
 CP1 = 1004.5
 CP2 = 1004.0
-CPH2O1 = 4.218e+3
+CPH2O1 = 4.218e3
 CPH2O2 = 4.2e6
-CPICE = 2.1060e+3
+CPICE = 2.1060e3
 CPICE1 = 2.106e6
 SIGMA1 = 5.67e-8
 
@@ -70,4 +71,4 @@ FRZK = 0.15
 FXEXP = 2.0
 REFKDT = 3.0
 CZIL = 0.075
-CSOIL = 2.00e+6
+CSOIL = 2.00e6

@@ -1,6 +1,7 @@
 from gt4py.cartesian import gtscript
 from gt4py.cartesian.gtscript import FORWARD, computation, interval
 
+import pySHiELD.constants as physcons
 from ndsl.constants import X_DIM, Y_DIM
 
 # from pace.dsl.dace.orchestration import orchestrate
@@ -15,7 +16,6 @@ from ndsl.dsl.typing import (
     IntFieldIJ,
 )
 from ndsl.initialization.allocator import QuantityFactory
-import pySHiELD.constants as physcons
 
 
 @gtscript.function
@@ -45,7 +45,7 @@ def start_evaporation(
     edir1: FloatFieldIJ,
     et1: FloatField,
     evapo_mask: BoolFieldIJ,
-    transp_mask: BoolFieldIJ
+    transp_mask: BoolFieldIJ,
 ):
     with computation(FORWARD), interval(...):
         if evapo_mask:
@@ -83,7 +83,7 @@ def transpiration(
     transp_mask: BoolFieldIJ,
     k_mask: IntField,
 ):
-    '''
+    """
     Fortran name is transp
     Calculates transpiration for the veg class
     ! ===================================================================== !
@@ -112,7 +112,7 @@ def transpiration(
     !     et1      - real, plant transpiration                       nsoil  !
     !                                                                       !
     !  ====================    end of description    =====================  !
-    '''
+    """
     with computation(FORWARD), interval(...):
         if transp_mask:
             # initialize plant total transpiration, retrieve plant
@@ -123,8 +123,11 @@ def transpiration(
     with computation(FORWARD), interval(0, 1):
         if transp_mask:
             if cmc != 0.0:
-                etp1a = shdfac * pc * etp1 * (
-                    1.0 - (cmc / physcons.CMCMAX) ** physcons.CFACTR
+                etp1a = (
+                    shdfac
+                    * pc
+                    * etp1
+                    * (1.0 - (cmc / physcons.CMCMAX) ** physcons.CFACTR)
                 )
             else:
                 etp1a = shdfac * pc * etp1
@@ -158,6 +161,7 @@ def transpiration(
 
             # return et1
 
+
 def finish_evaporation(
     cmc: FloatFieldIJ,
     eta1: FloatFieldIJ,
@@ -171,6 +175,7 @@ def finish_evaporation(
     transp_mask: BoolFieldIJ,
 ):
     from __externals__ import dt
+
     with computation(FORWARD), interval(...):
         if transp_mask:
             ett1 = ett1 + et1
@@ -181,9 +186,9 @@ def finish_evaporation(
                 if shdfac > 0.0:
                     # calculate canopy evaporation.
                     if cmc > 0.0:
-                        ec1 = shdfac * (
-                            (cmc / physcons.CMCMAX) ** physcons.CFACTR
-                        ) * etp1
+                        ec1 = (
+                            shdfac * ((cmc / physcons.CMCMAX) ** physcons.CFACTR) * etp1
+                        )
                     else:
                         ec1 = 0.0
 
@@ -258,7 +263,7 @@ class EvapoTranspiration:
         k_mask: IntField,
         evapo_mask: BoolFieldIJ,
     ):
-        '''
+        """
         Description from Fortran:
         ! ===================================================================== !
         !  description:                                                         !
@@ -300,7 +305,7 @@ class EvapoTranspiration:
         !     ett1     - real, total plant transpiration                   1    !
         !                                                                       !
         !  ====================    end of description    =====================  !
-        '''
+        """
 
         self._start_evaporation(
             etp1,

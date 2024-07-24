@@ -17,7 +17,7 @@ from ndsl.dsl.typing import (
 )
 from ndsl.initialization.allocator import QuantityFactory
 from ndsl.stencils.basic_operations import sign
-from pySHiELD._config import COND_DIM, SurfaceConfig, TRACER_DIM
+from pySHiELD._config import COND_DIM, TRACER_DIM, SurfaceConfig
 from pySHiELD.functions.physics_functions import fpvs
 
 
@@ -375,6 +375,7 @@ def cal_zt_hwrf17(ws10m):
     elif ws10m > 80.0:
         zt = p60
     return zt
+
 
 def cal_z0_moon(ws10m):
     # coded by Kun Gao (Kun.Gao@noaa.gov)

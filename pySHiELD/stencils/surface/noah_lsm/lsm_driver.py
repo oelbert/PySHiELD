@@ -1,12 +1,9 @@
 from gt4py.cartesian import gtscript
 from gt4py.cartesian.gtscript import FORWARD, PARALLEL, computation, exp, interval
+from numpy import ndarray
 
 import ndsl.constants as constants
 import pySHiELD.constants as physcons
-from pySHiELD.stencils.surface.noah_lsm.sfc_params import set_soil_veg
-from pySHiELD.stencils.surface.noah_lsm.nopac import NOPAC
-from pySHiELD.stencils.surface.noah_lsm.snopac import SNOPAC
-from pySHiELD.stencils.surface.noah_lsm.shflx import tdfcnd
 from ndsl.constants import X_DIM, Y_DIM, Z_DIM, Z_INTERFACE_DIM
 
 # from pace.dsl.dace.orchestration import orchestrate
@@ -26,7 +23,11 @@ from ndsl.initialization.allocator import QuantityFactory
 from ndsl.quantity import Quantity
 from pySHiELD._config import SurfaceConfig
 from pySHiELD.functions.physics_functions import fpvs
-from numpy import ndarray
+from pySHiELD.stencils.surface.noah_lsm.nopac import NOPAC
+from pySHiELD.stencils.surface.noah_lsm.sfc_params import set_soil_veg
+from pySHiELD.stencils.surface.noah_lsm.shflx import tdfcnd
+from pySHiELD.stencils.surface.noah_lsm.snopac import SNOPAC
+
 
 @gtscript.function
 def snowz0(sncovr, z0):
@@ -102,17 +103,17 @@ def canres(
                     rcq = max(rcq, 0.01)
 
                     # contribution due to soil moisture availability.
-                    rcsoil = 0.
+                    rcsoil = 0.0
 
                     # use soil depth as weighting factor
-                    gx = 0.
-                    if (k_mask < nroot):
+                    gx = 0.0
+                    if k_mask < nroot:
                         gx = max(0.0, min(1.0, (sh2o - smcwlt) / (smcref - smcwlt)))
                         rcsoil = rcsoil + (zsoil / zroot * gx)
         with interval(1, None):
             if lsm_mask:
                 if shdfac > 0.0:
-                    if (k_mask < nroot):
+                    if k_mask < nroot:
                         gx = max(0.0, min(1.0, (sh2o - smcwlt) / (smcref - smcwlt)))
                         rcsoil = rcsoil + ((zsoil - zsoil[0, 0, -1]) / zroot * gx)
     with computation(FORWARD), interval(0, 1):
@@ -295,6 +296,7 @@ def init_lsm(
     lsm_mask: BoolFieldIJ,
 ):
     from __externals__ import dt
+
     # save land-related prognostic fields for guess run
     with computation(PARALLEL), interval(...):
         if land and flag_guess:
@@ -587,7 +589,8 @@ def sflx_1(
     !                                                                       !
     !  ====================    end of description    =====================  !
     """
-    from __externals__ import lheatstrg, ivegsrc, dt
+    from __externals__ import dt, ivegsrc, lheatstrg
+
     with computation(PARALLEL), interval(0, 1):
         if lsm_mask:
 
@@ -810,7 +813,7 @@ def sflx_1(
 
             pc = 0.0
 
-            esnow = 0.
+            esnow = 0.0
 
     # TODO: Split these out completely
     with computation(PARALLEL), interval(...):
@@ -861,6 +864,7 @@ def sflx_2(
 ):
     with computation(PARALLEL), interval(...):
         from __externals__ import dt
+
         if lsm_mask:
             et = et * physcons.LSUBC
 
@@ -869,8 +873,8 @@ def sflx_2(
             if lsm_mask:
 
                 # prepare sensible heat (h) for return to parent model
-                sheat = -(ch * physcons.CP1 * sfcprs) / (physcons.RD1 * t2v) * (
-                    th2 - t1
+                sheat = (
+                    -(ch * physcons.CP1 * sfcprs) / (physcons.RD1 * t2v) * (th2 - t1)
                 )
 
                 # convert units and/or sign of total evap (eta), potential evap (etp),
@@ -1045,6 +1049,7 @@ class NoahLSM:
     scheme follows that of Schaake et al. (1996) for its treatment of the subgrid
     variability of precipitation and soil moisture.
     """
+
     def __init__(
         self,
         stencil_factory: StencilFactory,
@@ -1059,7 +1064,6 @@ class NoahLSM:
         lheatstrg: Bool,
         ivegsrc: Bool,
     ):
-
         def make_quantity() -> Quantity:
             return quantity_factory.zeros(
                 [X_DIM, Y_DIM, Z_DIM],
@@ -1105,74 +1109,35 @@ class NoahLSM:
         ) = set_soil_veg(land_data, veg_data, soil_data, vegfrac_data)
 
         self._vegtype = quantity_factory.from_array(
-            veg_data,
-            dims=[X_DIM, Y_DIM],
-            units="",
-            dtype=Int
+            veg_data, dims=[X_DIM, Y_DIM], units="", dtype=Int
         )
         self._soiltype = quantity_factory.from_array(
-            soil_data,
-            dims=[X_DIM, Y_DIM],
-            units="",
-            dtype=Int
+            soil_data, dims=[X_DIM, Y_DIM], units="", dtype=Int
         )
         self._slope = quantity_factory.from_array(
-            slope_data,
-            dims=[X_DIM, Y_DIM],
-            units="",
-            dtype=Int
+            slope_data, dims=[X_DIM, Y_DIM], units="", dtype=Int
         )
         self._land = quantity_factory.from_array(
-            land,
-            dims=[X_DIM, Y_DIM],
-            units="",
-            dtype=Bool
+            land, dims=[X_DIM, Y_DIM], units="", dtype=Bool
         )
         self._ice = quantity_factory.from_array(
-            ice,
-            dims=[X_DIM, Y_DIM],
-            units="",
-            dtype=Bool
+            ice, dims=[X_DIM, Y_DIM], units="", dtype=Bool
         )
-        self._nroot = quantity_factory.from_array(
-            nroot, dims=[X_DIM, Y_DIM], units=""
-        )
-        self._zroot = quantity_factory.from_array(
-            zroot, dims=[X_DIM, Y_DIM], units=""
-        )
+        self._nroot = quantity_factory.from_array(nroot, dims=[X_DIM, Y_DIM], units="")
+        self._zroot = quantity_factory.from_array(zroot, dims=[X_DIM, Y_DIM], units="")
         self._sldpth = quantity_factory.from_array(
             sldpth, dims=[X_DIM, Y_DIM, Z_INTERFACE_DIM], units="m"
         )
-        self._snup = quantity_factory.from_array(
-            snup, dims=[X_DIM, Y_DIM], units=""
-        )
-        self._rsmin = quantity_factory.from_array(
-            rsmin, dims=[X_DIM, Y_DIM], units=""
-        )
-        self._rgl = quantity_factory.from_array(
-            rgl, dims=[X_DIM, Y_DIM], units=""
-        )
-        self._hs = quantity_factory.from_array(
-            hs, dims=[X_DIM, Y_DIM], units=""
-        )
-        self._xlai = quantity_factory.from_array(
-            xlai, dims=[X_DIM, Y_DIM], units=""
-        )
-        self._bexp = quantity_factory.from_array(
-            bexp, dims=[X_DIM, Y_DIM], units=""
-        )
-        self._dksat = quantity_factory.from_array(
-            dksat, dims=[X_DIM, Y_DIM], units=""
-        )
-        self._dwsat = quantity_factory.from_array(
-            dwsat, dims=[X_DIM, Y_DIM], units=""
-        )
-        self._f1 = quantity_factory.from_array(
-            f1, dims=[X_DIM, Y_DIM], units=""
-        )
-        self._kdt = quantity_factory.from_array(
-            kdt, dims=[X_DIM, Y_DIM], units=""
-        )
+        self._snup = quantity_factory.from_array(snup, dims=[X_DIM, Y_DIM], units="")
+        self._rsmin = quantity_factory.from_array(rsmin, dims=[X_DIM, Y_DIM], units="")
+        self._rgl = quantity_factory.from_array(rgl, dims=[X_DIM, Y_DIM], units="")
+        self._hs = quantity_factory.from_array(hs, dims=[X_DIM, Y_DIM], units="")
+        self._xlai = quantity_factory.from_array(xlai, dims=[X_DIM, Y_DIM], units="")
+        self._bexp = quantity_factory.from_array(bexp, dims=[X_DIM, Y_DIM], units="")
+        self._dksat = quantity_factory.from_array(dksat, dims=[X_DIM, Y_DIM], units="")
+        self._dwsat = quantity_factory.from_array(dwsat, dims=[X_DIM, Y_DIM], units="")
+        self._f1 = quantity_factory.from_array(f1, dims=[X_DIM, Y_DIM], units="")
+        self._kdt = quantity_factory.from_array(kdt, dims=[X_DIM, Y_DIM], units="")
         self._psisat = quantity_factory.from_array(
             psisat, dims=[X_DIM, Y_DIM], units=""
         )
@@ -1194,15 +1159,11 @@ class NoahLSM:
         self._shdfac = quantity_factory.from_array(
             shdfac, dims=[X_DIM, Y_DIM], units=""
         )
-        self._frzx = quantity_factory.from_array(
-            frzx, dims=[X_DIM, Y_DIM], units=""
-        )
+        self._frzx = quantity_factory.from_array(frzx, dims=[X_DIM, Y_DIM], units="")
         self._rtdis = quantity_factory.from_array(
             rtdis, dims=[X_DIM, Y_DIM, Z_DIM], units=""
         )
-        self._zsoil = quantity_factory.from_array(
-            zsoil, dims=[Z_DIM], units=""
-        )
+        self._zsoil = quantity_factory.from_array(zsoil, dims=[Z_DIM], units="")
 
         self._lsm_mask = quantity_factory.zeros(
             dims=[X_DIM, Y_DIM],

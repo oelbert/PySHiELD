@@ -1,10 +1,9 @@
 from gt4py.cartesian import gtscript
 from gt4py.cartesian.gtscript import FORWARD, PARALLEL, computation, interval, log
 
-from ndsl.constants import X_DIM, Y_DIM, Z_DIM
-
 import ndsl.constants as constants
 import pySHiELD.constants as physcons
+from ndsl.constants import X_DIM, Y_DIM, Z_DIM
 
 # from pace.dsl.dace.orchestration import orchestrate
 from ndsl.dsl.stencil import StencilFactory
@@ -16,11 +15,11 @@ from ndsl.dsl.typing import (
     FloatFieldIJ,
     FloatFieldK,
     Int,
-    IntFieldIJ
+    IntFieldIJ,
 )
 from ndsl.initialization.allocator import QuantityFactory
-from ndsl.stencils.tridiag import tridiag_solve
 from ndsl.quantity import Quantity
+from ndsl.stencils.tridiag import tridiag_solve
 
 
 @gtscript.function
@@ -63,18 +62,18 @@ def tmpavg_fn(tup, tm, tdn, dz):
             else:
                 x0 = (constants.TICE0 - tm) * dzh / (tdn - tm)
                 tavg = (
-                    0.5 * (
-                        tup * dzh + tm * (dzh + x0) + constants.TICE0 * (2.0 * dzh - x0)
-                    ) / dz
+                    0.5
+                    * (tup * dzh + tm * (dzh + x0) + constants.TICE0 * (2.0 * dzh - x0))
+                    / dz
                 )
         else:
             if tdn < constants.TICE0:
                 xup = (constants.TICE0 - tup) * dzh / (tm - tup)
                 xdn = dzh - (constants.TICE0 - tm) * dzh / (tdn - tm)
                 tavg = (
-                    0.5 * (
-                        tup * xup + constants.TICE0 * (2.0 * dz - xup - xdn) + tdn * xdn
-                    ) / dz
+                    0.5
+                    * (tup * xup + constants.TICE0 * (2.0 * dz - xup - xdn) + tdn * xdn)
+                    / dz
                 )
             else:
                 xup = (constants.TICE0 - tup) * dzh / (tm - tup)
@@ -83,20 +82,24 @@ def tmpavg_fn(tup, tm, tdn, dz):
         if tm < constants.TICE0:
             if tdn < constants.TICE0:
                 xup = dzh - (constants.TICE0 - tup) * dzh / (tm - tup)
-                tavg = 0.5 * (
-                    constants.TICE0 * (dz - xup) + tm * (dzh + xup) + tdn * dzh
-                ) / dz
+                tavg = (
+                    0.5
+                    * (constants.TICE0 * (dz - xup) + tm * (dzh + xup) + tdn * dzh)
+                    / dz
+                )
             else:
                 xup = dzh - (constants.TICE0 - tup) * dzh / (tm - tup)
                 xdn = (constants.TICE0 - tm) * dzh / (tdn - tm)
-                tavg = 0.5 * (
-                    constants.TICE0 * (2.0 * dz - xup - xdn) + tm * (xup + xdn)
-                ) / dz
+                tavg = (
+                    0.5
+                    * (constants.TICE0 * (2.0 * dz - xup - xdn) + tm * (xup + xdn))
+                    / dz
+                )
         else:
             if tdn < constants.TICE0:
                 xdn = dzh - (constants.TICE0 - tm) * dzh / (tdn - tm)
-                tavg = (constants.TICE0 * (dz - xdn) + 0.5 * (
-                    constants.TICE0 + tdn) * xdn
+                tavg = (
+                    constants.TICE0 * (dz - xdn) + 0.5 * (constants.TICE0 + tdn) * xdn
                 ) / dz
             else:
                 tavg = (tup + 2.0 * tm + tdn) / 4.0
@@ -188,11 +191,13 @@ def frh2o_fn(psis, bexp, tavg, smc, sh2o, smcmax):
 
             free = smc - swl
         if not kcount:
-            fk = ((
-                (physcons.LSUBF / (physcons.GS2 * (-psis))) * (
-                    (tavg - constants.TICE0) / tavg
+            fk = (
+                (
+                    (physcons.LSUBF / (physcons.GS2 * (-psis)))
+                    * ((tavg - constants.TICE0) / tavg)
                 )
-            )**(-1 / bx)) * smcmax
+                ** (-1 / bx)
+            ) * smcmax
 
             fk = max(fk, 0.02)
 
@@ -374,9 +379,12 @@ def hrt(
 
                 df1k = df1
 
-                if (sice > 0) or tsurf < (constants.TICE0) or (
-                    stc < constants.TICE0
-                ) or (tbk < constants.TICE0):
+                if (
+                    (sice > 0)
+                    or tsurf < (constants.TICE0)
+                    or (stc < constants.TICE0)
+                    or (tbk < constants.TICE0)
+                ):
                     dz = -zsoil
                     tavg = tmpavg_fn(tsurf, stc, tbk, dz)
                     tsnsr, sh2o = snksrc_fn(
@@ -401,9 +409,9 @@ def hrt(
                 if (not lheatstrg) and (ivegsrc == 1) and (vegtype == 13):
                     df1k = 3.24 * (1.0 - shdfac) + shdfac * df1k
 
-                tbk = stc + (stc[0, 0, 1] - stc) * (
-                    zsoil[0, 0, -1] - zsoil
-                ) / (zsoil[0, 0, -1] - zsoil[0, 0, 1])
+                tbk = stc + (stc[0, 0, 1] - stc) * (zsoil[0, 0, -1] - zsoil) / (
+                    zsoil[0, 0, -1] - zsoil[0, 0, 1]
+                )
                 # calc the vertical soil temp gradient thru each layer
                 denom = 0.5 * (zsoil[0, 0, -1] - zsoil[0, 0, 1])
                 dtsdz = (stc - stc[0, 0, 1]) / denom
@@ -418,9 +426,12 @@ def hrt(
                 qtot = -1.0 * denom * rhsts
                 sice = smc - sh2o
 
-                if (sice > 0) or (tbk[0, 0, -1] < constants.TICE0) or (
-                    stc < constants.TICE0
-                ) or (tbk < constants.TICE0):
+                if (
+                    (sice > 0)
+                    or (tbk[0, 0, -1] < constants.TICE0)
+                    or (stc < constants.TICE0)
+                    or (tbk < constants.TICE0)
+                ):
                     dz = zsoil[0, 0, -1] - zsoil
                     tavg = tmpavg_fn(tbk[0, 0, -1], stc, tbk, dz)
                     tsnsr, sh2o = snksrc_fn(
@@ -463,9 +474,12 @@ def hrt(
                 qtot = -1.0 * denom * rhsts
                 sice = smc - sh2o
 
-                if (sice > 0) or (tbk[0, 0, -1] < constants.TICE0) or (
-                    stc < constants.TICE0
-                ) or (tbk < constants.TICE0):
+                if (
+                    (sice > 0)
+                    or (tbk[0, 0, -1] < constants.TICE0)
+                    or (stc < constants.TICE0)
+                    or (tbk < constants.TICE0)
+                ):
                     dz = zsoil[0, 0, -1] - zsoil
                     tavg = tmpavg_fn(tbk[0, 0, -1], stc, tbk, dz)
                     tsnsr, sh2o = snksrc_fn(
@@ -486,6 +500,7 @@ def prep_hstep(
     ci: FloatField,
 ):
     from __externals__ import dt
+
     with computation(PARALLEL), interval(...):
         ai *= dt
         bi = 1.0 + dt * bi
@@ -685,7 +700,7 @@ class SoilHeatFlux:
         !     csoil    - real, soil heat capacity                          1    !
         !     vegtyp   - integer, vegtation type                           1    !
         !     shdfac   - real, aeral coverage of green vegetation          1    !
-        !     lheatstrg- logical, flag for canopy heat storage             1    ! 
+        !     lheatstrg- logical, flag for canopy heat storage             1    !
         !                         parameterization                              !
         !                                                                       !
         !  input/outputs:                                                       !

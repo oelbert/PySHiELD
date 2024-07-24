@@ -11,7 +11,6 @@ from gt4py.cartesian.gtscript import (
 
 import ndsl.constants as constants
 from ndsl.constants import X_DIM, Y_DIM, Z_DIM
-from ndsl.quantity import Quantity
 
 # from pace.dsl.dace.orchestration import orchestrate
 from ndsl.dsl.stencil import StencilFactory
@@ -27,7 +26,8 @@ from ndsl.dsl.typing import (
 )
 from ndsl.grid import GridData
 from ndsl.initialization.allocator import QuantityFactory
-from pySHiELD._config import COND_DIM, SurfaceConfig, TRACER_DIM
+from ndsl.quantity import Quantity
+from pySHiELD._config import COND_DIM, TRACER_DIM, SurfaceConfig
 from pySHiELD.functions.physics_functions import fpvs
 from pySHiELD.stencils.surface.sfc_diff import SurfaceExchange
 from pySHiELD.stencils.surface.sfc_state import SurfaceState
@@ -77,6 +77,7 @@ def init_step_vars(
         smcwlt2 = 0.0
         smcref2 = 0.0
 
+
 def update_guess(
     wind: FloatFieldIJ,
     iter: Int,
@@ -85,6 +86,7 @@ def update_guess(
     with computation(PARALLEL), interval(...):
         if (iter == 1) and (wind < 2.0):
             flag_guess[0, 0] = True
+
 
 class SurfaceLayer:
     def __init__(
@@ -110,10 +112,7 @@ class SurfaceLayer:
             dtype=Bool,
         )
 
-        self._exchange = SurfaceExchange(
-            stencil_factory=stencil_factory,
-            config=config
-        )
+        self._exchange = SurfaceExchange(stencil_factory=stencil_factory, config=config)
         self._update_guess = stencil_factory.from_origin_domain(
             update_guess,
             origin=grid_indexing.origin_compute(),

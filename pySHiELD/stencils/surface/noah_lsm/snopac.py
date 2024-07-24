@@ -3,9 +3,6 @@ from gt4py.cartesian.gtscript import FORWARD, PARALLEL, computation, exp, interv
 
 import ndsl.constants as constants
 import pySHiELD.constants as physcons
-from pySHiELD.stencils.surface.noah_lsm.evapo import EvapoTranspiration
-from pySHiELD.stencils.surface.noah_lsm.smflx import SoilMoistureFlux
-from pySHiELD.stencils.surface.noah_lsm.shflx import SoilHeatFlux
 from ndsl.constants import X_DIM, Y_DIM, Z_DIM
 
 # from pace.dsl.dace.orchestration import orchestrate
@@ -23,6 +20,9 @@ from ndsl.dsl.typing import (
 )
 from ndsl.initialization.allocator import QuantityFactory
 from ndsl.quantity import Quantity
+from pySHiELD.stencils.surface.noah_lsm.evapo import EvapoTranspiration
+from pySHiELD.stencils.surface.noah_lsm.shflx import SoilHeatFlux
+from pySHiELD.stencils.surface.noah_lsm.smflx import SoilMoistureFlux
 
 
 @gtscript.function
@@ -125,6 +125,7 @@ def start_snopac(
     evapo_mask: BoolFieldIJ,
 ):
     from __externals__ import dt
+
     with computation(PARALLEL), interval(...):
         if snopac_mask:
             et1 = 0.0
@@ -163,8 +164,8 @@ def start_snopac(
                 # dewfall (=frostfall in this case).
                 dew = -etp1
                 esnow2 = etp1 * dt
-                etanrg = etp * ((
-                    1.0 - sncovr) * physcons.LSUBC + sncovr * physcons.LSUBS
+                etanrg = etp * (
+                    (1.0 - sncovr) * physcons.LSUBC + sncovr * physcons.LSUBS
                 )
 
             else:
@@ -218,9 +219,10 @@ def update_temp_and_melt_snow(
     esdmin: FloatFieldIJ,
     prcp1: FloatFieldIJ,
     snowng: BoolFieldIJ,
-    snopac_mask: BoolFieldIJ
+    snopac_mask: BoolFieldIJ,
 ):
     from __externals__ import dt
+
     with computation(PARALLEL), interval(...):
         if snopac_mask:
             if etp >= 0.0:
@@ -255,8 +257,10 @@ def update_temp_and_melt_snow(
             if snowng:
                 # fractional snowfall/rainfall
                 flx1 = (
-                    physcons.CPICE * ffrozp + physcons.CPH2O1 * (1.0 - ffrozp)
-                ) * prcp * (t1 - sfctmp)
+                    (physcons.CPICE * ffrozp + physcons.CPH2O1 * (1.0 - ffrozp))
+                    * prcp
+                    * (t1 - sfctmp)
+                )
 
             elif prcp > 0.0:
                 flx1 = physcons.CPH2O1 * prcp * (t1 - sfctmp)
@@ -308,9 +312,15 @@ def update_temp_and_melt_snow(
                     t14 = t1 * t1
                     t14 = t14 * t14
 
-                    flx3 = fdown - flx1 - flx2 - sfcems * (
-                        physcons.SIGMA1
-                    ) * t14 - ssoil - seh - etanrg
+                    flx3 = (
+                        fdown
+                        - flx1
+                        - flx2
+                        - sfcems * (physcons.SIGMA1) * t14
+                        - ssoil
+                        - seh
+                        - etanrg
+                    )
                     if flx3 <= 0.0:
                         flx3 = 0.0
 
@@ -352,6 +362,7 @@ def adjust_for_snow_compaction(
     snopac_mask: BoolFieldIJ,
 ):
     from __externals__ import dt
+
     with computation(FORWARD), interval(0, 1):
         if snopac_mask:
             # snow depth and density adjustment based on snow compaction.

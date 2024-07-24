@@ -1,19 +1,14 @@
 from gt4py.cartesian.gtscript import FORWARD, PARALLEL, computation, interval
 
+import pySHiELD.constants as physcons
 from ndsl.constants import X_DIM, Y_DIM, Z_DIM
 
 # from pace.dsl.dace.orchestration import orchestrate
 from ndsl.dsl.stencil import StencilFactory
-from ndsl.dsl.typing import (
-    BoolFieldIJ,
-    Float,
-    FloatField,
-    FloatFieldIJ,
-    FloatFieldK,
-)
+from ndsl.dsl.typing import BoolFieldIJ, Float, FloatField, FloatFieldIJ, FloatFieldK
 from ndsl.initialization.allocator import QuantityFactory
 from ndsl.stencils.tridiag import tridiag_solve
-import pySHiELD.constants as physcons
+
 
 def init_sstep(
     rhstt: FloatField,
@@ -28,8 +23,9 @@ def init_sstep(
         if surface_mask:
             rhstt *= dt
             ai *= dt
-            bi = 1. + (bi * dt)
+            bi = 1.0 + (bi * dt)
             ci *= dt
+
 
 def finish_sstep(
     sh2o: FloatField,
@@ -44,6 +40,7 @@ def finish_sstep(
     surface_mask: BoolFieldIJ,
 ):
     from __externals__ import dt
+
     # sum the previous smc value and the matrix solution
     with computation(FORWARD):
         with interval(0, 1):
@@ -133,7 +130,7 @@ class SoilCanopyMoisture:
         ci: FloatField,
         runoff3: FloatFieldIJ,
         smc: FloatField,
-        surface_mask: BoolFieldIJ
+        surface_mask: BoolFieldIJ,
     ):
         """
         Original Fortran description:

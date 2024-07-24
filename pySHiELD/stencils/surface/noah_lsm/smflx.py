@@ -1,6 +1,7 @@
 from gt4py.cartesian import gtscript
 from gt4py.cartesian.gtscript import FORWARD, PARALLEL, computation, exp, interval
 
+import pySHiELD.constants as physcons
 from ndsl.constants import X_DIM, Y_DIM, Z_DIM
 
 # from pace.dsl.dace.orchestration import orchestrate
@@ -17,7 +18,6 @@ from ndsl.initialization.allocator import QuantityFactory
 from ndsl.quantity import Quantity
 from ndsl.stencils.basic_operations import average_in
 from pySHiELD.stencils.surface.noah_lsm.sstep import SoilCanopyMoisture
-import pySHiELD.constants as physcons
 
 
 @gtscript.function
@@ -65,6 +65,7 @@ def start_smflx(
     frozen_ground: BoolFieldIJ,
 ):
     from __externals__ import dt
+
     with computation(FORWARD), interval(0, 1):
         if surface_mask:
             # compute the right hand side of the canopy eqn term
@@ -80,9 +81,7 @@ def start_smflx(
             # pcpdrp is the combined prcp1 and drip (from cmc) that goes into the soil
             pcpdrp = (1.0 - shdfac) * prcp1 + drip / dt
 
-            frozen_ground = (pcpdrp * dt) > (
-                0.001 * 1000.0 * (-zsoil) * smcmax
-            )
+            frozen_ground = (pcpdrp * dt) > (0.001 * 1000.0 * (-zsoil) * smcmax)
 
     with computation(PARALLEL), interval(...):
         if surface_mask:
@@ -105,7 +104,7 @@ def srt(
     slope: FloatFieldIJ,
     kdt: FloatFieldIJ,
     frzx: FloatFieldIJ,
-    sice : FloatField,
+    sice: FloatField,
     rhstt: FloatField,
     runoff1: FloatFieldIJ,
     runoff2: FloatFieldIJ,
@@ -157,6 +156,7 @@ def srt(
     !  ====================    end of description    =====================  !
     """
     from __externals__ import dt
+
     with computation(FORWARD), interval(0, 1):
         if surface_mask:
             # determine rainfall infiltration rate and runoff
@@ -245,8 +245,12 @@ def srt(
             ci = -wdf * ddz / denom2
             slopx = 1.0
             numer = (
-                wdf * dsmdz
-            ) + slopx * wcnd - wdf[0, 0, -1] * dsmdz[0, 0, -1] - wcnd[0, 0, -1] + et
+                (wdf * dsmdz)
+                + slopx * wcnd
+                - wdf[0, 0, -1] * dsmdz[0, 0, -1]
+                - wcnd[0, 0, -1]
+                + et
+            )
             rhstt = -numer / denom2
 
             # calc matrix coefs
@@ -262,8 +266,12 @@ def srt(
             dsmdz = 0.0
             ci = 0.0
             numer = (
-                wdf * dsmdz
-            ) + slopx * wcnd - wdf[0, 0, -1] * dsmdz[-1] - wcnd[0, 0, -1] + et
+                (wdf * dsmdz)
+                + slopx * wcnd
+                - wdf[0, 0, -1] * dsmdz[-1]
+                - wcnd[0, 0, -1]
+                + et
+            )
             rhstt = -numer / denom2
 
             # calc matrix coefs
@@ -315,7 +323,7 @@ class SoilMoistureFlux:
         self._pcpdrp = make_quantity_2d()
         self._rhsct = make_quantity_2d()
         self._trhsct = make_quantity_2d()
-        
+
         self._start_smflx = stencil_factory.stencil_factory.from_origin_domain(
             func=start_smflx,
             externals={"dt": dt},
@@ -336,11 +344,7 @@ class SoilMoistureFlux:
             domain=grid_indexing.domain_compute(),
         )
 
-        self._sstep = SoilCanopyMoisture(
-            stencil_factory,
-            quantity_factory,
-            dt
-        )
+        self._sstep = SoilCanopyMoisture(stencil_factory, quantity_factory, dt)
 
     def __call__(
         self,
@@ -413,7 +417,7 @@ class SoilMoistureFlux:
         !     drip     - real, through-fall of precip and/or dew           1    !
         !                                                                       !
         !  ====================    end of description    =====================  !
-    """
+        """
         self._start_smflx(
             kdt,
             smcmax,
@@ -477,10 +481,7 @@ class SoilMoistureFlux:
             self._frozen_ground,
         )
 
-        self._average_in(
-            sh2o,
-            self._mid_sh20
-        )
+        self._average_in(sh2o, self._mid_sh20)
 
         self._srt(
             edir1,
