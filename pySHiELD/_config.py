@@ -32,12 +32,23 @@ class PBLConfig:
     isatmedmf: int = NamelistDefaults.isatmedmf
     xkzm_h: float = NamelistDefaults.xkzm_h
     xkzm_m: float = NamelistDefaults.xkzm_m
+    xkzm_hl: float = NamelistDefaults.xkzm_hl
+    xkzm_ml: float = NamelistDefaults.xkzm_ml
+    xkzm_hi: float = NamelistDefaults.xkzm_hi
+    xkzm_mi: float = NamelistDefaults.xkzm_mi
+    xkzinv: float = NamelistDefaults.xkzinv
     xkzm_s: float = NamelistDefaults.xkzm_s
+    xkzm_lim: float = NamelistDefaults.xkzm_lim
+    xkgdx: float = NamelistDefaults.xkgdx
+    do_dk_hb19: bool = DEFAULT_BOOL
+    rlmn: float = NamelistDefaults.rlmn
+    rlmx: float = NamelistDefaults.rlmx
     ntracers: int = len(tracer_variables)
     ntiw: int = DEFAULT_INT
     ntcw: int = DEFAULT_INT
     ntke: int = DEFAULT_INT
     dspheat: bool = NamelistDefaults.dspheat
+    cap_k0_land: bool = DEFAULT_BOOL
 
     def __post_init__(self):
         if self.pbl_scheme == "SATMED_EDMF":
@@ -149,6 +160,17 @@ class PhysicsConfig:
     dspheat: bool = NamelistDefaults.dspheat
     xkzm_h: float = NamelistDefaults.xkzm_h
     xkzm_m: float = NamelistDefaults.xkzm_m
+    xkzm_hl: float = NamelistDefaults.xkzm_hl
+    xkzm_ml: float = NamelistDefaults.xkzm_ml
+    xkzm_hi: float = NamelistDefaults.xkzm_hi
+    xkzm_mi: float = NamelistDefaults.xkzm_mi
+    xkzinv: float = NamelistDefaults.xkzinv
+    xkzm_lim: float = NamelistDefaults.xkzm_lim
+    xkgdx: float = NamelistDefaults.xkgdx
+    do_dk_hb19: bool = DEFAULT_BOOL
+    rlmn: float = NamelistDefaults.rlmn
+    rlmx: float = NamelistDefaults.rlmx
+    cap_k0_land: bool = DEFAULT_BOOL
     xkzm_s: float = NamelistDefaults.xkzm_s
     namelist_override: Optional[str] = None
 
@@ -262,10 +284,21 @@ class PhysicsConfig:
             isatmedmf=self.isatmedmf,
             xkzm_h=self.xkzm_h,
             xkzm_m=self.xkzm_m,
+            xkzm_hl=self.xkzm_hl,
+            xkzm_ml=self.xkzm_ml,
+            xkzm_hi=self.xkzm_hi,
+            xkzm_mi=self.xkzm_mi,
+            xkzinv=self.xkzinv,
             xkzm_s=self.xkzm_s,
+            xkzm_lim=self.xkzm_lim,
+            xkgdx=self.xkgdx,
+            do_dk_hb19=self.do_dk_hb19,
+            rlmn=self.rlmn,
+            rlmx=self.rlmx,
             ntracers=self.ntracers,
             ntiw=self.ntiw,
             ntcw=self.ntcw,
             ntke=self.ntke,
             dspheat=self.dspheat,
+            cap_k0_land=self.cap_k0_land,
         )

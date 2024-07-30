@@ -115,7 +115,9 @@ def init_turbulence(
     ptop: FloatFieldIJ,
     pbot: FloatFieldIJ,
 ):
-    from __externals__ import dt2, km1, ntcw, ntiw, ntke, xkzm_h, xkzm_m, xkzm_s
+    from __externals__ import (
+        dt2, km1, ntcw, ntiw, ntke, xkzm_h, xkzm_m, xkzm_s, cap_k0_land
+    )
 
     with computation(FORWARD), interval(0, 1):
         pcnvflg = False
@@ -214,9 +216,10 @@ def init_turbulence(
         gotvx = constants.GRAV / (t1[0, 0, 0] * tem)
 
         tem = (t1[0, 0, 1] - t1[0, 0, 0]) * tem * rdzt[0, 0, 0]
-        if tem > 1.0e-5:
-            xkzo = min(xkzo[0, 0, 0], constants.XKZINV)
-            xkzmo = min(xkzmo[0, 0, 0], constants.XKZINV)
+        if cap_k0_land:
+            if tem > 1.0e-5:
+                xkzo = min(xkzo[0, 0, 0], constants.XKZINV)
+                xkzmo = min(xkzmo[0, 0, 0], constants.XKZINV)
 
         #  Compute empirical cloud fraction based on Xu & Randall (1996, JAS)
         plyr = 0.01 * prsl[0, 0, 0]
@@ -1643,6 +1646,8 @@ class ScaleAwareTKEMoistEDMF:
             "PBL scheme satmedmfvdif requires ntracer "
             f"({config.ntracers}) == ntke ({config.ntke})"
         )
+        if config.do_dk_hb19:
+            raise NotImplementedError("do_dk_hb19 has not been implemented")
 
         self._ntracers = config.ntracers
         self._ntrac1 = self._ntracers - 1
@@ -1669,7 +1674,7 @@ class ScaleAwareTKEMoistEDMF:
             return quantity_factory.zeros([X_DIM, Y_DIM], units="unknown", dtype=type)
 
         # Allocate internal variables:
-        self._km1 = idx.domain[2] - 1
+        km1 = idx.domain[2] - 1
         self._kmpbl = idx.domain[2] / 2
         self._kmscu = idx.domain[2] / 2
 
@@ -1685,10 +1690,6 @@ class ScaleAwareTKEMoistEDMF:
         self._ntke = config.ntke
 
         self._dspheat = config.dspheat
-
-        self._xkzm_h = config.xkzm_h
-        self._xkzm_m = config.xkzm_m
-        self._xkzm_s = config.xkzm_s
 
         # Layer mask:
         self._k_mask = quantity_factory.zeros(
@@ -1833,14 +1834,15 @@ class ScaleAwareTKEMoistEDMF:
         self._init_turbulence = stencil_factory.from_origin_domain(
             func=init_turbulence,
             externals={
-                "km1": self._km1,
-                "xkzm_h": self._xkzm_h,
-                "xkzm_m": self._xkzm_m,
-                "xkzm_s": self._xkzm_s,
+                "km1": km1,
+                "xkzm_h": config.xkzm_h,
+                "xkzm_m": config.xkzm_m,
+                "xkzm_s": config.xkzm_s,
                 "dt2": self._dt_atmos,
                 "ntke": self._ntke,
                 "ntiw": self._ntiw,
                 "ntcw": self._ntcw,
+                "cap_k0_land": config.cap_k0_land
             },
             origin=idx.origin_compute(),
             domain=idx.domain_compute(),
@@ -1872,7 +1874,7 @@ class ScaleAwareTKEMoistEDMF:
 
         self._stratocumulus = stencil_factory.from_origin_domain(
             func=stratocumulus,
-            externals={"km1": self._km1},
+            externals={"km1": km1},
             origin=idx.origin_compute(),
             domain=(idx.iec, idx.jec, self._kmscu),
         )
@@ -2001,7 +2003,7 @@ class ScaleAwareTKEMoistEDMF:
                 domain=idx.domain_compute(),
             )
         )
-        
+
         self._recover_heat_tendency_add_diss_heat = (
             stencil_factory.from_origin_domain(
                 func=recover_heat_tendency_add_diss_heat,
@@ -2035,8 +2037,6 @@ class ScaleAwareTKEMoistEDMF:
             origin=idx.origin_compute(),
             domain=idx.domain_compute(),
         )
-
-        pass
 
     def __call__(
         self,
@@ -2626,5 +2626,3 @@ class ScaleAwareTKEMoistEDMF:
             u1,
             v1,
         )
-
-        pass
