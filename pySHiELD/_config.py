@@ -6,7 +6,7 @@ import f90nml
 
 from ndsl import MetaEnumStr
 from ndsl.namelist import Namelist, NamelistDefaults
-
+from ndsl.dsl.typing import Int
 
 DEFAULT_FLOAT = 0.0
 DEFAULT_INT = 0
@@ -26,6 +26,8 @@ class SurfaceConfig:
     do_z0_hwrf17_hwonly: bool = DEFAULT_BOOL
     do_z0_moon: bool = DEFAULT_BOOL
     dt_atmos: float = DEFAULT_FLOAT
+    mom4ice: bool = DEFAULT_BOOL
+    lsm: Int = DEFAULT_INT
 
 
 @dataclasses.dataclass
@@ -120,6 +122,8 @@ class PhysicsConfig:
     tice: float = NamelistDefaults.tice
     alin: float = NamelistDefaults.alin
     clin: float = NamelistDefaults.clin
+    mom4ice: bool = NamelistDefaults.mom4ice
+    lsm: Int = NamelistDefaults.lsm
     namelist_override: Optional[str] = None
 
     def __post_init__(self):

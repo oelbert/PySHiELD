@@ -154,7 +154,9 @@ class SurfaceLayer:
         )
         self._sfc_sice = SurfaceSeaIce(
             stencil_factory=stencil_factory,
-            config=config,
+            mom4ice=config.mom4ice,
+            lsm=config.lsm,
+            dt_atmos=config.dt_atmos,
         )
         self._update_guess_1 = stencil_factory.from_origin_domain(
             update_guess_1,

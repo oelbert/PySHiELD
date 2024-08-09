@@ -11,6 +11,7 @@ from ndsl.dsl.typing import (
     BoolFieldIJ,
     Float,
     FloatFieldIJ,
+    Int,
     IntFieldIJ,
 )
 from ndsl.stencils.basic_operations import sign
@@ -410,8 +411,6 @@ def sfc_diff(
     ustar: FloatFieldIJ,
     snwdph: FloatFieldIJ,
     ztrl: FloatFieldIJ,
-    z0s_max: Float,
-    wind_th_hwrf: Float,
     cm: FloatFieldIJ,
     ch: FloatFieldIJ,
     rb: FloatFieldIJ,
@@ -422,10 +421,8 @@ def sfc_diff(
     fm10: FloatFieldIJ,
     fh2: FloatFieldIJ,
     islimsk: IntFieldIJ,
-    ivegsrc: IntFieldIJ,
     vegtype: IntFieldIJ,
     flag_iter: BoolFieldIJ,
-    redrag: Bool,
 ):
     """
     Probably want to split this into functions and rename a bunch
@@ -435,6 +432,10 @@ def sfc_diff(
         do_z0_hwrf17,
         do_z0_hwrf17_hwonly,
         do_z0_moon,
+        ivegsrc,
+        redrag,
+        wind_th_hwrf,
+        z0s_max,
     )
 
     with computation(FORWARD), interval(...):
@@ -581,10 +582,14 @@ class SurfaceExchange:
     def __init__(
         self,
         stencil_factory: StencilFactory,
+        ivegsrc: Int,
         do_z0_hwrf15: Bool,
         do_z0_hwrf17: Bool,
         do_z0_hwrf17_hwonly: Bool,
         do_z0_moon: Bool,
+        redrag: Bool,
+        wind_th_hwrf: Float,
+        z0s_max: Float,
     ):
         """
         Calculates surface exchanges and near-surface winds.
@@ -610,11 +615,14 @@ class SurfaceExchange:
                 "do_z0_hwrf17": do_z0_hwrf17,
                 "do_z0_hwrf17_hwonly": do_z0_hwrf17_hwonly,
                 "do_z0_moon": do_z0_moon,
+                "ivegsrc": ivegsrc,
+                "redrag": redrag,
+                "wind_th_hwrf": wind_th_hwrf,
+                "z0s_max": z0s_max,
             },
             origin=grid_indexing.origin_compute(),
             domain=grid_indexing.domain_compute(),
         )
-        pass
 
     def __call__(
         self,
@@ -634,8 +642,6 @@ class SurfaceExchange:
         ustar: FloatFieldIJ,
         snowdepth: FloatFieldIJ,
         ztrl: FloatFieldIJ,
-        z0s_max: Float,
-        wind_th_hwrf: Float,
         cm: FloatFieldIJ,
         ch: FloatFieldIJ,
         rb: FloatFieldIJ,
@@ -646,10 +652,8 @@ class SurfaceExchange:
         fm10: FloatFieldIJ,
         fh2: FloatFieldIJ,
         islimsk: IntFieldIJ,
-        ivegsrc: IntFieldIJ,
         vegtype: IntFieldIJ,
         flag_iter: BoolFieldIJ,
-        redrag: Bool,
     ):
         self._sfc_diff(
             u1,
@@ -668,8 +672,6 @@ class SurfaceExchange:
             ustar,
             snowdepth,
             ztrl,
-            z0s_max,
-            wind_th_hwrf,
             cm,
             ch,
             rb,
@@ -680,8 +682,6 @@ class SurfaceExchange:
             fm10,
             fh2,
             islimsk,
-            ivegsrc,
             vegtype,
             flag_iter,
-            redrag,
         )

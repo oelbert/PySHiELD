@@ -7,9 +7,11 @@ import pySHiELD.constants as physcons
 # from pace.dsl.dace.orchestration import orchestrate
 from ndsl.dsl.stencil import StencilFactory
 from ndsl.dsl.typing import (
+    Bool,
     BoolFieldIJ,
     Float,
     FloatFieldIJ,
+    Int,
     IntFieldIJ,
 )
 from pySHiELD.functions.physics_functions import fpvsx
@@ -245,6 +247,7 @@ def ice3lay(
 
 def sfc_sice(
     ps: FloatFieldIJ,
+    wind: FloatFieldIJ,
     t1: FloatFieldIJ,
     q1: FloatFieldIJ,
     sfcemis: FloatFieldIJ,
@@ -257,7 +260,6 @@ def sfc_sice(
     prsl1: FloatFieldIJ,
     prslki: FloatFieldIJ,
     islimsk: IntFieldIJ,
-    wind: FloatFieldIJ,
     flag_iter: BoolFieldIJ,
     hice: FloatFieldIJ,
     fice: FloatFieldIJ,
@@ -277,77 +279,7 @@ def sfc_sice(
     gflux: FloatFieldIJ,
     snowmt: FloatFieldIJ,
 ):
-    """This file contains the GFS thermodynamics surface ice model.
-
-    =====================================================================
-    description:
-
-    usage:
-
-
-    program history log:
-           2005  --  xingren wu created  from original progtm and added
-                       two-layer ice model
-           200x  -- sarah lu    added flag_iter
-      oct  2006  -- h. wei      added cmm and chh to output
-           2007  -- x. wu modified for mom4 coupling (i.e. cpldice)
-                                      (not used anymore)
-           2007  -- s. moorthi micellaneous changes
-      may  2009  -- y.-t. hou   modified to include surface emissivity
-                       effect on lw radiation. replaced the confusing
-                       slrad with sfc net sw sfcnsw (dn-up). reformatted
-                       the code and add program documentation block.
-      sep  2009 -- s. moorthi removed rcl, changed pressure units and
-                       further optimized
-      jan  2015 -- x. wu change "cimin = 0.15" for both
-                       uncoupled and coupled case
-      jul  2020 -- ETH-students port to gt4py
-
-
-    ====================  definition of variables  ====================
-
-    inputs:                                                       size
-       ps       - real, surface pressure                            im
-       t1       - real, surface layer mean temperature ( k )        im
-       q1       - real, surface layer mean specific humidity        im
-       sfcemis  - real, sfc lw emissivity ( fraction )              im
-       dlwflx   - real, total sky sfc downward lw flux ( w/m**2 )   im
-       sfcnsw   - real, total sky sfc netsw flx into ground(w/m**2) im
-       sfcdsw   - real, total sky sfc downward sw flux ( w/m**2 )   im
-       srflag   - real, snow/rain fraction for precipitation        im
-       cm       - real, surface exchange coeff for momentum (m/s)   im
-       ch       - real, surface exchange coeff heat & moisture(m/s) im
-       prsl1    - real, surface layer mean pressure                 im
-       prslki   - real,                                             im
-       islimsk  - integer, sea/land/ice mask (=0/1/2)               im
-       wind     - real,                                             im
-       flag_iter- logical,                                          im
-       delt     - real, time interval (second)                      1
-       cimin    - real, minimum ice fraction                        1
-
-    input/outputs:
-       hice     - real, sea-ice thickness                           im
-       fice     - real, sea-ice concentration                       im
-       tice     - real, sea-ice surface temperature                 im
-       weasd    - real, water equivalent accumulated snow depth (mm)im
-       tskin    - real, ground surface skin temperature ( k )       im
-       tprcp    - real, total precipitation                         im
-       stc0     - real, soil temp (k), 1. layer                     im
-       stc1     - real, soil temp (k), 2nd layer                    im
-       ep       - real, potential evaporation                       im
-
-    outputs:
-       snwdph   - real, water equivalent snow depth (mm)            im
-       qsurf    - real, specific humidity at sfc                    im
-       snowmt   - real, snow melt (m)                               im
-       gflux    - real, soil heat flux (w/m**2)                     im
-       cmm      - real, surface exchange coeff for momentum(m/s)    im
-       chh      - real, surface exchange coeff heat&moisture (m/s)  im
-       evap     - real, evaperation from latent heat flux           im
-       hflx     - real, sensible heat flux                          im
-
-    =====================================================================
-    """
+    from __externals__ import mom4ice, lsm
     with computation(PARALLEL), interval(0, 1):
         # set flag for sea-ice
         flag = (islimsk == 2) and flag_iter
@@ -357,10 +289,14 @@ def sfc_sice(
             fice = 0.0
 
         if flag:
-            if srflag > 0.0:
-                ep = ep * (1.0 - srflag)
-                weasd = weasd + 1.0e3 * tprcp * srflag
-                tprcp = tprcp * (1.0 - srflag)
+            if mom4ice:
+                hi_save = hice
+                hs_save = weasd * 0.001
+            elif lsm > 0:
+                if srflag == 1.0:
+                    ep = 0.
+                    weasd = weasd + 1.e3 * tprcp
+                    tprcp = 0.0
 
             #     initialize variables. all units are supposedly m.k.s. unless specified
             #     psurf is in pascals, wind is wind speed, theta1 is adiabatic surface
@@ -381,13 +317,11 @@ def sfc_sice(
             q0 = min(qs1, q0)
 
             if fice < physcons.CIMIN:
-                # fice = physcons.CIMIN
+                fice = physcons.CIMIN
                 tice = physcons.TSICE
                 tskin = physcons.TSICE
-
-            fice = max(fice, physcons.CIMIN)
-
             ffw = 1.0 - fice
+
             qssi = fpvsx(tice)
             qssw = fpvsx(physcons.TSICE)
             qssi = constants.EPS * qssi / (ps + (constants.EPS - 1) * qssi)
@@ -395,7 +329,10 @@ def sfc_sice(
 
             # snow depth in water equivalent is converted from mm to m unit
 
-            snowd = weasd * 0.001
+            if mom4ice:
+                snowd = weasd * 0.001 / fice
+            else:
+                snowd = weasd * 0.001
 
             # when snow depth is less than 1 mm, a patchy snow is assumed and
             #           soil is allowed to interact with the atmosphere.
@@ -463,6 +400,10 @@ def sfc_sice(
                 gflux,
             )
 
+            if mom4ice:
+                hice = hi_save
+                snowd = hs_save
+
             if tice < physcons.TIMIN:
                 tice = physcons.TIMIN
 
@@ -500,13 +441,17 @@ class SurfaceSeaIce:
     def __init__(
         self,
         stencil_factory: StencilFactory,
-        dt_atmos: Float
+        mom4ice: Bool,
+        lsm: Int,
+        dt_atmos: Float,
     ):
         grid_indexing = stencil_factory.grid_indexing
         self._sfc_sice = stencil_factory.from_origin_domain(
             sfc_sice,
             externals={
-                "delt": dt_atmos
+                "delt": dt_atmos,
+                "mom4ice": mom4ice,
+                "lsm": lsm,
             },
             origin=grid_indexing.origin_compute(),
             domain=grid_indexing.domain_compute(),
@@ -515,6 +460,7 @@ class SurfaceSeaIce:
     def __call__(
         self,
         ps: FloatFieldIJ,
+        wind: FloatFieldIJ,
         t1: FloatFieldIJ,
         q1: FloatFieldIJ,
         sfcemis: FloatFieldIJ,
@@ -527,7 +473,6 @@ class SurfaceSeaIce:
         prsl1: FloatFieldIJ,
         prslki: FloatFieldIJ,
         islimsk: IntFieldIJ,
-        wind: FloatFieldIJ,
         flag_iter: BoolFieldIJ,
         hice: FloatFieldIJ,
         fice: FloatFieldIJ,
@@ -547,8 +492,95 @@ class SurfaceSeaIce:
         gflux: FloatFieldIJ,
         snowmt: FloatFieldIJ,
     ):
+        """
+        This file contains the GFS thermodynamics surface ice model.
+
+        Fortran description:
+        ! ===================================================================== !
+        !  description:                                                         !
+        !                                                                       !
+        !  usage:                                                               !
+        !                                                                       !
+        !    call sfc_sice                                                      !
+        !       inputs:                                                         !
+        !          ( im, km, ps, u1, v1, t1, q1, delt,                          !
+        !            sfcemis, dlwflx, sfcnsw, sfcdsw, srflag,                   !
+        !            cm, ch, prsl1, prslki, islimsk,                            !
+        !            flag_iter, mom4ice, lsm,                                   !
+        !       input/outputs:                                                  !
+        !            hice, fice, tice, weasd, tskin, tprcp, stc, ep,            !
+        !       outputs:                                                        !
+        !            snwdph, qsurf, snowmt, gflux, cmm, chh, evap, hflx )       !
+        !                                                                       !
+        !  subprogram called:  ice3lay.                                         !
+        !                                                                       !
+        !  program history log:                                                 !
+        !         2005  --  xingren wu created  from original progtm and added  !
+        !                     two-layer ice model                               !
+        !         200x  -- sarah lu    added flag_iter                          !
+        !    oct  2006  -- h. wei      added cmm and chh to output              !
+        !         2007  -- x. wu modified for mom4 coupling (i.e. mom4ice)      !
+        !         2007  -- s. moorthi micellaneous changes                      !
+        !    may  2009  -- y.-t. hou   modified to include surface emissivity   !
+        !                     effect on lw radiation. replaced the confusing    !
+        !                     slrad with sfc net sw sfcnsw (dn-up). reformatted !
+        !                     the code and add program documentation block.     !
+        !    sep  2009 -- s. moorthi removed rcl, changed pressure units and    !
+        !                     further optimized                                 !
+        !    jan  2015 -- x. wu change "cimin = 0.15" for both                  !
+        !                              uncoupled and coupled case               !
+        !                                                                       !
+        !                                                                       !
+        !  ====================  defination of variables  ====================  !
+        !                                                                       !
+        !  inputs:                                                       size   !
+        !     im, km   - integer, horiz dimension and num of soil layers   1    !
+        !     ps       - real, surface pressure                            im   !
+        !     wind     - real, surface layer wind                          im   !
+        !     t1       - real, surface layer mean temperature ( k )        im   !
+        !     q1       - real, surface layer mean specific humidity        im   !
+        !     delt     - real, time interval (second)                      1    !
+        !     sfcemis  - real, sfc lw emissivity ( fraction )              im   !
+        !     dlwflx   - real, total sky sfc downward lw flux ( w/m**2 )   im   !
+        !     sfcnsw   - real, total sky sfc netsw flx into ground(w/m**2) im   !
+        !     sfcdsw   - real, total sky sfc downward sw flux ( w/m**2 )   im   !
+        !     srflag   - real, snow/rain flag for precipitation            im   !
+        !     cm       - real, surface exchange coeff for momentum (m/s)   im   !
+        !     ch       - real, surface exchange coeff heat & moisture(m/s) im   !
+        !     prsl1    - real, surface layer mean pressure                 im   !
+        !     prslki   - real,                                             im   !
+        !     islimsk  - integer, sea/land/ice mask (=0/1/2)               im   !
+        !     flag_iter- logical,                                          im   !
+        !     mom4ice  - logical,                                          im   !
+        !     lsm      - integer, flag for land surface model scheme       1    !
+        !                =0: use osu scheme; =1: use noah scheme                !
+        !                                                                       !
+        !  input/outputs:                                                       !
+        !     hice     - real, sea-ice thickness                           im   !
+        !     fice     - real, sea-ice concentration                       im   !
+        !     tice     - real, sea-ice surface temperature                 im   !
+        !     weasd    - real, water equivalent accumulated snow depth (mm)im   !
+        !     tskin    - real, ground surface skin temperature ( k )       im   !
+        !     tprcp    - real, total precipitation                         im   !
+        !     stc      - real, soil temp (k)                              im,km !
+        !     ep       - real, potential evaporation                       im   !
+        !                                                                       !
+        !  outputs:                                                             !
+        !     snwdph   - real, water equivalent snow depth (mm)            im   !
+        !     qsurf    - real, specific humidity at sfc                    im   !
+        !     snowmt   - real, snow melt (m)                               im   !
+        !     gflux    - real, soil heat flux (w/m**2)                     im   !
+        !     cmm      - real,                                             im   !
+        !     chh      - real,                                             im   !
+        !     evap     - real, evaperation from latent heat flux           im   !
+        !     hflx     - real, sensible heat flux                          im   !
+        !                                                                       !
+        ! ===================================================================== !
+        """
+        # TODO: make this fully 3D
         self._sfc_sice(
             ps,
+            wind,
             t1,
             q1,
             sfcemis,
@@ -561,7 +593,6 @@ class SurfaceSeaIce:
             prsl1,
             prslki,
             islimsk,
-            wind,
             flag_iter,
             hice,
             fice,

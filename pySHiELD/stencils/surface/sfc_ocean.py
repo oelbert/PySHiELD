@@ -97,6 +97,62 @@ class SurfaceOcean:
         islimsk: IntFieldIJ,
         flag_iter: BoolFieldIJ,
     ):
+        """
+        Original Fortran docstring:
+        ! ===================================================================== !
+        !  description:                                                         !
+        !                                                                       !
+        !  usage:                                                               !
+        !                                                                       !
+        !    call sfc_ocean                                                     !
+        !       inputs:                                                         !
+        !          ( im, ps, u1, v1, t1, q1, tskin, cm, ch,                     !
+        !            prsl1, prslki, islimsk, ddvel, flag_iter,                  !
+        !       outputs:                                                        !
+        !            qsurf, cmm, chh, gflux, evap, hflx, ep )                   !
+        !                                                                       !
+        !                                                                       !
+        !  subprograms/functions called: fpvs                                   !
+        !                                                                       !
+        !                                                                       !
+        !  program history log:                                                 !
+        !         2005  -- created from the original progtm to account for      !
+        !                  ocean only                                           !
+        !    oct  2006  -- h. wei      added cmm and chh to the output          !
+        !    apr  2009  -- y.-t. hou   modified to match the modified gbphys.f  !
+        !                  reformatted the code and added program documentation !
+        !    sep  2009  -- s. moorthi removed rcl and made pa as pressure unit  !
+        !                  and furthur reformatted the code                     !
+        !                                                                       !
+        !                                                                       !
+        !  ====================  defination of variables  ====================  !
+        !                                                                       !
+        !  inputs:                                                       size   !
+        !     im       - integer, horizontal dimension                     1    !
+        !     ps       - real, surface pressure                            im   !
+        !     u1, v1   - real, u/v component of surface layer wind         im   !
+        !     t1       - real, surface layer mean temperature ( k )        im   !
+        !     q1       - real, surface layer mean specific humidity        im   !
+        !     tskin    - real, ground surface skin temperature ( k )       im   !
+        !     cm       - real, surface exchange coeff for momentum (m/s)   im   !
+        !     ch       - real, surface exchange coeff heat & moisture(m/s) im   !
+        !     prsl1    - real, surface layer mean pressure                 im   !
+        !     prslki   - real,                                             im   !
+        !     islimsk  - integer, sea/land/ice mask (=0/1/2)               im   !
+        !     ddvel    - real, wind enhancement due to convection (m/s)    im   !
+        !     flag_iter- logical,                                          im   !
+        !                                                                       !
+        !  outputs:                                                             !
+        !     qsurf    - real, specific humidity at sfc                    im   !
+        !     cmm      - real,                                             im   !
+        !     chh      - real,                                             im   !
+        !     gflux    - real, ground heat flux (zero for ocean)           im   !
+        !     evap     - real, evaporation from latent heat flux           im   !
+        !     hflx     - real, sensible heat flux                          im   !
+        !     ep       - real, potential evaporation                       im   !
+        !                                                                       !
+        ! ===================================================================== !
+        """
         self._sfc_ocean(
             ps,
             u1,
