@@ -1,14 +1,6 @@
-import copy
-
-import numpy as np
-
-import ndsl.dsl.gt4py_utils as utils
-from ndsl.dsl.typing import Float
 from ndsl.initialization.allocator import QuantityFactory
 from ndsl.initialization.sizer import SubtileGridSizer
-from pySHiELD import PHYSICS_PACKAGES, PhysicsState
 from pySHiELD.stencils.pbl import ScaleAwareTKEMoistEDMF
-from pySHiELD._config import PBLConfig
 from tests.savepoint.translate.translate_physics import TranslatePhysicsFortranData2Py
 
 class TranslatePBL(TranslatePhysicsFortranData2Py):
@@ -105,11 +97,13 @@ class TranslatePBL(TranslatePhysicsFortranData2Py):
             sizer, self.stencil_factory.backend
         )
 
-        self.pbl = ScaleAwareTKEMoistEDMF(
+        compute_func = ScaleAwareTKEMoistEDMF(
             self.stencil_factory,
             quantity_factory,
             self.grid.grid_data,
             self.namelist.pbl,
         )
 
-        pass
+        compute_func(**inputs)
+
+        return self.slice_output(inputs)
