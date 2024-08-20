@@ -157,7 +157,7 @@ def mfscu_s0(
                 hrad = zm[0, 0, 0]
                 krad1 = k_mask[0, 0, 0] - 1
                 tem1 = max(
-                    constants.CLDTIME * radmin[0, 0] / (zm[0, 0, 1] - zm[0, 0, 0]), -3.0
+                    physcons.CLDTIME * radmin[0, 0] / (zm[0, 0, 1] - zm[0, 0, 0]), -3.0
                 )
                 thld = thlx[0, 0, 0] + tem1
                 qtd = qtx[0, 0, 0]
@@ -171,7 +171,7 @@ def mfscu_s0(
                 tem1 = qtx[0, 0, 0] - qtx[0, 0, 1]
                 if (tem > 0.0) and (tem1 > 0.0):
                     cteit = constants.CP_AIR * tem / (constants.HLV * tem1)
-                    if cteit > constants.ACTEI:
+                    if cteit > physcons.ACTEI:
                         ra1 = physcons.A2
                         ra2 = physcons.A22
 
@@ -243,16 +243,16 @@ def mfscu_s3(
         tld = thld[0, 0, 0] / pix[0, 0, 0]
         es = 0.01 * fpvs(tld)
         qs = max(
-            constants.QMIN, constants.EPS * es / (plyr[0, 0, 0] + constants.EPSM1 * es)
+            physcons.QMIN, constants.EPS * es / (plyr[0, 0, 0] + constants.EPSM1 * es)
         )
         dq = qtd[0, 0, 0] - qs
-        gamma = constants.EL2ORC * qs / (tld ** 2)
+        gamma = physcons.EL2ORC * qs / (tld ** 2)
         qld = dq / (1.0 + gamma)
         if cnvflg[0, 0] and k_mask[0, 0, 0] < krad[0, 0]:
             if dq > 0.0:
                 qtd = qs + qld
                 tem1 = 1.0 + constants.ZVIR * qs - qld
-                thvd = (thld[0, 0, 0] + pix[0, 0, 0] * constants.ELOCP * qld) * tem1
+                thvd = (thld[0, 0, 0] + pix[0, 0, 0] * physcons.ELOCP * qld) * tem1
             else:
                 tem1 = 1.0 + constants.ZVIR * qtd[0, 0, 0]
                 thvd = thld[0, 0, 0] * tem1
@@ -461,10 +461,10 @@ def mfscu_s9(
         tld = thld[0, 0, 0] / pix[0, 0, 0]
         es = 0.01 * fpvs(tld)
         qs = max(
-            constants.QMIN, constants.EPS * es / (plyr[0, 0, 0] + constants.EPSM1 * es)
+            physcons.QMIN, constants.EPS * es / (plyr[0, 0, 0] + constants.EPSM1 * es)
         )
         dq = qtd[0, 0, 0] - qs
-        gamma = constants.EL2ORC * qs / (tld ** 2)
+        gamma = physcons.EL2ORC * qs / (tld ** 2)
         qld = dq / (1.0 + gamma)
 
         if (
@@ -476,7 +476,7 @@ def mfscu_s9(
                 qtd = qs + qld
                 qcdo[0, 0, 0][0] = qs
                 qcdo[0, 0, 0][ntcw - 1] = qld
-                tcdo = tld + constants.ELOCP * qld
+                tcdo = tld + physcons.ELOCP * qld
             else:
                 qcdo[0, 0, 0][0] = qtd[0, 0, 0]
                 qcdo[0, 0, 0][ntcw - 1] = 0.0
@@ -489,8 +489,8 @@ def mfscu_s9(
         ):
             tem = 0.5 * xlamdem[0, 0, 0] * dz
             factor = 1.0 + tem
-            ptem = tem - constants.PGCON
-            ptem1 = tem + constants.PGCON
+            ptem = tem - physcons.PGCON
+            ptem1 = tem + physcons.PGCON
             ucdo = (
                 (1.0 - tem) * ucdo[0, 0, 1] + ptem * u1[0, 0, 1] + ptem1 * u1[0, 0, 0]
             ) / factor

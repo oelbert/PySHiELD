@@ -65,7 +65,7 @@ def mfpblt_s0(
         xlamavg = 0.0
         sumx = 0.0
         if cnvflg[0, 0]:
-            ptem = min(constants.ALP * vpert[0, 0], 3.0)
+            ptem = min(physcons.ALP * vpert[0, 0], 3.0)
             thlu = thlx[0, 0, 0] + ptem
             qtu = qtx[0, 0, 0]
             buo = constants.GRAV * ptem / thvx[0, 0, 0]
@@ -123,16 +123,16 @@ def mfpblt_s1(
                 tlu = thlu[0, 0, 0] / pix[0, 0, 0]
                 es = 0.01 * fpvs(tlu)
                 qs = max(
-                    constants.QMIN,
+                    physcons.QMIN,
                     constants.EPS * es / (plyr[0, 0, 0] + constants.EPSM1 * es),
                 )
                 dq = qtu[0, 0, 0] - qs
 
                 if dq > 0.0:
-                    gamma = constants.EL2ORC * qs / (tlu ** 2)
+                    gamma = physcons.EL2ORC * qs / (tlu ** 2)
                     qlu = dq / (1.0 + gamma)
                     qtu = qs + qlu
-                    thvu = (thlu[0, 0, 0] + pix[0, 0, 0] * constants.ELOCP * qlu) * (
+                    thvu = (thlu[0, 0, 0] + pix[0, 0, 0] * physcons.ELOCP * qlu) * (
                         1.0 + constants.ZVIR * qs - qlu
                     )
                 else:
@@ -308,18 +308,18 @@ def mfpblt_s2(
             tlu = thlu[0, 0, 0] / pix[0, 0, 0]
             es = 0.01 * fpvs(tlu)
             qs = max(
-                constants.QMIN,
+                physcons.QMIN,
                 constants.EPS * es / (plyr[0, 0, 0] + constants.EPSM1 * es),
             )
             dq = qtu[0, 0, 0] - qs
-            qlu = dq / (1.0 + (constants.EL2ORC * qs / (tlu ** 2)))
+            qlu = dq / (1.0 + (physcons.EL2ORC * qs / (tlu ** 2)))
 
             if cnvflg[0, 0] and (k_mask[0, 0, 0] <= kpbl[0, 0]):
                 if dq > 0.0:
                     qtu = qs + qlu
                     qcko[0, 0, 0][0] = qs
                     qcko[0, 0, 0][1] = qlu
-                    tcko = tlu + constants.ELOCP * qlu
+                    tcko = tlu + physcons.ELOCP * qlu
                 else:
                     qcko[0, 0, 0][0] = qtu[0, 0, 0]
                     qcko[0, 0, 0][1] = 0.0
@@ -332,13 +332,13 @@ def mfpblt_s2(
             if cnvflg[0, 0] and (k_mask[0, 0, 0] <= kpbl[0, 0]):
                 ucko = (
                     (1.0 - tem) * ucko[0, 0, -1]
-                    + (tem + constants.PGCON) * u1[0, 0, 0]
-                    + (tem - constants.PGCON) * u1[0, 0, -1]
+                    + (tem + physcons.PGCON) * u1[0, 0, 0]
+                    + (tem - physcons.PGCON) * u1[0, 0, -1]
                 ) / factor
                 vcko = (
                     (1.0 - tem) * vcko[0, 0, -1]
-                    + (tem + constants.PGCON) * v1[0, 0, 0]
-                    + (tem - constants.PGCON) * v1[0, 0, -1]
+                    + (tem + physcons.PGCON) * v1[0, 0, 0]
+                    + (tem - physcons.PGCON) * v1[0, 0, -1]
                 ) / factor
 
 

@@ -146,7 +146,7 @@ def init_turbulence(
     with computation(PARALLEL), interval(...):
         zi = phii[0, 0, 0] * constants.RGRAV
         zl = phil[0, 0, 0] * constants.RGRAV
-        tke = max(q1[0, 0, 0][ntke], constants.TKMIN)
+        tke = max(q1[0, 0, 0][ntke], physcons.TKMIN)
     with computation(PARALLEL), interval(0, -1):
         ckz = physcons.CK1
         chz = physcons.CH1
@@ -192,44 +192,44 @@ def init_turbulence(
         pix = psk[0, 0] / prslk[0, 0, 0]
         theta = t1[0, 0, 0] * pix[0, 0, 0]
         if (ntiw + 1) > 0:
-            tem = max(q1[0, 0, 0][ntcw], constants.QLMIN)
-            tem1 = max(q1[0, 0, 0][ntiw], constants.QLMIN)
+            tem = max(q1[0, 0, 0][ntcw], physcons.QLMIN)
+            tem1 = max(q1[0, 0, 0][ntiw], physcons.QLMIN)
             ptem = constants.HLV * tem + (constants.HLV + constants.HLF) * tem1
             qlx = tem + tem1
             slx = constants.CP_AIR * t1[0, 0, 0] + phil[0, 0, 0] - ptem
         else:
-            qlx = max(q1[0, 0, 0][ntcw], constants.QLMIN)
+            qlx = max(q1[0, 0, 0][ntcw], physcons.QLMIN)
             slx = (
                 constants.CP_AIR * t1[0, 0, 0]
                 + phil[0, 0, 0]
                 - constants.HLV * qlx[0, 0, 0]
             )
 
-        tem = 1.0 + constants.ZVIR * max(q1[0, 0, 0][0], constants.QMIN) - qlx[0, 0, 0]
+        tem = 1.0 + constants.ZVIR * max(q1[0, 0, 0][0], physcons.QMIN) - qlx[0, 0, 0]
         thvx = theta[0, 0, 0] * tem
-        qtx = max(q1[0, 0, 0][0], constants.QMIN) + qlx[0, 0, 0]
-        thlx = theta[0, 0, 0] - pix[0, 0, 0] * constants.ELOCP * qlx[0, 0, 0]
+        qtx = max(q1[0, 0, 0][0], physcons.QMIN) + qlx[0, 0, 0]
+        thlx = theta[0, 0, 0] - pix[0, 0, 0] * physcons.ELOCP * qlx[0, 0, 0]
         thlvx = thlx[0, 0, 0] * (1.0 + constants.ZVIR * qtx[0, 0, 0])
         svx = constants.CP_AIR * t1[0, 0, 0] * tem
-        thetae = theta[0, 0, 0] + constants.ELOCP * pix[0, 0, 0] * max(
-            q1[0, 0, 0][0], constants.QMIN
+        thetae = theta[0, 0, 0] + physcons.ELOCP * pix[0, 0, 0] * max(
+            q1[0, 0, 0][0], physcons.QMIN
         )
         gotvx = constants.GRAV / (t1[0, 0, 0] * tem)
 
         tem = (t1[0, 0, 1] - t1[0, 0, 0]) * tem * rdzt[0, 0, 0]
         if cap_k0_land:
             if tem > 1.0e-5:
-                xkzo = min(xkzo[0, 0, 0], constants.XKZINV)
-                xkzmo = min(xkzmo[0, 0, 0], constants.XKZINV)
+                xkzo = min(xkzo[0, 0, 0], physcons.XKZINV)
+                xkzmo = min(xkzmo[0, 0, 0], physcons.XKZINV)
 
         #  Compute empirical cloud fraction based on Xu & Randall (1996, JAS)
         plyr = 0.01 * prsl[0, 0, 0]
         es = 0.01 * fpvs(t1)
         qs = max(
-            constants.QMIN,
+            physcons.QMIN,
             constants.EPS * es / (plyr[0, 0, 0] + (constants.EPS - 1) * es),
         )
-        rhly = max(0.0, min(1.0, max(constants.QMIN, q1[0, 0, 0][0]) / qs))
+        rhly = max(0.0, min(1.0, max(physcons.QMIN, q1[0, 0, 0][0]) / qs))
         qstl = qs
 
     with computation(FORWARD), interval(...):
@@ -237,7 +237,7 @@ def init_turbulence(
         clwt = 1.0e-6 * (plyr[0, 0, 0] * 0.001)
         if qlx[0, 0, 0] > clwt:
             onemrh = max(1.0e-10, 1.0 - rhly[0, 0, 0])
-            tem1 = constants.CQL / min(
+            tem1 = physcons.CQL / min(
                 max((onemrh * qstl[0, 0, 0]) ** 0.49, 0.0001), 1.0
             )
             val = max(min(tem1 * qlx[0, 0, 0], 50.0), 0.0)
@@ -248,8 +248,8 @@ def init_turbulence(
         tem1 = 0.5 * (t1[0, 0, 0] + t1[0, 0, 1])
         cfh = min(cfly[0, 0, 1], 0.5 * (cfly[0, 0, 0] + cfly[0, 0, 1]))
         alp = constants.GRAV / (0.5 * (svx[0, 0, 0] + svx[0, 0, 1]))
-        gamma = constants.EL2ORC * (0.5 * (qstl[0, 0, 0] + qstl[0, 0, 1])) / (tem1 ** 2)
-        epsi = tem1 / constants.ELOCP
+        gamma = physcons.EL2ORC * (0.5 * (qstl[0, 0, 0] + qstl[0, 0, 1])) / (tem1 ** 2)
+        epsi = tem1 / physcons.ELOCP
         beta = (1.0 + gamma * epsi * (1.0 + constants.ZVIR)) / (1.0 + gamma)
         chx = cfh * alp * beta + (1.0 - cfh) * alp
         cqx = cfh * alp * constants.HLV * (beta - epsi)
@@ -269,17 +269,17 @@ def init_turbulence(
 
             if pblflg[0, 0]:
                 thermal = thlvx[0, 0, 0]
-                crb = constants.RBCR
+                crb = physcons.RBCR
             else:
                 tem1 = 1e-7 * (
                     max(sqrt(u10m[0, 0] ** 2 + v10m[0, 0] ** 2), 1.0)
-                    / (constants.F0 * 0.01 * zorl[0, 0])
+                    / (physcons.F0 * 0.01 * zorl[0, 0])
                 )
                 thermal = tsea[0, 0] * (
-                    1.0 + constants.ZVIR * max(q1[0, 0, 0][0], constants.QMIN)
+                    1.0 + constants.ZVIR * max(q1[0, 0, 0][0], physcons.QMIN)
                 )
                 crb = max(
-                    min(0.16 * (tem1 ** (-0.18)), constants.CRBMAX), constants.CRBMIN
+                    min(0.16 * (tem1 ** (-0.18)), physcons.CRBMAX), physcons.CRBMIN
                 )
 
             dtdz1 = dt2 / (zi[0, 0, 1] - zi[0, 0, 0])
@@ -391,31 +391,31 @@ def mrf_pbl_2_thermal_excess(
                 pblflg = False
 
     with computation(FORWARD), interval(0, 1):
-        zol = max(rbsoil[0, 0] * fm[0, 0] * fm[0, 0] / fh[0, 0], constants.RIMIN)
+        zol = max(rbsoil[0, 0] * fm[0, 0] * fm[0, 0] / fh[0, 0], physcons.RIMIN)
         if sfcflg[0, 0]:
-            zol = min(zol[0, 0], -constants.ZFMIN)
+            zol = min(zol[0, 0], -physcons.ZFMIN)
         else:
-            zol = max(zol[0, 0], constants.ZFMIN)
+            zol = max(zol[0, 0], physcons.ZFMIN)
 
-        zol1 = zol[0, 0] * constants.SFCFRAC * hpbl[0, 0] / zl[0, 0, 0]
+        zol1 = zol[0, 0] * physcons.SFCFRAC * hpbl[0, 0] / zl[0, 0, 0]
 
         if sfcflg[0, 0]:
-            phih = sqrt(1.0 / (1.0 - constants.APHI16 * zol1))
+            phih = sqrt(1.0 / (1.0 - physcons.APHI16 * zol1))
             phim = sqrt(phih[0, 0])
         else:
-            phim = 1.0 + constants.APHI5 * zol1
+            phim = 1.0 + physcons.APHI5 * zol1
             phih = phim[0, 0]
 
-        pcnvflg = pblflg[0, 0] and (zol[0, 0] < constants.ZOLCRU)
+        pcnvflg = pblflg[0, 0] and (zol[0, 0] < physcons.ZOLCRU)
 
         wst3 = gotvx[0, 0, 0] * sflux[0, 0] * hpbl[0, 0]
         ust3 = ustar[0, 0] ** 3.0
 
         if pblflg[0, 0]:
             wscale = max(
-                (ust3 + constants.WFAC * constants.VK * wst3 * constants.SFCFRAC)
-                ** constants.H1,
-                ustar[0, 0] / constants.APHI5,
+                (ust3 + physcons.WFAC * physcons.VK * wst3 * physcons.SFCFRAC)
+                ** physcons.H1,
+                ustar[0, 0] / physcons.APHI5,
             )
 
         flg = 1
@@ -425,7 +425,7 @@ def mrf_pbl_2_thermal_excess(
             hgamq = evap[0, 0] / wscale
             vpert = max(hgamt + hgamq * constants.ZVIR * theta[0, 0, 0], 0.0)
             thermal = thermal[0, 0] + min(
-                constants.CFAC * vpert[0, 0], constants.GAMCRT
+                physcons.CFAC * vpert[0, 0], physcons.GAMCRT
             )
             flg = 0
             rbup = rbsoil[0, 0]
@@ -508,11 +508,11 @@ def enhance_pbl_height_thermal(
     with computation(FORWARD):
         with interval(0, 1):
             flg = scuflg[0, 0]
-            if flg[0, 0] and (zl[0, 0, 0] >= constants.ZSTBLMAX):
+            if flg[0, 0] and (zl[0, 0, 0] >= physcons.ZSTBLMAX):
                 lcld = k_mask[0, 0, 0]
                 flg = 0
         with interval(1, -1):
-            if flg[0, 0] and (zl[0, 0, 0] >= constants.ZSTBLMAX):
+            if flg[0, 0] and (zl[0, 0, 0] >= physcons.ZSTBLMAX):
                 lcld = k_mask[0, 0, 0]
                 flg = 0
 
@@ -539,7 +539,7 @@ def stratocumulus(
             if (
                 flg[0, 0]
                 and (k_mask[0, 0, 0] <= lcld[0, 0])
-                and (qlx[0, 0, 0] >= constants.QLCR)
+                and (qlx[0, 0, 0] >= physcons.QLCR)
             ):
                 kcld = k_mask[0, 0, 0]
                 flg = 0
@@ -548,7 +548,7 @@ def stratocumulus(
             if (
                 flg[0, 0]
                 and (k_mask[0, 0, 0] <= lcld[0, 0])
-                and (qlx[0, 0, 0] >= constants.QLCR)
+                and (qlx[0, 0, 0] >= physcons.QLCR)
             ):
                 kcld = k_mask[0, 0, 0]
                 flg = 0
@@ -562,7 +562,7 @@ def stratocumulus(
     with computation(BACKWARD):
         with interval(-1, None):
             if flg[0, 0] and (k_mask[0, 0, 0] <= kcld[0, 0]):
-                if qlx[0, 0, 0] >= constants.QLCR:
+                if qlx[0, 0, 0] >= physcons.QLCR:
                     if radx[0, 0, 0] < radmin[0, 0]:
                         radmin = radx[0, 0, 0]
                         krad = k_mask[0, 0, 0]
@@ -571,7 +571,7 @@ def stratocumulus(
 
         with interval(0, -1):
             if flg[0, 0] and (k_mask[0, 0, 0] <= kcld[0, 0]):
-                if qlx[0, 0, 0] >= constants.QLCR:
+                if qlx[0, 0, 0] >= physcons.QLCR:
                     if radx[0, 0, 0] < radmin[0, 0]:
                         radmin = radx[0, 0, 0]
                         krad = k_mask[0, 0, 0]
@@ -637,7 +637,7 @@ def compute_prandtl_num_exchange_coeff(
 ):
 
     with computation(PARALLEL), interval(...):
-        tem1 = max(zi[0, 0, 1] - constants.SFCFRAC * hpbl[0, 0], 0.0)
+        tem1 = max(zi[0, 0, 1] - physcons.SFCFRAC * hpbl[0, 0], 0.0)
         ptem = -3.0 * (tem1 ** 2.0) / (hpbl[0, 0] ** 2.0)
         if k_mask[0, 0, 0] < kpbl[0, 0]:
             if pcnvflg[0, 0]:
@@ -646,17 +646,17 @@ def compute_prandtl_num_exchange_coeff(
                 prn = phih[0, 0] / phim[0, 0]
 
         if k_mask[0, 0, 0] < kpbl[0, 0]:
-            prn = max(min(prn[0, 0, 0], constants.PRMAX), constants.PRMIN)
+            prn = max(min(prn[0, 0, 0], physcons.PRMAX), physcons.PRMIN)
             ckz = max(
                 min(
-                    physcons.CK1 + (physcons.CK0 - constants.CK1) * exp(ptem),
+                    physcons.CK1 + (physcons.CK0 - physcons.CK1) * exp(ptem),
                     physcons.CK0,
                 ),
                 physcons.CK1,
             )
             chz = max(
                 min(
-                    physcons.CH1 + (physcons.CH0 - constants.CH1) * exp(ptem),
+                    physcons.CH1 + (physcons.CH0 - physcons.CH1) * exp(ptem),
                     physcons.CH0,
                 ),
                 physcons.CH1,
@@ -693,9 +693,9 @@ def compute_asymptotic_mixing_length(
                 zlup = zlup + dz
                 if bsum >= tke:
                     if ptem >= 0.0:
-                        tem2 = max(ptem, constants.ZFMIN)
+                        tem2 = max(ptem, physcons.ZFMIN)
                     else:
-                        tem2 = min(ptem, -constants.ZFMIN)
+                        tem2 = min(ptem, -physcons.ZFMIN)
                     ptem1 = (bsum - tke) / tem2
                     zlup = zlup - ptem1 * dz
                     zlup = max(zlup, 0.0)
@@ -715,46 +715,46 @@ def compute_asymptotic_mixing_length(
                 zldn = zldn + dz
                 if bsum >= tke:
                     if ptem >= 0.0:
-                        tem2 = max(ptem, constants.ZFMIN)
+                        tem2 = max(ptem, physcons.ZFMIN)
                     else:
-                        tem2 = min(ptem, -constants.ZFMIN)
+                        tem2 = min(ptem, -physcons.ZFMIN)
                     ptem1 = (bsum - tke) / tem2
                     zldn = zldn - ptem1 * dz
                     zldn = max(zldn, 0.0)
                     mlenflg = False
             lev -= 1
         dz = zl[0, 0, lev]
-        tem1 = tsea * (1.0 + constants.ZVIR * max(q1_gt[0, 0, lev][0], constants.QMIN))
+        tem1 = tsea * (1.0 + constants.ZVIR * max(q1_gt[0, 0, lev][0], physcons.QMIN))
         ptem = gotvx[0, 0, lev] * (thvx - tem1) * dz
         bsum = bsum + ptem
         zldn = zldn + dz
         if bsum >= tke:
             if ptem >= 0.0:
-                tem2 = max(ptem, constants.ZFMIN)
+                tem2 = max(ptem, physcons.ZFMIN)
             else:
-                tem2 = min(ptem, -constants.ZFMIN)
+                tem2 = min(ptem, -physcons.ZFMIN)
             ptem1 = (bsum - tke) / tem2
             zldn = zldn - ptem1 * dz
             zldn = max(zldn, 0.0)
             mlenflg = False
 
         tem = 0.5 * (zi[0, 0, 1] - zi)
-        tem1 = min(tem, constants.RLMN)
+        tem1 = min(tem, physcons.RLMN)
 
         ptem2 = min(zlup, zldn)
-        rlam = min(max(constants.ELMFAC * ptem2, tem1), constants.RLMX)
+        rlam = min(max(physcons.ELMFAC * ptem2, tem1), physcons.RLMX)
 
         ptem2 = sqrt(zlup * zldn)
-        ele = min(max(constants.ELEFAC * ptem2, tem1), constants.ELMX)
+        ele = min(max(physcons.ELEFAC * ptem2, tem1), physcons.ELMX)
 
     with computation(FORWARD):
         with interval(0, -1):
             if zol < 0.0:
-                zk = constants.VK * zl * (1.0 - 100.0 * zol) ** 0.2
+                zk = physcons.VK * zl * (1.0 - 100.0 * zol) ** 0.2
             elif zol >= 1.0:
-                zk = constants.VK * zl / 3.7
+                zk = physcons.VK * zl / 3.7
             else:
-                zk = constants.VK * zl / (1.0 + 2.7 * zol)
+                zk = physcons.VK * zl / (1.0 + 2.7 * zol)
 
             elm = zk * rlam / (rlam + zk)
             dz = zi[0, 0, 1] - zi
@@ -815,7 +815,7 @@ def compute_eddy_diffusivity_buoy_shear(
             * (elm[0, 0, 0] + elm[0, 0, 1])
             * sqrt(0.5 * (tke[0, 0, 0] + tke[0, 0, 1]))
         )
-        ri = max(bf[0, 0, 0] / shr2[0, 0, 0], constants.RIMIN)
+        ri = max(bf[0, 0, 0] / shr2[0, 0, 0], physcons.RIMIN)
 
         if k_mask[0, 0, 0] < kpbl[0, 0]:
             if pblflg[0, 0]:
@@ -827,21 +827,21 @@ def compute_eddy_diffusivity_buoy_shear(
         else:
             if ri < 0.0:
                 dku = physcons.CK1 * tem
-                dkt = constants.RCHCK * dku[0, 0, 0]
+                dkt = physcons.RCHCK * dku[0, 0, 0]
             else:
                 dkt = physcons.CH1 * tem
-                dku = dkt[0, 0, 0] * min(1.0 + 2.1 * ri, constants.PRMAX)
+                dku = dkt[0, 0, 0] * min(1.0 + 2.1 * ri, physcons.PRMAX)
 
         tem = ckz[0, 0, 0] * tem
         dku_tmp = max(dku[0, 0, 0], tem)
-        dkt_tmp = max(dkt[0, 0, 0], tem / constants.PRSCU)
+        dkt_tmp = max(dkt[0, 0, 0], tem / physcons.PRSCU)
 
         if scuflg[0, 0]:
             if k_mask[0, 0, 0] >= mrad[0, 0] and k_mask[0, 0, 0] < krad[0, 0]:
                 dku = dku_tmp
                 dkt = dkt_tmp
 
-        dkq = constants.PRTKE * dkt[0, 0, 0]
+        dkq = physcons.PRTKE * dkt[0, 0, 0]
 
         dkt = max(min(dkt[0, 0, 0], physcons.DKMAX), xkzo[0, 0, 0])
 
@@ -853,8 +853,8 @@ def compute_eddy_diffusivity_buoy_shear(
         if k_mask[0, 0, 0] == krad[0, 0]:
             if scuflg[0, 0]:
                 tem1 = bf[0, 0, 0] / gotvx[0, 0, 0]
-                if tem1 < constants.TDZMIN:
-                    tem1 = constants.TDZMIN
+                if tem1 < physcons.TDZMIN:
+                    tem1 = physcons.TDZMIN
                 ptem = radj[0, 0] / tem1
                 dkt = dkt[0, 0, 0] + ptem
                 dku = dku[0, 0, 0] + ptem
@@ -895,7 +895,7 @@ def compute_eddy_diffusivity_buoy_shear(
                     stress[0, 0]
                     * ustar[0, 0]
                     * phim[0, 0]
-                    / (constants.VK * zl[0, 0, 0])
+                    / (physcons.VK * zl[0, 0, 0])
                 )
             )
 
@@ -989,7 +989,7 @@ def predict_tke(
             0.0,
         )
         tke = max(
-            tke[0, 0, 0] + dtn * (prod[0, 0, 0] - diss[0, 0, 0]), constants.TKMIN
+            tke[0, 0, 0] + dtn * (prod[0, 0, 0] - diss[0, 0, 0]), physcons.TKMIN
         )
 
 
@@ -1500,7 +1500,7 @@ def moment_tridiag_mat_ele_comp(
 
     with computation(PARALLEL), interval(0, -1):
         if dspheat:
-            tdt = tdt[0, 0, 0] + constants.DSPFAC * (diss[0, 0, 0] / constants.CP_AIR)
+            tdt = tdt[0, 0, 0] + physcons.DSPFAC * (diss[0, 0, 0] / constants.CP_AIR)
 
     with computation(PARALLEL), interval(0, 1):
         ad = 1.0 + dtdz1[0, 0, 0] * stress[0, 0] / spd1[0, 0]
@@ -1681,7 +1681,7 @@ class ScaleAwareTKEMoistEDMF:
 
         self._dt_atmos = config.dt_atmos
         self._rdt = 1.0 / self._dt_atmos
-        self._kk = max(round(self._dt_atmos / constants.CDTN), 1)
+        self._kk = max(round(self._dt_atmos / physcons.CDTN), 1)
         self._dtn = self._dt_atmos / float(self._kk)
 
         self._area = grid_data.area
