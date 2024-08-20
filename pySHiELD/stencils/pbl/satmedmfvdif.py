@@ -148,8 +148,8 @@ def init_turbulence(
         zl = phil[0, 0, 0] * constants.RGRAV
         tke = max(q1[0, 0, 0][ntke], constants.TKMIN)
     with computation(PARALLEL), interval(0, -1):
-        ckz = constants.CK1
-        chz = constants.CH1
+        ckz = physcons.CK1
+        chz = physcons.CH1
         prn = 1.0
         kx1 = 0.0
         zm = zi[0, 0, 1]
@@ -158,14 +158,14 @@ def init_turbulence(
         #  set background diffusivities as a function of
         #  horizontal grid size with xkzm_h & xkzm_m for gdx >= 25km
         #  and 0.01 for gdx=5m
-        if gdx[0, 0] >= constants.XKGDX:
+        if gdx[0, 0] >= physcons.XKGDX:
             xkzm_hx = xkzm_h
             xkzm_mx = xkzm_m
         else:
-            xkzm_hx = 0.01 + ((xkzm_h - 0.01) * (1.0 / (constants.XKGDX - 5.0))) * (
+            xkzm_hx = 0.01 + ((xkzm_h - 0.01) * (1.0 / (physcons.XKGDX - 5.0))) * (
                 gdx[0, 0] - 5.0
             )
-            xkzm_mx = 0.01 + ((xkzm_m - 0.01) * (1.0 / (constants.XKGDX - 5.0))) * (
+            xkzm_mx = 0.01 + ((xkzm_m - 0.01) * (1.0 / (physcons.XKGDX - 5.0))) * (
                 gdx[0, 0] - 5.0
             )
 
@@ -288,7 +288,7 @@ def init_turbulence(
     with computation(PARALLEL):
         with interval(0, -2):
             dw2 = (u1[0, 0, 0] - u1[0, 0, 1]) ** 2 + (v1[0, 0, 0] - v1[0, 0, 1]) ** 2
-            shr2 = max(dw2, constants.DW2MIN) * rdzt[0, 0, 0] * rdzt[0, 0, 0]
+            shr2 = max(dw2, physcons.DW2MIN) * rdzt[0, 0, 0] * rdzt[0, 0, 0]
         with interval(-2, -1):
             pbot = phii
 
@@ -649,17 +649,17 @@ def compute_prandtl_num_exchange_coeff(
             prn = max(min(prn[0, 0, 0], constants.PRMAX), constants.PRMIN)
             ckz = max(
                 min(
-                    constants.CK1 + (physcons.CK0 - constants.CK1) * exp(ptem),
+                    physcons.CK1 + (physcons.CK0 - constants.CK1) * exp(ptem),
                     physcons.CK0,
                 ),
-                constants.CK1,
+                physcons.CK1,
             )
             chz = max(
                 min(
-                    constants.CH1 + (constants.CH0 - constants.CH1) * exp(ptem),
-                    constants.CH0,
+                    physcons.CH1 + (physcons.CH0 - constants.CH1) * exp(ptem),
+                    physcons.CH0,
                 ),
-                constants.CH1,
+                physcons.CH1,
             )
 
 
@@ -826,10 +826,10 @@ def compute_eddy_diffusivity_buoy_shear(
                 dku = dkt[0, 0, 0] * prn[0, 0, 0]
         else:
             if ri < 0.0:
-                dku = constants.CK1 * tem
+                dku = physcons.CK1 * tem
                 dkt = constants.RCHCK * dku[0, 0, 0]
             else:
-                dkt = constants.CH1 * tem
+                dkt = physcons.CH1 * tem
                 dku = dkt[0, 0, 0] * min(1.0 + 2.1 * ri, constants.PRMAX)
 
         tem = ckz[0, 0, 0] * tem
@@ -843,11 +843,11 @@ def compute_eddy_diffusivity_buoy_shear(
 
         dkq = constants.PRTKE * dkt[0, 0, 0]
 
-        dkt = max(min(dkt[0, 0, 0], constants.DKMAX), xkzo[0, 0, 0])
+        dkt = max(min(dkt[0, 0, 0], physcons.DKMAX), xkzo[0, 0, 0])
 
-        dkq = max(min(dkq[0, 0, 0], constants.DKMAX), xkzo[0, 0, 0])
+        dkq = max(min(dkq[0, 0, 0], physcons.DKMAX), xkzo[0, 0, 0])
 
-        dku = max(min(dku[0, 0, 0], constants.DKMAX), xkzmo[0, 0, 0])
+        dku = max(min(dku[0, 0, 0], physcons.DKMAX), xkzmo[0, 0, 0])
 
     with computation(PARALLEL), interval(...):
         if k_mask[0, 0, 0] == krad[0, 0]:
@@ -969,7 +969,7 @@ def compute_eddy_diffusivity_buoy_shear(
             prod = buop + shrp
 
     with computation(PARALLEL), interval(0, -1):
-        rle = constants.CE0 / ele[0, 0, 0]
+        rle = physcons.CE0 / ele[0, 0, 0]
 
 
 def predict_tke(

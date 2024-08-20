@@ -45,18 +45,18 @@ def mfscu_s2(
             dz = zl[0, 0, 1] - zl[0, 0, 0]
             if k_mask[0, 0, 0] >= mrad[0, 0] and k_mask[0, 0, 0] < krad[0, 0]:
                 if mrad[0, 0] == 0:
-                    xlamde = constants.CE0 * (
+                    xlamde = physcons.CE0 * (
                         (1.0 / (zm[0, 0, 0] + dz))
                         + 1.0 / max(hrad[0, 0] - zm[0, 0, 0] + dz, dz)
                     )
                 else:
-                    xlamde = constants.CE0 * (
+                    xlamde = physcons.CE0 * (
                         (1.0 / (zm[0, 0, 0] - zm_mrad[0, 0] + dz))
                         + 1.0 / max(hrad[0, 0] - zm[0, 0, 0] + dz, dz)
                     )
             else:
-                xlamde = constants.CE0 / dz
-            xlamdem = constants.CM * xlamde[0, 0, 0]
+                xlamde = physcons.CE0 / dz
+            xlamdem = physcons.CM * xlamde[0, 0, 0]
 
 
 def mfscu_s6(
@@ -78,18 +78,18 @@ def mfscu_s6(
             dz = zl[0, 0, 1] - zl[0, 0, 0]
             if k_mask[0, 0, 0] >= mrad[0, 0] and k_mask[0, 0, 0] < krad[0, 0]:
                 if mrad[0, 0] == 0:
-                    xlamde = constants.CE0 * (
+                    xlamde = physcons.CE0 * (
                         (1.0 / (zm[0, 0, 0] + dz))
                         + 1.0 / max(hrad[0, 0] - zm[0, 0, 0] + dz, dz)
                     )
                 else:
-                    xlamde = constants.CE0 * (
+                    xlamde = physcons.CE0 * (
                         (1.0 / (zm[0, 0, 0] - zm_mrad[0, 0] + dz))
                         + 1.0 / max(hrad[0, 0] - zm[0, 0, 0] + dz, dz)
                     )
             else:
-                xlamde = constants.CE0 / dz
-            xlamdem = constants.CM * xlamde[0, 0, 0]
+                xlamde = physcons.CE0 / dz
+            xlamdem = physcons.CM * xlamde[0, 0, 0]
 
 
 def mfscu_10(

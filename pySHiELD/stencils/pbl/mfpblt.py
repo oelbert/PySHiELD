@@ -99,13 +99,13 @@ def mfpblt_s1(
         if cnvflg[0, 0]:
             dz = zl[0, 0, 1] - zl[0, 0, 0]
             if k_mask[0, 0, 0] < kpbl[0, 0]:
-                xlamue = constants.CE0 * (
+                xlamue = physcons.CE0 * (
                     1.0 / (zm[0, 0, 0] + dz)
                     + 1.0 / max(hpbl[0, 0] - zm[0, 0, 0] + dz, dz)
                 )
             else:
-                xlamue = constants.CE0 / dz
-            xlamuem = constants.CM * xlamue[0, 0, 0]
+                xlamue = physcons.CE0 / dz
+            xlamuem = physcons.CM * xlamue[0, 0, 0]
 
     with computation(FORWARD):
         with interval(1, None):
@@ -240,10 +240,10 @@ def mfpblt_s2(
             if k_mask[0, 0, 0] < kpbl[0, 0]:
                 ptem = 1 / (zm[0, 0, 0] + dz)
                 ptem1 = 1 / max(hpbl[0, 0] - zm[0, 0, 0] + dz, dz)
-                xlamue = constants.CE0 * (ptem + ptem1)
+                xlamue = physcons.CE0 * (ptem + ptem1)
             else:
-                xlamue = constants.CE0 / dz
-            xlamuem = constants.CM * xlamue[0, 0, 0]
+                xlamue = physcons.CE0 / dz
+            xlamuem = physcons.CM * xlamue[0, 0, 0]
 
     with computation(FORWARD):
         with interval(0, 1):
