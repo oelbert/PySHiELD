@@ -10,6 +10,7 @@ from gt4py.cartesian.gtscript import (
 )
 
 import ndsl.constants as constants
+import pySHiELD.constants as constants
 from ndsl.constants import X_DIM, Y_DIM, Z_DIM
 
 # from pace.dsl.dace.orchestration import orchestrate
@@ -648,8 +649,8 @@ def compute_prandtl_num_exchange_coeff(
             prn = max(min(prn[0, 0, 0], constants.PRMAX), constants.PRMIN)
             ckz = max(
                 min(
-                    constants.CK1 + (constants.CK0 - constants.CK1) * exp(ptem),
-                    constants.CK0,
+                    constants.CK1 + (physcons.CK0 - constants.CK1) * exp(ptem),
+                    physcons.CK0,
                 ),
                 constants.CK1,
             )

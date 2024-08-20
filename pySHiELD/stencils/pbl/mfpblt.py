@@ -8,6 +8,7 @@ from gt4py.cartesian.gtscript import (
 )
 
 import ndsl.constants as constants
+import pySHiELD.constants as physcons
 from ndsl.constants import X_DIM, Y_DIM, Z_DIM
 
 # from pace.dsl.dace.orchestration import orchestrate
@@ -263,7 +264,7 @@ def mfpblt_s2(
     with computation(PARALLEL), interval(...):
         if cnvflg[0, 0] and (k_mask[0, 0, 0] < kpbl[0, 0]):
             if wu2[0, 0, 0] > 0.0:
-                xmf = constants.A1 * sqrt(wu2[0, 0, 0])
+                xmf = physcons.A1 * sqrt(wu2[0, 0, 0])
             else:
                 xmf = 0.0
 
@@ -276,7 +277,7 @@ def mfpblt_s2(
                     0.999,
                 )
 
-                if sigma > constants.A1:
+                if sigma > physcons.A1:
                     scaldfunc = max(min((1.0 - sigma) * (1.0 - sigma), 1.0), 0.0)
                 else:
                     scaldfunc = 1.0

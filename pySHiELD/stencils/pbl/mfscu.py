@@ -9,6 +9,7 @@ from gt4py.cartesian.gtscript import (
 )
 
 import ndsl.constants as constants
+import pySHiELD.constants as physcons
 from ndsl.constants import X_DIM, Y_DIM, Z_DIM
 
 # from pace.dsl.dace.orchestration import orchestrate
@@ -163,16 +164,16 @@ def mfscu_s0(
                 thlvd = thlvx[0, 0, 0] + tem1
                 buo = -constants.GRAV * tem1 / thvx[0, 0, 0]
 
-                ra1 = constants.A1
-                ra2 = constants.A11
+                ra1 = physcons.A1
+                ra2 = physcons.A11
 
                 tem = thetae[0, 0, 0] - thetae[0, 0, 1]
                 tem1 = qtx[0, 0, 0] - qtx[0, 0, 1]
                 if (tem > 0.0) and (tem1 > 0.0):
                     cteit = constants.CP_AIR * tem / (constants.HLV * tem1)
                     if cteit > constants.ACTEI:
-                        ra1 = constants.A2
-                        ra2 = constants.A22
+                        ra1 = physcons.A2
+                        ra2 = physcons.A22
 
                 radj = -ra2[0, 0] * radmin[0, 0]
 
