@@ -26,9 +26,6 @@ class PHYSICS_PACKAGES(Enum, metaclass=MetaEnumStr):
 class PBLConfig:
     dt_atmos: int = DEFAULT_INT
     hydrostatic: bool = DEFAULT_BOOL
-    npx: int = DEFAULT_INT
-    npy: int = DEFAULT_INT
-    npz: int = DEFAULT_INT
     isatmedmf: int = NamelistDefaults.isatmedmf
     xkzm_h: float = NamelistDefaults.xkzm_h
     xkzm_m: float = NamelistDefaults.xkzm_m
@@ -36,7 +33,7 @@ class PBLConfig:
     xkzm_ml: float = NamelistDefaults.xkzm_ml
     xkzm_hi: float = NamelistDefaults.xkzm_hi
     xkzm_mi: float = NamelistDefaults.xkzm_mi
-    xkzinv: float = NamelistDefaults.xkzinv
+    xkzminv: float = NamelistDefaults.xkzminv
     xkzm_s: float = NamelistDefaults.xkzm_s
     xkzm_lim: float = NamelistDefaults.xkzm_lim
     xkgdx: float = NamelistDefaults.xkgdx
@@ -164,7 +161,7 @@ class PhysicsConfig:
     xkzm_ml: float = NamelistDefaults.xkzm_ml
     xkzm_hi: float = NamelistDefaults.xkzm_hi
     xkzm_mi: float = NamelistDefaults.xkzm_mi
-    xkzinv: float = NamelistDefaults.xkzinv
+    xkzminv: float = NamelistDefaults.xkzminv
     xkzm_lim: float = NamelistDefaults.xkzm_lim
     xkgdx: float = NamelistDefaults.xkgdx
     do_dk_hb19: bool = DEFAULT_BOOL
@@ -288,7 +285,7 @@ class PhysicsConfig:
             xkzm_ml=self.xkzm_ml,
             xkzm_hi=self.xkzm_hi,
             xkzm_mi=self.xkzm_mi,
-            xkzinv=self.xkzinv,
+            xkzminv=self.xkzminv,
             xkzm_s=self.xkzm_s,
             xkzm_lim=self.xkzm_lim,
             xkgdx=self.xkgdx,
