@@ -276,7 +276,7 @@ class PhysicsState:
             "intent": "inout",
         }
     )
-    hsw = field(
+    hsw: Quantity = field(
         metadata={
             "name": "shortwave_heating_rate",
             "dims": [X_DIM, Y_DIM, Z_DIM],
@@ -284,7 +284,7 @@ class PhysicsState:
             "intent": "in",
         }
     )
-    hlw = field(
+    hlw: Quantity = field(
         metadata={
             "name": "longwave_heating_rate",
             "dims": [X_DIM, Y_DIM, Z_DIM],
