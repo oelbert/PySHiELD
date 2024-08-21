@@ -13,13 +13,11 @@ from gt4py.cartesian.gtscript import (
 
 import ndsl.constants as constants
 import pySHiELD.functions.microphysics_funcs as functions
+from ndsl import Quantity, QuantityFactory, StencilFactory, orchestrate
 from ndsl.constants import X_DIM, Y_DIM, Z_DIM
-from ndsl.dsl.dace.orchestration import dace_inhibitor, orchestrate
-from ndsl.dsl.stencil import StencilFactory
+from ndsl.dsl.dace.orchestration import dace_inhibitor
 from ndsl.dsl.typing import Float, FloatField, FloatFieldIJ, Int
 from ndsl.grid import GridData
-from ndsl.initialization.allocator import QuantityFactory
-from ndsl.quantity import Quantity
 
 from .._config import PhysicsConfig
 
@@ -675,8 +673,6 @@ def sedimentation(
     m1_sol: FloatField,
     c_air: Float,
     c_vap: Float,
-    d0_vap: Float,
-    lv00: Float,
     log_10: Float,
     zs: Float,
     dts: Float,
@@ -1259,7 +1255,6 @@ def icloud(
     csaci: Float,
     cgacw: Float,
     cgaci: Float,
-    cracw: Float,
     cssub_0: Float,
     cssub_1: Float,
     cssub_2: Float,
@@ -2103,8 +2098,6 @@ class Microphysics:
                 self._m1_sol,
                 self._c_air,
                 self._c_vap,
-                self._d0_vap,
-                self._lv00,
                 self._log_10,
                 self._zs,
                 self._dts,
@@ -2191,7 +2184,6 @@ class Microphysics:
                 self._csaci,
                 self._cgacw,
                 self._cgaci,
-                self._cracw,
                 self._cssub_0,
                 self._cssub_1,
                 self._cssub_2,
