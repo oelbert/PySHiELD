@@ -16,6 +16,8 @@ TRACER_DIM = "n_tracers"
 COND_DIM = "n_cond"
 
 
+# TODO: Should we have an enum for each class of parameterization
+# microphysics, PBL, shallow convection, etc?
 @unique
 class PHYSICS_PACKAGES(Enum, metaclass=MetaEnumStr):
     GFS_microphysics = "GFS_microphysics"
@@ -48,14 +50,10 @@ class PBLConfig:
     cap_k0_land: bool = DEFAULT_BOOL
 
     def __post_init__(self):
-        if self.pbl_scheme == "SATMED_EDMF":
-            print("satmededmf")
-            if self.isatmedmf != 0:
-                raise NotImplementedError(
-                    f"PBL Config: isatmedmf == {self.isatmedmf} not implemented"
-                )
-        else:
-            raise NotImplementedError(f"PBL Config:{self.pbl_scheme} not implemented")
+        if self.isatmedmf != 0:
+            raise NotImplementedError(
+                f"PBL Config: isatmedmf == {self.isatmedmf} not implemented"
+            )
         self.ntiw = tracer_variables.index("qice")
         self.ntiw = tracer_variables.index("qliquid")
         self.ntke = tracer_variables.index("qsgs_tke")
