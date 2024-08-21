@@ -91,6 +91,48 @@ class TranslatePhysicsFortranData2Py(TranslateFortranData2Py):
             return data
         return rearranged
 
+    def transform_mp3_serialized_data(self, data):
+        if isinstance(data, np.ndarray):
+            n_dim = len(data.shape)
+            cn = int(np.sqrt(data.shape[0]))
+            npz = data.shape[-1]
+            if len(data.flatten()) == 1:
+                rearranged = data[0]
+            elif n_dim == 2:
+                rearranged = np.reshape(data[:, :], (cn, cn, npz))
+            elif n_dim == 1:
+                rearranged = np.reshape(data[:], (cn, cn))
+            else:
+                raise NotImplementedError("Data dimension not supported")
+        else:
+            return data
+        return rearranged
+
+    def transform_shield_serialized_data(self, data):
+        """
+        SHiELD physics is j-blocked and so only has 1 horizontal dimension,
+        so the j-dimension needs to be padded in as a singleton
+        """
+        if isinstance(data, np.ndarray):
+            n_dim = len(data.shape)
+            cn = data.shape[0]
+            npz = data.shape[-2]
+            ntracer = data.shape[-1]
+            if len(data.flatten()) == 1:
+                reshaped = data[0]  # scalars can stay the same
+            # else add singleton j
+            elif n_dim == 1:
+                reshaped = np.reshape(data[:], (cn, 1))
+            elif n_dim == 2:
+                reshaped = np.reshape(data[:], (cn, 1, npz))
+            elif n_dim == 3:
+                reshaped = np.reshape(data[:], (cn, 1, npz, ntracer))
+            else:
+                raise NotImplementedError("Data dimension not supported")
+            return reshaped
+        else:
+            return data
+
     def transform_dwind_serialized_data(self, data):
         return transform_dwind_serialized_data(
             data, self.stencil_factory.grid_indexing, self.stencil_factory.backend
@@ -106,12 +148,22 @@ class TranslatePhysicsFortranData2Py(TranslateFortranData2Py):
                 serialname = varname
             dycore_format = info["dycore"] if "dycore" in info else False
             microph_format = info["microph"] if "microph" in info else False
+            mp3_format = info["mp3"] if "mp3" in info else False
+            shield_format = info["shield"] if "shield" in info else False
             dwind_format = info["dwind"] if "dwind" in info else False
             index_order = info["order"] if "order" in info else "C"
             if dycore_format:
                 pass
             elif microph_format:
                 inputs[serialname] = self.transform_microphysics_serialized_data(
+                    inputs[serialname]
+                )
+            elif mp3_format:
+                inputs[serialname] = self.transform_mp3_serialized_data(
+                    inputs[serialname]
+                )
+            elif shield_format:
+                inputs[serialname] = self.transform_shield_serialized_data(
                     inputs[serialname]
                 )
             elif dwind_format:
@@ -143,42 +195,70 @@ class TranslatePhysicsFortranData2Py(TranslateFortranData2Py):
                 roll_zero = info["out_roll_zero"] if "out_roll_zero" in info else False
                 index_order = info["order"] if "order" in info else "C"
                 dycore = info["dycore"] if "dycore" in info else False
-                if n_dim == 3:
-                    npz = data_result.shape[2]
-                    k_length = info["kend"] if "kend" in info else npz
-                    if compute_domain:
-                        ds = self.grid.compute_dict()
-                    else:
-                        ds = self.grid.default_domain_dict()
-                    ds.update(info)
-                    ij_slice = self.grid.slice_dict(ds)
-                    data_compute = data_result[ij_slice[0], ij_slice[1], :]
-                    if dycore:
+                mp3_format = info["mp3"] if "mp3" in info else False
+                shield_format = info["shield"] if "shield" in info else False  # TODO: implement this
+                if mp3_format:
+                    if n_dim == 3:
+                        if compute_domain:
+                            ds = self.grid.compute_dict()
+                        else:
+                            ds = self.grid.default_domain_dict()
+                        ds.update(info)
+                        ij_slice = self.grid.slice_dict(ds)
+                        npz = data_result.shape[-1]
+                        k_length = info["kend"] if "kend" in info else npz
+                        data_compute = data_result[ij_slice[0], ij_slice[1], :]
                         if k_length < npz:
-                            data_compute = data_compute[:, :, 0:-1]
+                            data_compute = data_compute[:, :, :k_length]
+                        out[serialname] = np.reshape(data_compute, (cn2, k_length))
+                    elif n_dim == 2:
+                        if compute_domain:
+                            ds = self.grid.compute_dict()
+                        else:
+                            ds = self.grid.default_domain_dict()
+                        ds.update(info)
+                        ij_slice = self.grid.slice_dict(ds)
+                        data_compute = data_result[ij_slice[0], ij_slice[1]]
+                        out[serialname] = np.reshape(data_compute, (cn2))
+                    else:
+                        raise NotImplementedError("Data dimension not supported")
+                else:
+                    if n_dim == 3:
+                        npz = data_result.shape[2]
+                        k_length = info["kend"] if "kend" in info else npz
+                        if compute_domain:
+                            ds = self.grid.compute_dict()
+                        else:
+                            ds = self.grid.default_domain_dict()
+                        ds.update(info)
+                        ij_slice = self.grid.slice_dict(ds)
+                        data_compute = data_result[ij_slice[0], ij_slice[1], :]
+                        if dycore:
+                            if k_length < npz:
+                                data_compute = data_compute[:, :, 0:-1]
+                            out[serialname] = data_compute
+                        else:
+                            data_compute = np.reshape(
+                                data_compute, (cn2, npz), order=index_order
+                            )
+                            if k_length < npz:
+                                out[serialname] = data_compute[:, ::-1][:, 1:]
+                            else:
+                                if roll_zero:
+                                    out[serialname] = np.roll(data_compute[:, ::-1], -1)
+                                else:
+                                    out[serialname] = data_compute[:, ::-1]
+                    elif n_dim == 2:
+                        if compute_domain:
+                            ds = self.grid.compute_dict()
+                        else:
+                            ds = self.grid.default_domain_dict()
+                        ds.update(info)
+                        ij_slice = self.grid.slice_dict(ds)
+                        data_compute = data_result[ij_slice[0], ij_slice[1]]
                         out[serialname] = data_compute
                     else:
-                        data_compute = np.reshape(
-                            data_compute, (cn2, npz), order=index_order
-                        )
-                        if k_length < npz:
-                            out[serialname] = data_compute[:, ::-1][:, 1:]
-                        else:
-                            if roll_zero:
-                                out[serialname] = np.roll(data_compute[:, ::-1], -1)
-                            else:
-                                out[serialname] = data_compute[:, ::-1]
-                elif n_dim == 2:
-                    if compute_domain:
-                        ds = self.grid.compute_dict()
-                    else:
-                        ds = self.grid.default_domain_dict()
-                    ds.update(info)
-                    ij_slice = self.grid.slice_dict(ds)
-                    data_compute = data_result[ij_slice[0], ij_slice[1]]
-                    out[serialname] = data_compute
-                else:
-                    raise NotImplementedError("Output data dimension not supported")
+                        raise NotImplementedError("Output data dimension not supported")
         return out
 
 
