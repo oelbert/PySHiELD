@@ -1640,7 +1640,7 @@ class ScaleAwareTKEMoistEDMF:
         self,
         stencil_factory: StencilFactory,
         quantity_factory: QuantityFactory,
-        grid_data: GridData,
+        grid_area: Float,
         config: PBLConfig,
     ):
         assert config.ntracers == config.ntke, (
@@ -1684,7 +1684,7 @@ class ScaleAwareTKEMoistEDMF:
         self._kk = max(round(self._dt_atmos / physcons.CDTN), 1)
         self._dtn = self._dt_atmos / float(self._kk)
 
-        self._area = grid_data.area
+        self._area = grid_area
 
         self._ntiw = config.ntiw
         self._ntcw = config.ntcw

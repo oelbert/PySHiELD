@@ -275,9 +275,6 @@ class PhysicsConfig:
         return PBLConfig(
             dt_atmos=self.dt_atmos,
             hydrostatic=self.hydrostatic,
-            npx=self.npx,
-            npy=self.npy,
-            npz=self.npz,
             isatmedmf=self.isatmedmf,
             xkzm_h=self.xkzm_h,
             xkzm_m=self.xkzm_m,

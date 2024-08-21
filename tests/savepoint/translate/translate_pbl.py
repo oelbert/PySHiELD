@@ -100,7 +100,7 @@ class TranslatePBL(TranslatePhysicsFortranData2Py):
         compute_func = ScaleAwareTKEMoistEDMF(
             self.stencil_factory,
             quantity_factory,
-            self.grid.grid_data,
+            self.grid.grid_data.grid_area,
             self.namelist.pbl,
         )
 
