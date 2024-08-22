@@ -1,5 +1,4 @@
 from gt4py.cartesian.gtscript import (
-    __INLINED,
     BACKWARD,
     FORWARD,
     PARALLEL,
@@ -26,7 +25,6 @@ from ndsl.dsl.typing import (
     IntFieldIJ,
     set_4d_field_size,
 )
-from ndsl.grid import GridData
 from ndsl.initialization.allocator import QuantityFactory
 from pySHiELD._config import COND_DIM, TRACER_DIM, PBLConfig
 from pySHiELD.functions.physics_functions import fpvs
@@ -34,6 +32,8 @@ from pySHiELD.stencils.pbl.mfpblt import PBLMassFlux
 from pySHiELD.stencils.pbl.mfscu import StratocumulusMassFlux
 from pySHiELD.stencils.pbl.tridiag import tridi2, tridin, tridit
 
+
+FloatFieldTracer = None
 
 def init_turbulence(
     zi: FloatField,
@@ -1647,7 +1647,7 @@ class ScaleAwareTKEMoistEDMF:
         # assert config.ntracers == config.ntke, (
         #     "PBL scheme satmedmfvdif requires ntracer "
         #     f"({config.ntracers}) == ntke ({config.ntke})"
-        #)
+        # )
         if config.do_dk_hb19:
             raise NotImplementedError("do_dk_hb19 has not been implemented")
 
