@@ -7,10 +7,6 @@ class TranslatePBL(TranslatePhysicsFortranData2Py):
     def __init__(self, grid, namelist, stencil_factory):
         super().__init__(grid, namelist, stencil_factory)
         self.in_vars["data_vars"] = {
-            "ntrac": {"serialname": "pbl_ntrac", "shield": True},
-            "ntcw": {"serialname": "pbl_ntcw", "shield": True},
-            "ntiw": {"serialname": "pbl_ntiw", "shield": True},
-            "ntke": {"serialname": "pbl_ntke", "shield": True},
             "dv": {"serialname": "pbl_dv", "shield": True},
             "du": {"serialname": "pbl_du", "shield": True},
             "tdt": {"serialname": "pbl_tdt", "shield": True},
@@ -43,14 +39,21 @@ class TranslatePBL(TranslatePhysicsFortranData2Py):
             "prslk": {"serialname": "pbl_prslk", "shield": True},
             "phii": {"serialname": "pbl_phii", "shield": True},
             "phil": {"serialname": "pbl_phil", "shield": True},
-            "dtp": {"serialname": "pbl_dtp", "shield": True},
-            "dspheat": {"serialname": "pbl_dspheat", "shield": True},
             "dusfc": {"serialname": "pbl_dusfc", "shield": True},
             "dvsfc": {"serialname": "pbl_dvsfc", "shield": True},
             "dtsfc": {"serialname": "pbl_dtsfc", "shield": True},
             "dqsfc": {"serialname": "pbl_dqsfc", "shield": True},
             "hpbl": {"serialname": "pbl_hpbl", "shield": True},
             "kinver": {"serialname": "pbl_kinver", "shield": True},
+            "dkt": {"serialname": "pbl_dkt", "shield": True},
+        }
+        self.in_vars["parameters"] = {
+            "ntrac": {"serialname": "pbl_ntrac", "shield": True},
+            "ntcw": {"serialname": "pbl_ntcw", "shield": True},
+            "ntiw": {"serialname": "pbl_ntiw", "shield": True},
+            "ntke": {"serialname": "pbl_ntke", "shield": True},
+            "dt_atmos": {"serialname": "pbl_dtp", "shield": True},
+            "dspheat": {"serialname": "pbl_dspheat", "shield": True},
             "xkzm_m": {"serialname": "pbl_xkzm_m", "shield": True},
             "xkzm_h": {"serialname": "pbl_xkzm_h", "shield": True},
             "xkzm_ml": {"serialname": "pbl_xkzm_ml", "shield": True},
@@ -64,7 +67,6 @@ class TranslatePBL(TranslatePhysicsFortranData2Py):
             "xkgdx": {"serialname": "pbl_xkgdx", "shield": True},
             "rlmn": {"serialname": "pbl_rlmn", "shield": True},
             "rlmx": {"serialname": "pbl_rlmx", "shield": True},
-            "dkt": {"serialname": "pbl_dkt", "shield": True},
             "cap_k0_land": {"serialname": "pbl_cap_k0_land", "shield": True},
         }
 
@@ -117,7 +119,6 @@ class TranslatePBL(TranslatePhysicsFortranData2Py):
         config.rlmn = inputs.pop("rlmn")
         config.rlmx = inputs.pop("rlmx")
         config.cap_k0_land = inputs.pop("cap_k0_land")
-        config.rlmn = inputs.pop("rlmn")
         compute_func = ScaleAwareTKEMoistEDMF(
             self.stencil_factory,
             quantity_factory,
