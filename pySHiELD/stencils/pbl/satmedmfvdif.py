@@ -29,7 +29,7 @@ from ndsl.grid import GridData
 from ndsl.initialization.allocator import QuantityFactory
 from pySHiELD._config import COND_DIM, TRACER_DIM, PBLConfig
 from pySHiELD.functions.physics_functions import fpvs
-from pySHiELD.stencils.pbl.mfpblt import PBLMassFlux, FloatFieldTracers
+from pySHiELD.stencils.pbl.mfpblt import PBLMassFlux, FloatFieldTracer
 from pySHiELD.stencils.pbl.mfscu import StratocumulusMassFlux
 from pySHiELD.stencils.pbl.tridiag import tridi2, tridin, tridit
 
