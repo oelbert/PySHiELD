@@ -286,7 +286,7 @@ def init_turbulence(
             dtdz1 = dt2 / (zi[0, 0, 1] - zi[0, 0, 0])
             ustar = sqrt(stress[0, 0])
     #  Compute buoyancy (bf) and winshear square
-    with computation(PARALLEL):
+    with computation(FORWARD):
         with interval(0, -2):
             dw2 = (u1[0, 0, 0] - u1[0, 0, 1]) ** 2 + (v1[0, 0, 0] - v1[0, 0, 1]) ** 2
             shr2 = max(dw2, physcons.DW2MIN) * rdzt[0, 0, 0] * rdzt[0, 0, 0]
