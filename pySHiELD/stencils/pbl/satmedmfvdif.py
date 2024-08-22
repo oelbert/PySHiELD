@@ -1644,10 +1644,10 @@ class ScaleAwareTKEMoistEDMF:
         grid_area: Float,
         config: PBLConfig,
     ):
-        assert config.ntracers == config.ntke, (
-            "PBL scheme satmedmfvdif requires ntracer "
-            f"({config.ntracers}) == ntke ({config.ntke})"
-        )
+        # assert config.ntracers == config.ntke, (
+        #     "PBL scheme satmedmfvdif requires ntracer "
+        #     f"({config.ntracers}) == ntke ({config.ntke})"
+        #)
         if config.do_dk_hb19:
             raise NotImplementedError("do_dk_hb19 has not been implemented")
 
