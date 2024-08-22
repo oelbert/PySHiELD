@@ -19,7 +19,7 @@ class TranslatePBL(TranslatePhysicsFortranData2Py):
             "v1": {"serialname": "pbl_v1", "shield": True},
             "t1": {"serialname": "pbl_t1", "shield": True},
             "q1": {"serialname": "pbl_q1", "shield": True},
-            "swh": {"serialname": "pbl_swh", "shield": True},
+            "hsw": {"serialname": "pbl_swh", "shield": True},
             "hlw": {"serialname": "pbl_hlw", "shield": True},
             "xmu": {"serialname": "pbl_xmu", "shield": True},
             "garea": {"serialname": "pbl_garea", "shield": True},
@@ -35,7 +35,7 @@ class TranslatePBL(TranslatePhysicsFortranData2Py):
             "heat": {"serialname": "pbl_heat", "shield": True},
             "evap": {"serialname": "pbl_evap", "shield": True},
             "stress": {"serialname": "pbl_stress", "shield": True},
-            "wind": {"serialname": "pbl_wind", "shield": True},
+            "spd1": {"serialname": "pbl_wind", "shield": True},
             "kpbl": {"serialname": "pbl_kpbl", "shield": True},
             "prsi": {"serialname": "pbl_prsi", "shield": True},
             "delta": {"serialname": "pbl_delta", "shield": True},
@@ -96,12 +96,33 @@ class TranslatePBL(TranslatePhysicsFortranData2Py):
         quantity_factory = QuantityFactory.from_backend(
             sizer, self.stencil_factory.backend
         )
-
+        config = self.namelist.pbl
+        config.ntracers = inputs.pop("ntrac")
+        config.ntcw = inputs.pop("ntcw")
+        config.ntiw = inputs.pop("ntiw")
+        config.ntke = inputs.pop("ntke")
+        config.dt_atmos = inputs.pop("dtp")
+        config.dspheat = inputs.pop("dspheat")
+        config.xkzm_m = inputs.pop("xkzm_m")
+        config.xkzm_h = inputs.pop("xkzm_h")
+        config.xkzm_ml = inputs.pop("xkzm_ml")
+        config.xkzm_hl = inputs.pop("xkzm_hl")
+        config.xkzm_mi = inputs.pop("xkzm_mi")
+        config.xkzm_hi = inputs.pop("xkzm_hi")
+        config.xkzm_s = inputs.pop("xkzm_s")
+        config.xkzminv = inputs.pop("xkzminv")
+        config.do_dk_hb19 = inputs.pop("do_dk_hb19")
+        config.xkzm_lim = inputs.pop("xkzm_lim")
+        config.xkgdx = inputs.pop("xkgdx")
+        config.rlmn = inputs.pop("rlmn")
+        config.rlmx = inputs.pop("rlmx")
+        config.cap_k0_land = inputs.pop("cap_k0_land")
+        config.rlmn = inputs.pop("rlmn")
         compute_func = ScaleAwareTKEMoistEDMF(
             self.stencil_factory,
             quantity_factory,
-            self.grid.grid_data.area,
-            self.namelist.pbl,
+            inputs.pop("garea"),
+            config,
         )
 
         compute_func(**inputs)

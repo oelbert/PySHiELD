@@ -1595,7 +1595,7 @@ def moment_tridiag_mat_ele_comp(
             ad = ad_p1[0, 0]
 
 
-def recover_momentum_tendency(
+def recover_momentum_tendency_and_finish(
     delta: FloatField,
     du: FloatField,
     dusfc: FloatFieldIJ,
@@ -1610,6 +1610,8 @@ def recover_momentum_tendency(
     k_mask: IntField,
     u1: FloatField,
     v1: FloatField,
+    dkt: FloatField,
+    dkt_out: FloatField,
 ):
     from __externals__ import rdt
 
@@ -1623,6 +1625,7 @@ def recover_momentum_tendency(
         dv = dv[0, 0, 0] + vtend
         dusfc = dusfc[0, 0] + constants.RGRAV * delta[0, 0, 0] * utend
         dvsfc = dvsfc[0, 0] + constants.RGRAV * delta[0, 0, 0] * vtend
+        dkt_out = dkt
 
 
 class ScaleAwareTKEMoistEDMF:
@@ -2034,8 +2037,8 @@ class ScaleAwareTKEMoistEDMF:
             domain=idx.domain_compute(),
         )
 
-        self._recover_momentum_tendency = stencil_factory.from_origin_domain(
-            func=recover_momentum_tendency,
+        self._recover_momentum_tendency_and_finish = stencil_factory.from_origin_domain(
+            func=recover_momentum_tendency_and_finish,
             externals={"rdt": self._rdt},
             origin=idx.origin_compute(),
             domain=idx.domain_compute(),
@@ -2079,6 +2082,7 @@ class ScaleAwareTKEMoistEDMF:
         dvsfc: FloatFieldIJ,
         dtsfc: FloatFieldIJ,
         dqsfc: FloatFieldIJ,
+        dkt: FloatField,
     ):
 
         """
@@ -2614,7 +2618,7 @@ class ScaleAwareTKEMoistEDMF:
             self._f2,
         )
 
-        self._recover_momentum_tendency(
+        self._recover_momentum_tendency_and_finish(
             delta,
             du,
             dusfc,
@@ -2629,4 +2633,6 @@ class ScaleAwareTKEMoistEDMF:
             self._k_mask,
             u1,
             v1,
+            self._dkt,
+            dkt,
         )
