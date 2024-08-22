@@ -1,6 +1,7 @@
 from gt4py.cartesian.gtscript import BACKWARD, FORWARD, PARALLEL, computation, interval
 
 from ndsl.dsl.typing import FloatField
+from pySHiELD._config import FloatFieldTracer
 
 
 def tridit(
@@ -29,13 +30,13 @@ def tridit(
 
 def tridi2(
     a1: FloatField,
-    a2: FloatField,
+    a2: FloatFieldTracer,
     au: FloatField,
     cl: FloatField,
     cm: FloatField,
     cu: FloatField,
     r1: FloatField,
-    r2: FloatField,
+    r2: FloatFieldTracer,
 ):
 
     with computation(PARALLEL), interval(0, 1):
@@ -65,10 +66,10 @@ def tridin(
     cm: FloatField,
     cu: FloatField,
     r1: FloatField,
-    r2: FloatField,
+    r2: FloatFieldTracer,
     au: FloatField,
     a1: FloatField,
-    a2: FloatField,
+    a2: FloatFieldTracer,
     n_tracer: int
 ):
     from __externals__ import nt

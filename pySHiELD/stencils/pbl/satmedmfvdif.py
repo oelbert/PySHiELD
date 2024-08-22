@@ -668,7 +668,7 @@ def compute_asymptotic_mixing_length(
     gotvx: FloatField,
     zl: FloatField,
     tsea: FloatFieldIJ,
-    q1_gt: FloatField,
+    q1_gt: FloatFieldTracer,
     zi: FloatField,
     rlam: FloatField,
     ele: FloatField,
@@ -2518,7 +2518,6 @@ class ScaleAwareTKEMoistEDMF:
             self._xmfd,
         )
 
-        
         for n in range(self.ntrac - 1):
             dim_n = n if n < self._ntke else n + 1
             if self._ntrac1 >= 2:
