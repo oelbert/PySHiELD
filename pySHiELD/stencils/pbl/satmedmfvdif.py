@@ -1663,7 +1663,7 @@ class ScaleAwareTKEMoistEDMF:
         self.quantity_factory = quantity_factory
         self.quantity_factory.set_extra_dim_lengths(
             **{
-                self.TRACER_DIM: self._ntracers,
+                self.TRACER_DIM: int(self._ntracers),
             }
         )
         idx = stencil_factory.grid_indexing
