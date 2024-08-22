@@ -72,8 +72,6 @@ def tridin(
     a2: FloatFieldTracer,
     n_tracer: int
 ):
-    from __externals__ import nt
-
     with computation(FORWARD):
         with interval(0, 1):
             fk = 1.0 / cm[0, 0, 0]

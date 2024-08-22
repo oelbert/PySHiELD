@@ -1992,7 +1992,6 @@ class ScaleAwareTKEMoistEDMF:
 
         self._tridin = stencil_factory.from_origin_domain(
             func=tridin,
-            externals={"nt": self._ntrac1},
             origin=idx.origin_compute(),
             domain=idx.domain_compute(),
         )
