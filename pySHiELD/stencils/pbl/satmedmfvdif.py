@@ -24,6 +24,7 @@ from ndsl.dsl.typing import (
     Int,
     IntField,
     IntFieldIJ,
+    set_4d_field_size,
 )
 from ndsl.grid import GridData
 from ndsl.initialization.allocator import QuantityFactory
@@ -45,7 +46,7 @@ def init_turbulence(
     area: FloatFieldIJ,
     gdx: FloatFieldIJ,
     tke: FloatField,
-    q1: FloatField,
+    q1: FloatFieldTracer,
     rdzt: FloatField,
     prn: FloatField,
     kx1: IntField,
@@ -611,7 +612,7 @@ def compute_mass_flux_prelim(
 def compute_mass_flux_tracer_prelim(
     qcko: FloatField,
     qcdo: FloatField,
-    q1: FloatField,
+    q1: FloatFieldTracer,
     pcnvflg: BoolFieldIJ,
     scuflg: BoolFieldIJ,
     n_extra: int
@@ -1140,9 +1141,9 @@ def tke_tridiag_matrix_ele_comp(
 
 
 def recover_tke_tendency_start_tridiag(
-    rtg: FloatField,
+    rtg: FloatFieldTracer,
     f1: FloatField,
-    q1: FloatField,
+    q1: FloatFieldTracer,
     ad: FloatField,
     f2: FloatField,
     dtdz1: FloatField,
@@ -1164,7 +1165,7 @@ def recover_tke_tendency_start_tridiag(
 
 def reset_tracers(
     f2: FloatField,
-    q1: FloatField,
+    q1: FloatFieldTracer,
     n_index: int,
 ):
     with computation(FORWARD), interval(0, 1):
@@ -1187,7 +1188,7 @@ def heat_moist_tridiag_mat_ele_comp(
     mrad: IntFieldIJ,
     pcnvflg: BoolFieldIJ,
     prsl: FloatField,
-    q1: FloatField,
+    q1: FloatFieldTracer,
     qcdo: FloatField,
     qcko: FloatField,
     rdzt: FloatField,
@@ -1320,7 +1321,7 @@ def setup_multi_tracer_tridiag(
     rdzt: FloatField,
     xmf: FloatField,
     qcko: FloatField,
-    q1: FloatField,
+    q1: FloatFieldTracer,
     f2: FloatField,
     scuflg: BoolFieldIJ,
     mrad: IntFieldIJ,
@@ -1431,8 +1432,8 @@ def setup_multi_tracer_tridiag(
 
 def recover_moisture_tendency(
     f2: FloatField,
-    q1: FloatField,
-    rtg: FloatField,
+    q1: FloatFieldTracer,
+    rtg: FloatFieldTracer,
     n_index: int,
 ):
     from __externals__ import rdt
@@ -1447,7 +1448,7 @@ def recover_heat_tendency_add_diss_heat(
     f1: FloatField,
     t1: FloatField,
     f2: FloatField,
-    q1: FloatField,
+    q1: FloatFieldTracer,
     dtsfc: FloatFieldIJ,
     delta: FloatField,
     dqsfc: FloatFieldIJ,
@@ -1652,6 +1653,9 @@ class ScaleAwareTKEMoistEDMF:
 
         self._ntracers = config.ntracers
         self._ntrac1 = self._ntracers - 1
+
+        global FloatFieldTracer
+        FloatFieldTracer = set_4d_field_size(self._ntracers, Float)
 
         self.TRACER_DIM = TRACER_DIM
         self.COND_DIM = COND_DIM
@@ -2046,12 +2050,12 @@ class ScaleAwareTKEMoistEDMF:
         dv: FloatField,
         du: FloatField,
         tdt: FloatField,
-        rtg,  # FloatField with extra data dimension
+        rtg: FloatFieldTracer,  # FloatField with extra data dimension
         hpbl: FloatFieldIJ,
         u1: FloatField,  # ix
         v1: FloatField,  # ix
         t1: FloatField,  # ix
-        q1,  # FloatField with extra data dimension
+        q1: FloatFieldTracer,  # FloatField with extra data dimension
         hsw: FloatField,  # ix
         hlw: FloatField,  # ix
         xmu: FloatFieldIJ,
