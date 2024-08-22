@@ -34,6 +34,7 @@ from pySHiELD.stencils.pbl.tridiag import tridi2, tridin, tridit
 
 
 FloatFieldTracer = set_4d_field_size(9, Float)
+FloatFieldCond = set_4d_field_size(6, Float)
 
 def init_turbulence(
     zi: FloatField,
@@ -610,8 +611,8 @@ def compute_mass_flux_prelim(
             vcdo = v1[0, 0, 0]
 
 def compute_mass_flux_tracer_prelim(
-    qcko: FloatField,
-    qcdo: FloatField,
+    qcko: FloatFieldTracer,
+    qcdo: FloatFieldTracer,
     q1: FloatFieldTracer,
     pcnvflg: BoolFieldIJ,
     scuflg: BoolFieldIJ,
@@ -996,8 +997,8 @@ def predict_tke(
 
 def tke_up_down_prop(
     pcnvflg: BoolFieldIJ,
-    qcdo: FloatField,
-    qcko: FloatField,
+    qcdo: FloatFieldTracer,
+    qcko: FloatFieldTracer,
     scuflg: BoolFieldIJ,
     tke: FloatField,
     kpbl: IntFieldIJ,
@@ -1059,8 +1060,8 @@ def tke_tridiag_matrix_ele_comp(
     mrad: IntFieldIJ,
     pcnvflg: BoolFieldIJ,
     prsl: FloatField,
-    qcdo: FloatField,
-    qcko: FloatField,
+    qcdo: FloatFieldTracer,
+    qcko: FloatFieldTracer,
     rdzt: FloatField,
     scuflg: BoolFieldIJ,
     tke: FloatField,
@@ -1189,8 +1190,8 @@ def heat_moist_tridiag_mat_ele_comp(
     pcnvflg: BoolFieldIJ,
     prsl: FloatField,
     q1: FloatFieldTracer,
-    qcdo: FloatField,
-    qcko: FloatField,
+    qcdo: FloatFieldTracer,
+    qcko: FloatFieldTracer,
     rdzt: FloatField,
     scuflg: BoolFieldIJ,
     tcdo: FloatField,
@@ -1320,14 +1321,14 @@ def setup_multi_tracer_tridiag(
     prsl: FloatField,
     rdzt: FloatField,
     xmf: FloatField,
-    qcko: FloatField,
+    qcko: FloatFieldTracer,
     q1: FloatFieldTracer,
     f2: FloatField,
     scuflg: BoolFieldIJ,
     mrad: IntFieldIJ,
     krad: IntFieldIJ,
     xmfd: FloatField,
-    qcdo: FloatField,
+    qcdo: FloatFieldTracer,
     n_index: int
 ):
     from __externals__ import dt2
