@@ -24,6 +24,7 @@ from ndsl.dsl.typing import (
     IntFieldIJ,
 )
 from ndsl.initialization.allocator import QuantityFactory
+from pySHiELD._config import FloatFieldTracer
 from pySHiELD.functions.physics_functions import fpvs
 
 
@@ -32,7 +33,7 @@ def mfpblt_s0(
     cnvflg: BoolFieldIJ,
     hpbl: FloatFieldIJ,
     kpbl: IntFieldIJ,
-    q1: FloatField,
+    q1: FloatFieldTracer,
     qtu: FloatField,
     qtx: FloatField,
     thlu: FloatField,
@@ -205,7 +206,7 @@ def mfpblt_s2(
     k_mask: IntField,
     pix: FloatField,
     plyr: FloatField,
-    qcko: FloatField,
+    qcko: FloatFieldTracer,
     qtu: FloatField,
     qtx: FloatField,
     scaldfunc: FloatFieldIJ,
@@ -347,8 +348,8 @@ def mfpblt_s3(
     kpbl: IntFieldIJ,
     k_mask: IntField,
     xlamue: FloatField,
-    qcko: FloatField,
-    q1: FloatField,
+    qcko: FloatFieldTracer,
+    q1: FloatFieldTracer,
     zl: FloatField,
     n_tracer: int,
 ):
@@ -378,6 +379,7 @@ class PBLMassFlux:
         ntcw: Int,
         ntrac1: Int,
         kmpbl: Int,
+        ntke: Int,
     ):
         idx = stencil_factory.grid_indexing
         self._im = idx.iec - idx.isc
@@ -385,6 +387,7 @@ class PBLMassFlux:
 
         self._ntcw = ntcw
         self._ntrac1 = ntrac1
+        self._ntke = ntke
 
         def make_quantity():
             return quantity_factory.zeros(
@@ -452,7 +455,7 @@ class PBLMassFlux:
         cnvflg: BoolFieldIJ,
         zl: FloatField,
         zm: FloatField,
-        q1,  # I, J, K, ntracer field
+        q1: FloatFieldTracer,  # I, J, K, ntracer field
         u1: FloatField,
         v1: FloatField,
         plyr: FloatField,
@@ -466,7 +469,7 @@ class PBLMassFlux:
         buo: FloatField,
         xmf: FloatField,
         tcko: FloatField,
-        qcko,  # I, J, K, ntracer field
+        qcko: FloatFieldTracer,  # I, J, K, ntracer field
         ucko: FloatField,
         vcko: FloatField,
         xlamue: FloatField,
@@ -584,6 +587,7 @@ class PBLMassFlux:
                 )
         if self._ntrac1 > self._ntcw:
             for n in range(self._ntcw, self._ntrac1):
+                dim_n = n if n < self._ntke else n + 1
                 self._mfpblt_s3(
                     cnvflg,
                     kpbl,
@@ -592,5 +596,5 @@ class PBLMassFlux:
                     qcko,
                     q1,
                     zl,
-                    n,
+                    dim_n,
                 )

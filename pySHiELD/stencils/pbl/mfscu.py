@@ -1,5 +1,4 @@
 from gt4py.cartesian.gtscript import (
-    __INLINED,
     BACKWARD,
     FORWARD,
     PARALLEL,
@@ -25,6 +24,7 @@ from ndsl.dsl.typing import (
     IntFieldIJ,
 )
 from ndsl.initialization.allocator import QuantityFactory
+from pySHiELD._config import FloatFieldTracer
 from pySHiELD.functions.physics_functions import fpvs
 
 
@@ -99,8 +99,8 @@ def mfscu_10(
     k_mask: IntField,
     zl: FloatField,
     xlamde: FloatField,
-    qcdo: FloatField,
-    q1: FloatField,
+    qcdo: FloatFieldTracer,
+    q1: FloatFieldTracer,
     n_tracer: int
 ):
     with computation(BACKWARD), interval(...):
@@ -127,7 +127,7 @@ def mfscu_s0(
     krad1: IntFieldIJ,
     k_mask: IntField,
     mrad: IntFieldIJ,
-    q1: FloatField,
+    q1: FloatFieldTracer,
     qtd: FloatField,
     qtx: FloatField,
     ra1: FloatFieldIJ,
@@ -426,7 +426,7 @@ def mfscu_s9(
     mrad: IntFieldIJ,
     pix: FloatField,
     plyr: FloatField,
-    qcdo: FloatField,
+    qcdo: FloatFieldTracer,
     qtd: FloatField,
     qtx: FloatField,
     tcdo: FloatField,
@@ -514,6 +514,7 @@ class StratocumulusMassFlux:
         ntcw: Int,
         ntrac1: Int,
         kmscu: Int,
+        ntke: Int,
     ):
 
         idx = stencil_factory.grid_indexing
@@ -524,6 +525,7 @@ class StratocumulusMassFlux:
         self._ntcw = ntcw
         self._ntrac1 = ntrac1
         self._dt2 = dt2
+        self._ntke = ntke
 
         # From our tuning:
         self._bb1 = 2.0
@@ -643,7 +645,7 @@ class StratocumulusMassFlux:
         cnvflg: BoolFieldIJ,
         zl: FloatField,
         zm: FloatField,
-        q1,  # I, J, K, ntracer field
+        q1: FloatFieldTracer,  # I, J, K, ntracer field
         u1: FloatField,
         v1: FloatField,
         plyr: FloatField,
@@ -660,7 +662,7 @@ class StratocumulusMassFlux:
         buo: FloatField,
         xmfd: FloatField,
         tcdo: FloatField,
-        qcdo,  # I, J, K, ntracer field
+        qcdo: FloatFieldTracer,  # I, J, K, ntracer field
         ucdo: FloatField,
         vcdo: FloatField,
         xlamde: FloatField,
@@ -869,6 +871,7 @@ class StratocumulusMassFlux:
 
         if self._ntrac1 > self._ntcw:
             for n in range(self._ntcw, self._ntrac1):
+                dim_n = n if n < self._ntke else n + 1
                 mfscu_10(
                     cnvflg,
                     krad,
@@ -878,5 +881,5 @@ class StratocumulusMassFlux:
                     xlamde,
                     qcdo,
                     q1,
-                    n,
+                    dim_n,
                 )

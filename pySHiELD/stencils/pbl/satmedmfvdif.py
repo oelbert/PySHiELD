@@ -23,18 +23,14 @@ from ndsl.dsl.typing import (
     Int,
     IntField,
     IntFieldIJ,
-    set_4d_field_size,
 )
 from ndsl.initialization.allocator import QuantityFactory
-from pySHiELD._config import COND_DIM, TRACER_DIM, PBLConfig
+from pySHiELD._config import TRACER_DIM, PBLConfig, FloatFieldTracer
 from pySHiELD.functions.physics_functions import fpvs
 from pySHiELD.stencils.pbl.mfpblt import PBLMassFlux
 from pySHiELD.stencils.pbl.mfscu import StratocumulusMassFlux
 from pySHiELD.stencils.pbl.tridiag import tridi2, tridin, tridit
 
-
-FloatFieldTracer = set_4d_field_size(9, Float)
-FloatFieldCond = set_4d_field_size(6, Float)
 
 def init_turbulence(
     zi: FloatField,
@@ -1146,7 +1142,7 @@ def recover_tke_tendency_start_tridiag(
     f1: FloatField,
     q1: FloatFieldTracer,
     ad: FloatField,
-    f2: FloatField,
+    f2: FloatFieldTracer,
     dtdz1: FloatField,
     evap: FloatFieldIJ,
     heat: FloatFieldIJ,
@@ -1165,7 +1161,7 @@ def recover_tke_tendency_start_tridiag(
         f2[0, 0, 0][0] = q1[0, 0, 0][0] + dtdz1[0, 0, 0] * evap[0, 0]
 
 def reset_tracers(
-    f2: FloatField,
+    f2: FloatFieldTracer,
     q1: FloatFieldTracer,
     n_index: int,
 ):
@@ -1181,7 +1177,7 @@ def heat_moist_tridiag_mat_ele_comp(
     dkt: FloatField,
     f1: FloatField,
     f1_p1: FloatFieldIJ,
-    f2: FloatField,
+    f2: FloatFieldTracer,
     f2_p1: FloatFieldIJ,
     kpbl: IntFieldIJ,
     krad: IntFieldIJ,
@@ -1323,7 +1319,7 @@ def setup_multi_tracer_tridiag(
     xmf: FloatField,
     qcko: FloatFieldTracer,
     q1: FloatFieldTracer,
-    f2: FloatField,
+    f2: FloatFieldTracer,
     scuflg: BoolFieldIJ,
     mrad: IntFieldIJ,
     krad: IntFieldIJ,
@@ -1432,7 +1428,7 @@ def setup_multi_tracer_tridiag(
 
 
 def recover_moisture_tendency(
-    f2: FloatField,
+    f2: FloatFieldTracer,
     q1: FloatFieldTracer,
     rtg: FloatFieldTracer,
     n_index: int,
@@ -1448,7 +1444,7 @@ def recover_heat_tendency_add_diss_heat(
     tdt: FloatField,
     f1: FloatField,
     t1: FloatField,
-    f2: FloatField,
+    f2: FloatFieldTracer,
     q1: FloatFieldTracer,
     dtsfc: FloatFieldIJ,
     delta: FloatField,
@@ -1476,7 +1472,7 @@ def moment_tridiag_mat_ele_comp(
     dtdz1: FloatField,
     f1: FloatField,
     f1_p1: FloatFieldIJ,
-    f2: FloatField,
+    f2: FloatFieldTracer,
     f2_p1: FloatFieldIJ,
     kpbl: IntFieldIJ,
     krad: IntFieldIJ,
@@ -1606,7 +1602,7 @@ def recover_momentum_tendency(
     dv: FloatField,
     dvsfc: FloatFieldIJ,
     f1: FloatField,
-    f2: FloatField,
+    f2: FloatFieldTracer,
     hpbl: FloatFieldIJ,
     hpblx: FloatFieldIJ,
     kpbl: IntFieldIJ,
@@ -1660,16 +1656,11 @@ class ScaleAwareTKEMoistEDMF:
 
         self._ntrac1 = self._ntracers - 1
 
-        global FloatFieldTracer
-        FloatFieldTracer = set_4d_field_size(self._ntracers, Float)
-
         self.TRACER_DIM = TRACER_DIM
-        self.COND_DIM = COND_DIM
         self.quantity_factory = quantity_factory
         self.quantity_factory.set_extra_dim_lengths(
             **{
                 self.TRACER_DIM: self._ntracers,
-                self.COND_DIM: self._ntrac1,
             }
         )
         idx = stencil_factory.grid_indexing
@@ -1824,7 +1815,7 @@ class ScaleAwareTKEMoistEDMF:
 
         # Allocate higher order fields
         self._f2 = quantity_factory.zeros(
-            [X_DIM, Y_DIM, Z_DIM, self.COND_DIM],
+            [X_DIM, Y_DIM, Z_DIM, self.TRACER_DIM],
             units="unknown",
             dtype=Int,
         )
@@ -1908,6 +1899,7 @@ class ScaleAwareTKEMoistEDMF:
             self._ntcw,
             self._ntrac1,
             self._kmpbl,
+            self._ntke,
         )
 
         self._mfscu = StratocumulusMassFlux(
@@ -1917,6 +1909,7 @@ class ScaleAwareTKEMoistEDMF:
             self._ntcw,
             self._ntrac1,
             self._kmscu,
+            self._ntke,
         )
 
         self._compute_prandtl_num_exchange_coeff = stencil_factory.from_origin_domain(
@@ -2489,10 +2482,11 @@ class ScaleAwareTKEMoistEDMF:
 
         if self._ntrac1 >= 2:
             for n in range(1, self._ntrac1):
+                dim_n = n if n < self._ntke else n + 1
                 self._reset_tracers(
                     self._f1,
                     q1,
-                    n,
+                    dim_n,
                 )
 
         self._heat_moist_tridiag_mat_ele_comp(
@@ -2524,8 +2518,10 @@ class ScaleAwareTKEMoistEDMF:
             self._xmfd,
         )
 
-        if self._ntrac1 >= 2:
-            for n in range(self.ntrac - 1):
+        
+        for n in range(self.ntrac - 1):
+            dim_n = n if n < self._ntke else n + 1
+            if self._ntrac1 >= 2:
                 self._setup_multi_tracer_tridiag(
                     self._pcnvflg,
                     self._k_mask,
@@ -2542,10 +2538,9 @@ class ScaleAwareTKEMoistEDMF:
                     self._krad,
                     self._xmfd,
                     self._qcdo,
-                    n
+                    dim_n
                 )
 
-        for n in range(self._ntrac1):
             self._tridin(
                 self._al,
                 self._ad,
@@ -2555,14 +2550,14 @@ class ScaleAwareTKEMoistEDMF:
                 self._au,
                 self._f1,
                 self._f2,
-                n
+                dim_n,
             )
 
             self._recover_moisture_tendency(
                 self._f2,
                 q1,
                 rtg,
-                n,
+                dim_n,
             )
 
         self._recover_heat_tendency_add_diss_heat(
@@ -2576,7 +2571,7 @@ class ScaleAwareTKEMoistEDMF:
             dqsfc,
         )
 
-        moment_tridiag_mat_ele_comp(
+        self._moment_tridiag_mat_ele_comp(
             self._ad,
             self._ad_p1,
             self._al,

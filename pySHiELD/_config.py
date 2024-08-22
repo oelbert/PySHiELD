@@ -7,13 +7,18 @@ import f90nml
 from ndsl.dsl.gt4py_utils import tracer_variables
 from ndsl import MetaEnumStr
 from ndsl.namelist import Namelist, NamelistDefaults
+from ndsl.dsl.typing import (
+    Float,
+    set_4d_field_size,
+)
 
+# TODO: This is a hack
+FloatFieldTracer = set_4d_field_size(9, Float)
 
 DEFAULT_INT = 0
 DEFAULT_BOOL = False
 DEFAULT_SCHEMES = ["GFS_microphysics"]
 TRACER_DIM = "n_tracers"
-COND_DIM = "n_cond"
 
 
 # TODO: Should we have an enum for each class of parameterization
