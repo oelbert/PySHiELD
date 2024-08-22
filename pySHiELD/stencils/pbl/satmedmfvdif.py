@@ -33,7 +33,7 @@ from pySHiELD.stencils.pbl.mfscu import StratocumulusMassFlux
 from pySHiELD.stencils.pbl.tridiag import tridi2, tridin, tridit
 
 
-FloatFieldTracer = None
+FloatFieldTracer = set_4d_field_size(9, Float)
 
 def init_turbulence(
     zi: FloatField,
@@ -1652,6 +1652,11 @@ class ScaleAwareTKEMoistEDMF:
             raise NotImplementedError("do_dk_hb19 has not been implemented")
 
         self._ntracers = config.ntracers
+        assert self._ntracers == 9, (
+            "PBL scheme satmedmfvdif requires ntracer "
+            f"({config.ntracers}) == 9"
+        )
+
         self._ntrac1 = self._ntracers - 1
 
         global FloatFieldTracer
