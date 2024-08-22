@@ -24,10 +24,11 @@ from ndsl.dsl.typing import (
     Int,
     IntField,
     IntFieldIJ,
+    set_4d_field_size,
 )
 from ndsl.grid import GridData
 from ndsl.initialization.allocator import QuantityFactory
-from pySHiELD._config import COND_DIM, TRACER_DIM, PBLConfig, FloatFieldTracer
+from pySHiELD._config import COND_DIM, TRACER_DIM, PBLConfig
 from pySHiELD.functions.physics_functions import fpvs
 from pySHiELD.stencils.pbl.mfpblt import PBLMassFlux
 from pySHiELD.stencils.pbl.mfscu import StratocumulusMassFlux
@@ -1652,6 +1653,9 @@ class ScaleAwareTKEMoistEDMF:
 
         self._ntracers = config.ntracers
         self._ntrac1 = self._ntracers - 1
+
+        global FloatFieldTracer
+        FloatFieldTracer = set_4d_field_size(self._ntracers, Float)
 
         self.TRACER_DIM = TRACER_DIM
         self.COND_DIM = COND_DIM
