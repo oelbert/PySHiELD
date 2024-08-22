@@ -47,28 +47,28 @@ class TranslatePBL(TranslatePhysicsFortranData2Py):
             "kinver": {"serialname": "pbl_kinver", "shield": True},
             "dkt": {"serialname": "pbl_dkt", "shield": True},
         }
-        self.in_vars["parameters"] = {
-            "ntrac": {"serialname": "pbl_ntrac", "shield": True},
-            "ntcw": {"serialname": "pbl_ntcw", "shield": True},
-            "ntiw": {"serialname": "pbl_ntiw", "shield": True},
-            "ntke": {"serialname": "pbl_ntke", "shield": True},
-            "dt_atmos": {"serialname": "pbl_dtp", "shield": True},
-            "dspheat": {"serialname": "pbl_dspheat", "shield": True},
-            "xkzm_m": {"serialname": "pbl_xkzm_m", "shield": True},
-            "xkzm_h": {"serialname": "pbl_xkzm_h", "shield": True},
-            "xkzm_ml": {"serialname": "pbl_xkzm_ml", "shield": True},
-            "xkzm_hl": {"serialname": "pbl_xkzm_hl", "shield": True},
-            "xkzm_mi": {"serialname": "pbl_xkzm_mi", "shield": True},
-            "xkzm_hi": {"serialname": "pbl_xkzm_hi", "shield": True},
-            "xkzm_s": {"serialname": "pbl_xkzm_s", "shield": True},
-            "xkzminv": {"serialname": "pbl_xkzminv", "shield": True},
-            "do_dk_hb19": {"serialname": "pbl_do_dk_hb19", "shield": True},
-            "xkzm_lim": {"serialname": "pbl_xkzm_lim", "shield": True},
-            "xkgdx": {"serialname": "pbl_xkgdx", "shield": True},
-            "rlmn": {"serialname": "pbl_rlmn", "shield": True},
-            "rlmx": {"serialname": "pbl_rlmx", "shield": True},
-            "cap_k0_land": {"serialname": "pbl_cap_k0_land", "shield": True},
-        }
+        self.in_vars["parameters"] = [
+            "pbl_ntrac",
+            "pbl_ntcw",
+            "pbl_ntiw",
+            "pbl_ntke",
+            "pbl_dtp",
+            "pbl_dspheat",
+            "pbl_xkzm_m",
+            "pbl_xkzm_h",
+            "pbl_xkzm_ml",
+            "pbl_xkzm_hl",
+            "pbl_xkzm_mi",
+            "pbl_xkzm_hi",
+            "pbl_xkzm_s",
+            "pbl_xkzminv",
+            "pbl_do_dk_hb19",
+            "pbl_xkzm_lim",
+            "pbl_xkgdx",
+            "pbl_rlmn",
+            "pbl_rlmx",
+            "pbl_cap_k0_land",
+        ]
 
         self.out_vars = {
             "du": {"serialname": "pbl_du", "shield": True},
@@ -99,26 +99,26 @@ class TranslatePBL(TranslatePhysicsFortranData2Py):
             sizer, self.stencil_factory.backend
         )
         config = self.namelist.pbl
-        config.ntracers = inputs.pop("ntrac")
-        config.ntcw = inputs.pop("ntcw")
-        config.ntiw = inputs.pop("ntiw")
-        config.ntke = inputs.pop("ntke")
-        config.dt_atmos = inputs.pop("dtp")
-        config.dspheat = inputs.pop("dspheat")
-        config.xkzm_m = inputs.pop("xkzm_m")
-        config.xkzm_h = inputs.pop("xkzm_h")
-        config.xkzm_ml = inputs.pop("xkzm_ml")
-        config.xkzm_hl = inputs.pop("xkzm_hl")
-        config.xkzm_mi = inputs.pop("xkzm_mi")
-        config.xkzm_hi = inputs.pop("xkzm_hi")
-        config.xkzm_s = inputs.pop("xkzm_s")
-        config.xkzminv = inputs.pop("xkzminv")
-        config.do_dk_hb19 = inputs.pop("do_dk_hb19")
-        config.xkzm_lim = inputs.pop("xkzm_lim")
-        config.xkgdx = inputs.pop("xkgdx")
-        config.rlmn = inputs.pop("rlmn")
-        config.rlmx = inputs.pop("rlmx")
-        config.cap_k0_land = inputs.pop("cap_k0_land")
+        config.ntracers = inputs.pop("pbl_ntrac")
+        config.ntcw = inputs.pop("pbl_ntcw")
+        config.ntiw = inputs.pop("pbl_ntiw")
+        config.ntke = inputs.pop("pbl_ntke")
+        config.dt_atmos = inputs.pop("pbl_dtp")
+        config.dspheat = inputs.pop("pbl_dspheat")
+        config.xkzm_m = inputs.pop("pbl_xkzm_m")
+        config.xkzm_h = inputs.pop("pbl_xkzm_h")
+        config.xkzm_ml = inputs.pop("pbl_xkzm_ml")
+        config.xkzm_hl = inputs.pop("pbl_xkzm_hl")
+        config.xkzm_mi = inputs.pop("pbl_xkzm_mi")
+        config.xkzm_hi = inputs.pop("pbl_xkzm_hi")
+        config.xkzm_s = inputs.pop("pbl_xkzm_s")
+        config.xkzminv = inputs.pop("pbl_xkzminv")
+        config.do_dk_hb19 = inputs.pop("pbl_do_dk_hb19")
+        config.xkzm_lim = inputs.pop("pbl_xkzm_lim")
+        config.xkgdx = inputs.pop("pbl_xkgdx")
+        config.rlmn = inputs.pop("pbl_rlmn")
+        config.rlmx = inputs.pop("pbl_rlmx")
+        config.cap_k0_land = inputs.pop("pbl_cap_k0_land")
         compute_func = ScaleAwareTKEMoistEDMF(
             self.stencil_factory,
             quantity_factory,
