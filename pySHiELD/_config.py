@@ -5,6 +5,7 @@ from typing import List, Optional, Tuple
 import f90nml
 
 from ndsl.dsl.gt4py_utils import tracer_variables
+from ndsl.dsl.typing import Float, set_4d_field_size
 from ndsl import MetaEnumStr
 from ndsl.namelist import Namelist, NamelistDefaults
 
@@ -14,6 +15,8 @@ DEFAULT_BOOL = False
 DEFAULT_SCHEMES = ["GFS_microphysics"]
 TRACER_DIM = "n_tracers"
 COND_DIM = "n_cond"
+
+FloatFieldTracer = None
 
 
 # TODO: Should we have an enum for each class of parameterization
@@ -189,6 +192,9 @@ class PhysicsConfig:
             physics_config = self.from_f90nml(f90_nml)
             for var in physics_config.__dict__.keys():
                 setattr(self, var, physics_config.__dict__[var])
+
+        global FloatFieldTracer
+        FloatFieldTracer = set_4d_field_size(self.ntracers, Float)
 
     @classmethod
     def from_f90nml(self, f90_namelist: f90nml.Namelist) -> "PhysicsConfig":
