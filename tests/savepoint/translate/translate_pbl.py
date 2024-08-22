@@ -86,9 +86,9 @@ class TranslatePBL(TranslatePhysicsFortranData2Py):
     def compute(self, inputs):
         sizer = SubtileGridSizer.from_tile_params(
             nx_tile=self.namelist.npx - 1,
-            ny_tile=1,
+            ny_tile=self.namelist.npx - 1,
             nz=self.namelist.npz,
-            n_halo=0,
+            n_halo=3,
             extra_dim_lengths={},
             layout=self.namelist.layout,
         )
