@@ -196,7 +196,7 @@ class TranslatePhysicsFortranData2Py(TranslateFortranData2Py):
                 index_order = info["order"] if "order" in info else "C"
                 dycore = info["dycore"] if "dycore" in info else False
                 mp3_format = info["mp3"] if "mp3" in info else False
-                shield_format = info["shield"] if "shield" in info else False  # TODO: implement this
+                shield_format = info["shield"] if "shield" in info else False
                 if mp3_format:
                     if n_dim == 3:
                         if compute_domain:
@@ -220,6 +220,28 @@ class TranslatePhysicsFortranData2Py(TranslateFortranData2Py):
                         ij_slice = self.grid.slice_dict(ds)
                         data_compute = data_result[ij_slice[0], ij_slice[1]]
                         out[serialname] = np.reshape(data_compute, (cn2))
+                    else:
+                        raise NotImplementedError("Data dimension not supported")
+                elif shield_format:
+                    if n_dim == 3:
+                        npz = data_result.shape[-1]
+                        npx = data_result.shape[0]
+                        k_length = info["kend"] if "kend" in info else npz
+                        if k_length < npz:
+                            data_result = data_result[:, :, :k_length]
+                        out[serialname] = np.reshape(data_result, (npx, k_length))
+                    elif n_dim == 2:
+                        npx = data_result.shape[0]
+                        out[serialname] = np.reshape(data_result, (npx))
+                    elif n_dim == 4:
+                        ntracer = data_result.shape[-1]
+                        npz = data_result.shape[-2]
+                        npx = data_result.shape[0]
+                        if k_length < npz:
+                            data_result = data_result[:, :, :k_length]
+                        out[serialname] = np.reshape(
+                            data_result, (npx, k_length, ntracer)
+                        )
                     else:
                         raise NotImplementedError("Data dimension not supported")
                 else:
