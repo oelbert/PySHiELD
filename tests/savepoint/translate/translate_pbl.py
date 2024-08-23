@@ -99,10 +99,10 @@ class TranslatePBL(TranslatePhysicsFortranData2Py):
             sizer, self.stencil_factory.backend
         )
         config = self.namelist.pbl
-        config.ntracers = inputs.pop("pbl_ntrac")
-        config.ntcw = inputs.pop("pbl_ntcw")
-        config.ntiw = inputs.pop("pbl_ntiw")
-        config.ntke = inputs.pop("pbl_ntke")
+        config.ntracers = int(inputs.pop("pbl_ntrac"))
+        config.ntcw = int(inputs.pop("pbl_ntcw"))
+        config.ntiw = int(inputs.pop("pbl_ntiw"))
+        config.ntke = int(inputs.pop("pbl_ntke"))
         config.dt_atmos = inputs.pop("pbl_dtp")
         config.dspheat = inputs.pop("pbl_dspheat")
         config.xkzm_m = inputs.pop("pbl_xkzm_m")
