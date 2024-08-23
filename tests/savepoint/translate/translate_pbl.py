@@ -119,6 +119,9 @@ class TranslatePBL(TranslatePhysicsFortranData2Py):
         inputs.pop("pbl_rlmn")
         inputs.pop("pbl_rlmx")
         inputs.pop("pbl_cap_k0_land")
+
+        self.make_storage_data_input_vars(inputs)
+
         compute_func = ScaleAwareTKEMoistEDMF(
             self.stencil_factory,
             quantity_factory,
