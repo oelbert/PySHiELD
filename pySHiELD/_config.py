@@ -47,7 +47,7 @@ class PBLConfig:
     do_dk_hb19: bool = DEFAULT_BOOL
     rlmn: float = NamelistDefaults.rlmn
     rlmx: float = NamelistDefaults.rlmx
-    ntracers: int = len(tracer_variables)
+    ntracers: int = int(len(tracer_variables))
     ntiw: int = DEFAULT_INT
     ntcw: int = DEFAULT_INT
     ntke: int = DEFAULT_INT
@@ -73,7 +73,7 @@ class PhysicsConfig:
     npz: int = DEFAULT_INT
     nwat: int = DEFAULT_INT
     schemes: List = None
-    ntracers: int = len(tracer_variables)
+    ntracers: int = int(len(tracer_variables))
     ntiw: int = DEFAULT_INT
     ntcw: int = DEFAULT_INT
     ntke: int = DEFAULT_INT
