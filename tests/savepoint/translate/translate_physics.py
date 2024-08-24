@@ -110,27 +110,18 @@ class TranslatePhysicsFortranData2Py(TranslateFortranData2Py):
 
     def transform_shield_serialized_data(self, data):
         """
-        SHiELD physics is j-blocked and so only has 1 horizontal dimension
+        SHiELD physics is j-blocked but the data
+        *should* have been merged when converted to netcdf
         """
         if isinstance(data, np.ndarray):
             n_dim = len(data.shape)
             cn = int(np.sqrt(data.shape[0]))
             if len(data.flatten()) == 1:
                 rearranged = data[0]
-            elif n_dim == 3:
-                n_data = data.shape[-1]
-                npz = data.shape[-2]
-                rearranged = np.reshape(data[:, :], (cn, cn, npz, n_data))
-            elif n_dim == 2:
-                npz = data.shape[-1]
-                rearranged = np.reshape(data[:, :], (cn, cn, npz))
-            elif n_dim == 1:
-                rearranged = np.reshape(data[:], (cn, cn))
-            else:
+                return rearranged
+            elif n_dim not in [1, 2, 3]:
                 raise NotImplementedError("Data dimension not supported")
-            return rearranged
-        else:
-            return data
+        return data
 
     def transform_dwind_serialized_data(self, data):
         return transform_dwind_serialized_data(
