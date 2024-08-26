@@ -98,18 +98,35 @@ class TranslatePBL(TranslatePhysicsFortranData2Py):
         quantity_factory = QuantityFactory.from_backend(
             sizer, self.stencil_factory.backend
         )
-        config = self.namelist.pbl
-        config.ntracers = int(inputs["pbl_ntrac"])
-        config.ntcw = int(inputs["pbl_ntcw"])
-        config.ntiw = int(inputs["pbl_ntiw"])
-        config.ntke = int(inputs["pbl_ntke"])
-
+    
         self.make_storage_data_input_vars(inputs)
+        
+        config = self.namelist.pbl
+        config.ntracers = int(inputs.pop("pbl_ntrac"))
+        config.ntcw = int(inputs.pop("pbl_ntcw"))
+        config.ntiw = int(inputs.pop("pbl_ntiw"))
+        config.ntke = int(inputs.pop("pbl_ntke"))
+        inputs.pop("pbl_dtp")
+        inputs.pop("pbl_dspheat")
+        inputs.pop("pbl_xkzm_m")
+        inputs.pop("pbl_xkzm_h")
+        inputs.pop("pbl_xkzm_ml")
+        inputs.pop("pbl_xkzm_hl")
+        inputs.pop("pbl_xkzm_mi")
+        inputs.pop("pbl_xkzm_hi")
+        inputs.pop("pbl_xkzm_s")
+        inputs.pop("pbl_xkzminv")
+        inputs.pop("pbl_do_dk_hb19")
+        inputs.pop("pbl_xkzm_lim")
+        inputs.pop("pbl_xkgdx")
+        inputs.pop("pbl_rlmn")
+        inputs.pop("pbl_rlmx")
+        inputs.pop("pbl_cap_k0_land")
 
         compute_func = ScaleAwareTKEMoistEDMF(
             self.stencil_factory,
             quantity_factory,
-            inputs.pop("pbl_garea"),
+            inputs.pop("garea"),
             config,
         )
 
