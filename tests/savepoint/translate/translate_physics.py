@@ -119,7 +119,7 @@ class TranslatePhysicsFortranData2Py(TranslateFortranData2Py):
             if len(data.flatten()) == 1:
                 rearranged = data[0]
                 return rearranged
-            elif n_dim not in [1, 2, 3]:
+            elif n_dim not in [1, 2, 3, 4]:
                 raise NotImplementedError("Data dimension not supported")
         return data
 
