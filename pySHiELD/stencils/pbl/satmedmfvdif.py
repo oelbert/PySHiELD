@@ -1157,8 +1157,8 @@ def recover_tke_tendency_start_tridiag(
 
     with computation(FORWARD), interval(0, 1):
         ad = 1.0
-        f1 = t1[0, 0, 0] + dtdz1[0, 0, 0] * heat[0, 0]
-        f2[0, 0, 0][0] = q1[0, 0, 0][0] + dtdz1[0, 0, 0] * evap[0, 0]
+        f1 = t1[0, 0, 0] + dtdz1[0, 0] * heat[0, 0]
+        f2[0, 0, 0][0] = q1[0, 0, 0][0] + dtdz1[0, 0] * evap[0, 0]
 
 def reset_tracers(
     f2: FloatFieldTracer,
@@ -1501,7 +1501,7 @@ def moment_tridiag_mat_ele_comp(
             tdt = tdt[0, 0, 0] + physcons.DSPFAC * (diss[0, 0, 0] / constants.CP_AIR)
 
     with computation(PARALLEL), interval(0, 1):
-        ad = 1.0 + dtdz1[0, 0, 0] * stress[0, 0] / spd1[0, 0]
+        ad = 1.0 + dtdz1[0, 0] * stress[0, 0] / spd1[0, 0]
         f1 = u1[0, 0, 0]
         f2[0, 0, 0][0] = v1[0, 0, 0]
 
