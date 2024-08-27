@@ -1820,19 +1820,19 @@ class ScaleAwareTKEMoistEDMF:
         self._f2 = quantity_factory.zeros(
             [X_DIM, Y_DIM, Z_DIM, self.TRACER_DIM],
             units="unknown",
-            dtype=Int,
+            dtype=Float,
         )
 
         self._qcko = quantity_factory.zeros(
             [X_DIM, Y_DIM, Z_DIM, self.TRACER_DIM],
             units="unknown",
-            dtype=Int,
+            dtype=Float,
         )
 
         self._qcdo = quantity_factory.zeros(
             [X_DIM, Y_DIM, Z_DIM, self.TRACER_DIM],
             units="unknown",
-            dtype=Int,
+            dtype=Float,
         )
 
         # Init stencils:
