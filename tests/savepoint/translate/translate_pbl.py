@@ -32,7 +32,7 @@ class TranslatePBL(TranslatePhysicsFortranData2Py):
             "evap": {"serialname": "pbl_evap", "shield": True},
             "stress": {"serialname": "pbl_stress", "shield": True},
             "spd1": {"serialname": "pbl_wind", "shield": True},
-            "kpbl": {"serialname": "pbl_kpbl", "shield": True, "int_type": True},
+            "kpbl": {"serialname": "pbl_kpbl", "shield": True},
             "prsi": {"serialname": "pbl_prsi", "shield": True},
             "delta": {"serialname": "pbl_delta", "shield": True},
             "prsl": {"serialname": "pbl_prsl", "shield": True},
@@ -44,7 +44,7 @@ class TranslatePBL(TranslatePhysicsFortranData2Py):
             "dtsfc": {"serialname": "pbl_dtsfc", "shield": True},
             "dqsfc": {"serialname": "pbl_dqsfc", "shield": True},
             "hpbl": {"serialname": "pbl_hpbl", "shield": True},
-            "kinver": {"serialname": "pbl_kinver", "shield": True, "int_type": True},
+            "kinver": {"serialname": "pbl_kinver", "shield": True},
             "dkt": {"serialname": "pbl_dkt", "shield": True},
         }
         self.in_vars["parameters"] = [
@@ -98,9 +98,9 @@ class TranslatePBL(TranslatePhysicsFortranData2Py):
         quantity_factory = QuantityFactory.from_backend(
             sizer, self.stencil_factory.backend
         )
-    
+
         self.make_storage_data_input_vars(inputs)
-        
+
         config = self.namelist.pbl
         config.ntracers = int(inputs.pop("pbl_ntrac"))
         config.ntcw = int(inputs.pop("pbl_ntcw"))
@@ -124,6 +124,8 @@ class TranslatePBL(TranslatePhysicsFortranData2Py):
         inputs.pop("pbl_cap_k0_land")
 
         inputs.pop("islmsk")  # Not used yet
+        inputs["kpbl"] = inputs["kpbl"].astype(int)
+        inputs["kinver"] = inputs["kinver"].astype(int)
 
         compute_func = ScaleAwareTKEMoistEDMF(
             self.stencil_factory,

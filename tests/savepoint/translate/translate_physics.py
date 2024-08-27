@@ -141,11 +141,6 @@ class TranslatePhysicsFortranData2Py(TranslateFortranData2Py):
             shield_format = info["shield"] if "shield" in info else False
             dwind_format = info["dwind"] if "dwind" in info else False
             index_order = info["order"] if "order" in info else "C"
-            if "int_type" in info:
-                int_type = info["int_type"]
-                print(f"int flag for {serialname} is {int_type}")
-            else:
-                int_type = False
             dict_4d = True
             if dycore_format:
                 pass
@@ -158,14 +153,9 @@ class TranslatePhysicsFortranData2Py(TranslateFortranData2Py):
                     inputs[serialname]
                 )
             elif shield_format:
-                if int_type:
-                    inputs[serialname] = self.transform_shield_serialized_data(
-                        inputs[serialname]
-                    ).astype(int)
-                else:
-                    inputs[serialname] = self.transform_shield_serialized_data(
-                        inputs[serialname]
-                    )
+                inputs[serialname] = self.transform_shield_serialized_data(
+                    inputs[serialname]
+                )
                 dict_4d = False
             elif dwind_format:
                 inputs[serialname] = self.transform_dwind_serialized_data(
