@@ -115,7 +115,6 @@ class TranslatePhysicsFortranData2Py(TranslateFortranData2Py):
         """
         if isinstance(data, np.ndarray):
             n_dim = len(data.shape)
-            cn = int(np.sqrt(data.shape[0]))
             if len(data.flatten()) == 1:
                 rearranged = data[0]
                 return rearranged
@@ -142,6 +141,7 @@ class TranslatePhysicsFortranData2Py(TranslateFortranData2Py):
             shield_format = info["shield"] if "shield" in info else False
             dwind_format = info["dwind"] if "dwind" in info else False
             index_order = info["order"] if "order" in info else "C"
+            dict_4d = True
             if dycore_format:
                 pass
             elif microph_format:
@@ -156,6 +156,7 @@ class TranslatePhysicsFortranData2Py(TranslateFortranData2Py):
                 inputs[serialname] = self.transform_shield_serialized_data(
                     inputs[serialname]
                 )
+                dict_4d = False
             elif dwind_format:
                 inputs[serialname] = self.transform_dwind_serialized_data(
                     inputs[serialname]
@@ -164,7 +165,9 @@ class TranslatePhysicsFortranData2Py(TranslateFortranData2Py):
                 inputs[serialname] = self.transform_physics_serialized_data(
                     inputs[serialname], roll_zero, index_order
                 )
-        super().make_storage_data_input_vars(inputs, storage_vars=storage_vars)
+        super().make_storage_data_input_vars(
+            inputs, storage_vars=storage_vars, dict_4d=dict_4d
+        )
 
     def slice_output(self, inputs, out_data=None):
         if out_data is None:
