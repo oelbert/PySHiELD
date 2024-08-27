@@ -142,8 +142,8 @@ class TranslatePhysicsFortranData2Py(TranslateFortranData2Py):
             dwind_format = info["dwind"] if "dwind" in info else False
             index_order = info["order"] if "order" in info else "C"
             if "int_type" in info:
-                print(f"int flag for {serialname} is {info["int_type"]}")
                 int_type = info["int_type"]
+                print(f"int flag for {serialname} is {int_type}")
             else:
                 int_type = False
             dict_4d = True
