@@ -11,92 +11,71 @@ class TranslateSurfaceExchange(TranslatePhysicsFortranData2Py):
     ):
         super().__init__(namelist, stencil_factory)
         self.in_vars["data_vars"] = {
-            "qvapor": {"dycore": True},
-            "qliquid": {"dycore": True},
-            "qrain": {"dycore": True},
-            "qsnow": {"dycore": True},
-            "qice": {"dycore": True},
-            "qgraupel": {"dycore": True},
-            "qo3mr": {"dycore": True},
-            "qsgs_tke": {"dycore": True},
-            "qcld": {"dycore": True},
-            "pt": {"dycore": True},
-            "delp": {"dycore": True},
-            "delz": {"dycore": True},
-            "ua": {"dycore": True},
-            "va": {"dycore": True},
-            "w": {"dycore": True},
-            "omga": {"dycore": True},
+            "u1": {"shield": True},
+            "v1": {"shield": True},
+            "t1": {"shield": True},
+            "q1": {"shield": True},
+            "ddvel": {"shield": True},
+            "tsurf": {"shield": True},
+            "tsfc": {"shield": True},
+            "prslki": {"shield": True},
+            "prsl1": {"shield": True},
+            "z0rl": {"shield": True},
+            "z1": {"shield": True},
+            "shdmax": {"shield": True},
+            "sigmaf": {"shield": True},
+            "ustar": {"shield": True},
+            "snowdepth": {"shield": True},
+            "ztrl": {"shield": True},
+            "cm": {"shield": True},
+            "ch": {"shield": True},
+            "rb": {"shield": True},
+            "stress": {"shield": True},
+            "fm": {"shield": True},
+            "fh": {"shield": True},
+            "wind": {"shield": True},
+            "fm10": {"shield": True},
+            "fh2": {"shield": True},
+            "islimsk": {"shield": True},
+            "vegtype": {"shield": True},
+            "flag_iter": {"shield": True},
         }
         self.in_vars["parameters"] = [
+            "ivegsrc",
             "do_z0_hwrf15",
             "do_z0_hwrf17",
             "do_z0_hwrf17_hwonly",
-            "do_z0_moon"
+            "do_z0_moon",
+            "redrag",
+            "wind_th_hwrf",
+            "z0s_max",
         ]
         self.out_vars = {
-            "gt0": {
-                "serialname": "IPD_gt0",
-                "kend": namelist.npz - 1,
-                "order": "F",
-            },
-            "gu0": {
-                "serialname": "IPD_gu0",
-                "kend": namelist.npz - 1,
-                "order": "F",
-            },
-            "gv0": {
-                "serialname": "IPD_gv0",
-                "kend": namelist.npz - 1,
-                "order": "F",
-            },
-            "qvapor": {
-                "serialname": "IPD_qvapor",
-                "kend": namelist.npz - 1,
-                "order": "F",
-            },
-            "qliquid": {
-                "serialname": "IPD_qliquid",
-                "kend": namelist.npz - 1,
-                "order": "F",
-            },
-            "qrain": {
-                "serialname": "IPD_rain",
-                "kend": namelist.npz - 1,
-                "order": "F",
-            },
-            "qice": {
-                "serialname": "IPD_qice",
-                "kend": namelist.npz - 1,
-                "order": "F",
-            },
-            "qsnow": {
-                "serialname": "IPD_snow",
-                "kend": namelist.npz - 1,
-                "order": "F",
-            },
-            "qgraupel": {
-                "serialname": "IPD_qgraupel",
-                "kend": namelist.npz - 1,
-                "order": "F",
-            },
-            "qcld": {
-                "serialname": "IPD_qcld",
-                "kend": namelist.npz - 1,
-                "order": "F",
-            },
+            "wind": {"shield": True},
+            "z0rl": {"shield": True},
+            "ztrl": {"shield": True},
+            "cm": {"shield": True},
+            "ch": {"shield": True},
+            "stress": {"shield": True},
+            "fm": {"shield": True},
+            "fh": {"shield": True},
+            "ustar": {"shield": True},
+            "fm10": {"shield": True},
         }
         self.stencil_factory = stencil_factory
 
     def compute(self, inputs):
+        self.make_storage_data_input_vars(inputs)
         self.compute_func = SurfaceExchange(
             self.stencil_factory,
-            self.inputs["do_z0_hwrf15"],
-            self.inputs["do_z0_hwrf17"],
-            self.inputs["do_z0_hwrf17_hwonly"],
-            self.inputs["do_z0_moon"],
+            inputs.pop("ivegsrc"),
+            inputs.pop("do_z0_hwrf15"),
+            inputs.pop("do_z0_hwrf17"),
+            inputs.pop("do_z0_hwrf17_hwonly"),
+            inputs.pop("do_z0_moon"),
+            inputs.pop("redrag"),
+            inputs.pop("wind_th_hwrf"),
+            inputs.pop("z0s_max"),
         )
-        self.make_storage_data_input_vars(inputs)
-        inputs["gq0"] = inputs["gq0"]["qvapor"]
         self.compute_func(**inputs)
         return self.slice_output(inputs)
