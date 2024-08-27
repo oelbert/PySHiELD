@@ -46,7 +46,7 @@ def init_turbulence(
     q1: FloatFieldTracer,
     rdzt: FloatField,
     prn: FloatField,
-    kx1: IntField,
+    kx1: IntFieldIJ,
     prsi: FloatField,
     k_mask: IntField,
     kinver: IntFieldIJ,
