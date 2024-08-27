@@ -1680,8 +1680,8 @@ class ScaleAwareTKEMoistEDMF:
 
         # Allocate internal variables:
         km1 = idx.domain[2] - 1
-        self._kmpbl = idx.domain[2] / 2
-        self._kmscu = idx.domain[2] / 2
+        self._kmpbl = idx.domain[2] // 2 + 1
+        self._kmscu = idx.domain[2] // 2 + 1
 
         self._dt_atmos = config.dt_atmos
         self._rdt = 1.0 / self._dt_atmos
