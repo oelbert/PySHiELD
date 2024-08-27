@@ -564,7 +564,7 @@ class StratocumulusMassFlux:
         # Compile stencils:
         self._mfscu_s0 = stencil_factory.from_origin_domain(
             func=mfscu_s0,
-            externals={"ntcw": ntcw},
+            externals={"ntcw": self._ntcw},
             origin=idx.origin_compute(),
             domain=idx.domain_compute(),
         )
@@ -627,7 +627,7 @@ class StratocumulusMassFlux:
         self._mfscu_s9 = stencil_factory.from_origin_domain(
             func=mfscu_s9,
             externals={
-                "ntcw": ntcw,
+                "ntcw": self._ntcw,
             },
             origin=idx.origin_compute(),
             domain=(idx.iec, idx.jec, kmscu),
@@ -678,7 +678,7 @@ class StratocumulusMassFlux:
         if totflg:
             return
 
-        mfscu_s0(
+        self._mfscu_s0(
             buo,
             cnvflg,
             self._flg,
@@ -857,7 +857,7 @@ class StratocumulusMassFlux:
 
         if self._ntcw > 2:
             for n in range(1, self._ntcw):
-                mfscu_10(
+                self._mfscu_10(
                     cnvflg,
                     krad,
                     mrad,
@@ -872,7 +872,7 @@ class StratocumulusMassFlux:
         if self._ntrac1 > self._ntcw:
             for n in range(self._ntcw, self._ntrac1):
                 dim_n = n if n < self._ntke else n + 1
-                mfscu_10(
+                self._mfscu_10(
                     cnvflg,
                     krad,
                     mrad,

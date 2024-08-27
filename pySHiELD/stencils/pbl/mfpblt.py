@@ -1,5 +1,4 @@
 from gt4py.cartesian.gtscript import (
-    __INLINED,
     FORWARD,
     PARALLEL,
     computation,
