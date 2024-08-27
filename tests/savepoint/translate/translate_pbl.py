@@ -32,7 +32,7 @@ class TranslatePBL(TranslatePhysicsFortranData2Py):
             "evap": {"serialname": "pbl_evap", "shield": True},
             "stress": {"serialname": "pbl_stress", "shield": True},
             "spd1": {"serialname": "pbl_wind", "shield": True},
-            "kpbl": {"serialname": "pbl_kpbl", "shield": True},
+            "kpbl": {"serialname": "pbl_kpbl", "shield": True, "int_type": True},
             "prsi": {"serialname": "pbl_prsi", "shield": True},
             "delta": {"serialname": "pbl_delta", "shield": True},
             "prsl": {"serialname": "pbl_prsl", "shield": True},
@@ -44,7 +44,7 @@ class TranslatePBL(TranslatePhysicsFortranData2Py):
             "dtsfc": {"serialname": "pbl_dtsfc", "shield": True},
             "dqsfc": {"serialname": "pbl_dqsfc", "shield": True},
             "hpbl": {"serialname": "pbl_hpbl", "shield": True},
-            "kinver": {"serialname": "pbl_kinver", "shield": True},
+            "kinver": {"serialname": "pbl_kinver", "shield": True, "int_type": True},
             "dkt": {"serialname": "pbl_dkt", "shield": True},
         }
         self.in_vars["parameters"] = [
