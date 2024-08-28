@@ -722,8 +722,10 @@ def compute_asymptotic_mixing_length(
                     zldn = max(zldn, 0.0)
                     mlenflg = False
             lev -= 1
+        # Do last iteration of while-loop outside the loop for indexing safety
+        temp_q10 = q1_gt[0, 0, 0][0]
         dz = zl[0, 0, lev]
-        tem1 = tsea * (1.0 + constants.ZVIR * max(q1_gt[0, 0, lev][0], physcons.QMIN))
+        tem1 = tsea * (1.0 + constants.ZVIR * max(temp_q10[0, 0, lev], physcons.QMIN))
         ptem = gotvx[0, 0, lev] * (thvx - tem1) * dz
         bsum = bsum + ptem
         zldn = zldn + dz
