@@ -223,12 +223,10 @@ class TranslatePhysicsFortranData2Py(TranslateFortranData2Py):
                             ds = self.grid.default_domain_dict()
                         ds.update(info)
                         ij_slice = self.grid.slice_dict(ds)
-                        npz = data_result.shape[-1]
+                        npz = data_result.shape[-1] - 1
                         k_length = info["kend"] if "kend" in info else npz
-                        data_compute = data_result[ij_slice[0], ij_slice[1], :]
-                        if k_length < npz:
-                            data_compute = data_compute[:, :, :k_length]
-                        out[serialname] = np.reshape(data_compute, (cn2, k_length))
+                        data_compute = data_result[ij_slice[0], ij_slice[1], :k_length]
+                        out[serialname] = data_compute
                     elif n_dim == 4:
                         if compute_domain:
                             ds = self.grid.compute_dict()
@@ -236,15 +234,11 @@ class TranslatePhysicsFortranData2Py(TranslateFortranData2Py):
                             ds = self.grid.default_domain_dict()
                         ds.update(info)
                         ij_slice = self.grid.slice_dict(ds)
-                        npz = data_result.shape[-2]
+                        npz = data_result.shape[-2] - 1
                         n_data = data_result.shape[-1]
                         k_length = info["kend"] if "kend" in info else npz
-                        data_compute = data_result[ij_slice[0], ij_slice[1], :]
-                        if k_length < npz:
-                            data_compute = data_compute[:, :, :k_length, :]
-                        out[serialname] = np.reshape(
-                            data_compute, (cn2, k_length, n_data)
-                        )
+                        data_compute = data_result[ij_slice[0], ij_slice[1], :k_length, :]
+                        out[serialname] = data_compute
                     elif n_dim == 2:
                         if compute_domain:
                             ds = self.grid.compute_dict()
@@ -253,7 +247,7 @@ class TranslatePhysicsFortranData2Py(TranslateFortranData2Py):
                         ds.update(info)
                         ij_slice = self.grid.slice_dict(ds)
                         data_compute = data_result[ij_slice[0], ij_slice[1]]
-                        out[serialname] = np.reshape(data_compute, (cn2))
+                        out[serialname] = data_compute
                     else:
                         raise NotImplementedError("Data dimension not supported")
                 else:
