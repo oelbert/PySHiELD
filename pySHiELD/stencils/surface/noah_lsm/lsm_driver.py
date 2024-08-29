@@ -21,7 +21,7 @@ from ndsl.dsl.typing import (
 )
 from ndsl.initialization.allocator import QuantityFactory
 from ndsl.quantity import Quantity
-from pySHiELD._config import SurfaceConfig
+from pySHiELD._config import LSMConfig
 from pySHiELD.functions.physics_functions import fpvs
 from pySHiELD.stencils.surface.noah_lsm.nopac import NOPAC
 from pySHiELD.stencils.surface.noah_lsm.sfc_params import set_soil_veg
@@ -1054,16 +1054,20 @@ class NoahLSM:
         self,
         stencil_factory: StencilFactory,
         quantity_factory: QuantityFactory,
-        config: SurfaceConfig,
+        config: LSMConfig,
         land_data: ndarray,
         veg_data: ndarray,
         soil_data: ndarray,
         slope_data: ndarray,
         vegfrac_data: ndarray,
         dt: Float,
-        lheatstrg: Bool,
-        ivegsrc: Bool,
     ):
+        assert config.pertvegf[0] < 0, f"pertvegf[0] > 0 not implemented, got {
+            config.pertvegf[0]
+        }"
+        assert config.ivegsrc == 1, f"ivegsrc !=1 not implemented, got {config.ivegsrc}"
+        assert config.isot == 1, f"isot != 1 not implemented, got {config.isot}"
+
         def make_quantity() -> Quantity:
             return quantity_factory.zeros(
                 [X_DIM, Y_DIM, Z_DIM],
@@ -1249,7 +1253,7 @@ class NoahLSM:
             func=sflx_1,
             externals={
                 "dt": dt,
-                "ivegsrc": ivegsrc,
+                "ivegsrc": config.ivegsrc,
                 "lheatstrg": lheatstrg,
             },
             origin=grid_indexing.origin_compute(),
@@ -1265,7 +1269,7 @@ class NoahLSM:
         self._snopac = SNOPAC(
             stencil_factory,
             quantity_factory,
-            ivegsrc,
+            config.ivegsrc,
             lheatstrg,
             dt,
         )
@@ -1273,7 +1277,7 @@ class NoahLSM:
         self._nopac = NOPAC(
             stencil_factory,
             quantity_factory,
-            ivegsrc,
+            config.ivegsrc,
             lheatstrg,
             dt,
         )

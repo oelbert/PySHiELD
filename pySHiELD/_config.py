@@ -20,13 +20,10 @@ class PHYSICS_PACKAGES(Enum, metaclass=MetaEnumStr):
 
 @dataclasses.dataclass
 class LSMConfig:
-    bare: int = DEFAULT_INT
-    defined_veg: int = DEFAULT_INT
-    defined_soil: int = DEFAULT_INT
-    defined_slope: int = DEFAULT_INT
-
-    def __post_init__(self):
-        pass
+    isot: int = DEFAULT_INT
+    ivegsrc: int = DEFAULT_INT
+    lheatstrg: bool = DEFAULT_BOOL
+    pertvegf: List[float] = [-999., -999., -999., -999., -999.]
 
 
 @dataclasses.dataclass
