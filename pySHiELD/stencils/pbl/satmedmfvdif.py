@@ -1822,7 +1822,7 @@ class ScaleAwareTKEMoistEDMF:
         self._pbot = make_quantity_2D(Float)
 
         # Workaround for q1 access in compute_asymptotic_mixing_length
-        self._temp_q10 = make_quantity(Float)
+        self._temp_q10 = make_quantity()
 
         # Allocate higher order fields
         self._f2 = quantity_factory.zeros(
@@ -2497,7 +2497,7 @@ class ScaleAwareTKEMoistEDMF:
             for n in range(1, self._ntrac1):
                 dim_n = n if n < self._ntke else n + 1
                 self._reset_tracers(
-                    self._f1,
+                    self._f2,
                     q1,
                     dim_n,
                 )
@@ -2531,7 +2531,7 @@ class ScaleAwareTKEMoistEDMF:
             self._xmfd,
         )
 
-        for n in range(self.ntrac - 1):
+        for n in range(self._ntrac1):
             dim_n = n if n < self._ntke else n + 1
             if self._ntrac1 >= 2:
                 self._setup_multi_tracer_tridiag(
