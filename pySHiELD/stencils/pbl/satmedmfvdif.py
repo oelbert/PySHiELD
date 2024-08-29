@@ -113,6 +113,7 @@ def init_turbulence(
     xmu: FloatFieldIJ,
     ptop: FloatFieldIJ,
     pbot: FloatFieldIJ,
+    temp_q10: FloatField,
 ):
     from __externals__ import (
         dt2, km1, ntcw, ntiw, ntke, xkzm_h, xkzm_m, xkzm_s, cap_k0_land
@@ -145,6 +146,7 @@ def init_turbulence(
         zi = phii[0, 0, 0] * constants.RGRAV
         zl = phil[0, 0, 0] * constants.RGRAV
         tke = max(q1[0, 0, 0][ntke], physcons.TKMIN)
+        temp_q10 = q1[0, 0, 0][0]
     with computation(FORWARD), interval(0, -1):
         ckz = physcons.CK1
         chz = physcons.CH1
@@ -668,7 +670,7 @@ def compute_asymptotic_mixing_length(
     gotvx: FloatField,
     zl: FloatField,
     tsea: FloatFieldIJ,
-    q1_gt: FloatFieldTracer,
+    q1_0: FloatField,
     zi: FloatField,
     rlam: FloatField,
     ele: FloatField,
@@ -723,9 +725,8 @@ def compute_asymptotic_mixing_length(
                     mlenflg = False
             lev -= 1
         # Do last iteration of while-loop outside the loop for indexing safety
-        temp_q10 = q1_gt[0, 0, 0][0]
         dz = zl[0, 0, lev]
-        tem1 = tsea * (1.0 + constants.ZVIR * max(temp_q10[0, 0, lev], physcons.QMIN))
+        tem1 = tsea * (1.0 + constants.ZVIR * max(q1_0[0, 0, lev], physcons.QMIN))
         ptem = gotvx[0, 0, lev] * (thvx - tem1) * dz
         bsum = bsum + ptem
         zldn = zldn + dz
@@ -1820,6 +1821,9 @@ class ScaleAwareTKEMoistEDMF:
         self._ptop = make_quantity_2D(Float)
         self._pbot = make_quantity_2D(Float)
 
+        # Workaround for q1 access in compute_asymptotic_mixing_length
+        self._temp_q10 = make_quantity(Float)
+
         # Allocate higher order fields
         self._f2 = quantity_factory.zeros(
             [X_DIM, Y_DIM, Z_DIM, self.TRACER_DIM],
@@ -2176,6 +2180,7 @@ class ScaleAwareTKEMoistEDMF:
             xmu,
             self._ptop,
             self._pbot,
+            self._temp_q10,
         )
 
         self._mrf_pbl_scheme_part1(
@@ -2365,7 +2370,7 @@ class ScaleAwareTKEMoistEDMF:
             self._gotvx,
             self._zl,
             tsea,
-            q1,
+            self._temp_q10,
             self._zi,
             self._rlam,
             self._ele,
