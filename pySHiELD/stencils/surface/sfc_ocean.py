@@ -68,6 +68,7 @@ def sfc_ocean(
 class SurfaceOcean:
     def __init__(self, stencil_factory: StencilFactory,):
         grid_indexing = stencil_factory.grid_indexing
+
         self._sfc_ocean = stencil_factory.from_origin_domain(
             sfc_ocean,
             origin=grid_indexing.origin_compute(),
