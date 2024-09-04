@@ -1,5 +1,5 @@
 from ndsl import Namelist, StencilFactory
-from pySHiELD.stencils.surface.sfc_diff import SurfaceExchange
+from pySHiELD.stencils.surface.sfc_sice import SurfaceSeaIce
 from tests.savepoint.translate.translate_physics import TranslatePhysicsFortranData2Py
 
 
@@ -11,84 +11,74 @@ class TranslateSurfaceExchange(TranslatePhysicsFortranData2Py):
     ):
         super().__init__(namelist, stencil_factory)
         self.in_vars["data_vars"] = {
-            "qvapor": {"dycore": True},
-            "qliquid": {"dycore": True},
-            "qrain": {"dycore": True},
-            "qsnow": {"dycore": True},
-            "qice": {"dycore": True},
-            "qgraupel": {"dycore": True},
-            "qo3mr": {"dycore": True},
-            "qsgs_tke": {"dycore": True},
-            "qcld": {"dycore": True},
-            "pt": {"dycore": True},
-            "delp": {"dycore": True},
-            "delz": {"dycore": True},
-            "ua": {"dycore": True},
-            "va": {"dycore": True},
-            "w": {"dycore": True},
-            "omga": {"dycore": True},
+            "u1": {"serialname": "sice_u1", "shield": True},
+            "v1": {"serialname": "sice_v1", "shield": True},
+            "t1": {"serialname": "sice_t1", "shield": True},
+            "ps": {"serialname": "sice_ps", "shield": True},
+            "wind": {"serialname": "sice_wind", "shield": True},
+            "q1": {"serialname": "sice_q1", "shield": True},
+            "sfcemis": {"serialname": "sfcemis", "shield": True},
+            "dlwflx": {"serialname": "sice_dlwflx", "shield": True},
+            "sfcnsw": {"serialname": "sice_sfcnsw", "shield": True},
+            "sfcdsw": {"serialname": "sice_sfcdsw", "shield": True},
+            "srflag": {"serialname": "sice_srflag", "shield": True},
+            "cm": {"serialname": "sice_cm", "shield": True},
+            "ch": {"serialname": "sice_ch", "shield": True},
+            "prsl1": {"serialname": "sice_prsl1", "shield": True},
+            "prslki": {"serialname": "sice_prslki", "shield": True},
+            "islimsk": {"serialname": "sice_islmsk", "shield": True},
+            "flag_iter": {"serialname": "sice_flag_iter", "shield": True},
+            "hice": {"serialname": "sice_hice", "shield": True},
+            "fice": {"serialname": "sice_fice", "shield": True},
+            "tice": {"serialname": "sice_tice", "shield": True},
+            "weasd": {"serialname": "sice_weasd", "shield": True},
+            "tskin": {"serialname": "sice_tskin", "shield": True},
+            "tprcp": {"serialname": "sice_tprcp", "shield": True},
+            "stc0": {"serialname": "sice_stc0", "shield": True},
+            "stc1": {"serialname": "sice_stc1", "shield": True},
+            "ep": {"serialname": "sice_ep", "shield": True},
+            "snwdph": {"serialname": "sice_snowd", "shield": True},
+            "qsurf": {"serialname": "sice_qsurf", "shield": True},
+            "cmm": {"serialname": "sice_cmm", "shield": True},
+            "chh": {"serialname": "sice_chh", "shield": True},
+            "evap": {"serialname": "sice_evap", "shield": True},
+            "hflx": {"serialname": "sice_hflx", "shield": True},
+            "gflux": {"serialname": "sice_gflux", "shield": True},
+            "snowmt": {"serialname": "sice_snowmt", "shield": True},
         }
-        self.in_vars["parameters"] = ["dt_atmos"]
+        self.in_vars["parameters"] = [
+            "sice_delt",
+            "sice_mom4ice",
+            "sice_lsm",
+        ]
         self.out_vars = {
-            "gt0": {
-                "serialname": "IPD_gt0",
-                "kend": namelist.npz - 1,
-                "order": "F",
-            },
-            "gu0": {
-                "serialname": "IPD_gu0",
-                "kend": namelist.npz - 1,
-                "order": "F",
-            },
-            "gv0": {
-                "serialname": "IPD_gv0",
-                "kend": namelist.npz - 1,
-                "order": "F",
-            },
-            "qvapor": {
-                "serialname": "IPD_qvapor",
-                "kend": namelist.npz - 1,
-                "order": "F",
-            },
-            "qliquid": {
-                "serialname": "IPD_qliquid",
-                "kend": namelist.npz - 1,
-                "order": "F",
-            },
-            "qrain": {
-                "serialname": "IPD_rain",
-                "kend": namelist.npz - 1,
-                "order": "F",
-            },
-            "qice": {
-                "serialname": "IPD_qice",
-                "kend": namelist.npz - 1,
-                "order": "F",
-            },
-            "qsnow": {
-                "serialname": "IPD_snow",
-                "kend": namelist.npz - 1,
-                "order": "F",
-            },
-            "qgraupel": {
-                "serialname": "IPD_qgraupel",
-                "kend": namelist.npz - 1,
-                "order": "F",
-            },
-            "qcld": {
-                "serialname": "IPD_qcld",
-                "kend": namelist.npz - 1,
-                "order": "F",
-            },
+            "hice": {"serialname": "sice_hice", "shield": True},
+            "fice": {"serialname": "sice_fice", "shield": True},
+            "tice": {"serialname": "sice_tice", "shield": True},
+            "weasd": {"serialname": "sice_weasd", "shield": True},
+            "tskin": {"serialname": "sice_tskin", "shield": True},
+            "tprcp": {"serialname": "sice_tprcp", "shield": True},
+            "stc0": {"serialname": "sice_stc0", "shield": True},
+            "stc1": {"serialname": "sice_stc1", "shield": True},
+            "ep": {"serialname": "sice_ep", "shield": True},
+            "snwdph": {"serialname": "sice_snowd", "shield": True},
+            "qsurf": {"serialname": "sice_qsurf", "shield": True},
+            "snowmt": {"serialname": "sice_snowmt", "shield": True},
+            "gflux": {"serialname": "sice_gflux", "shield": True},
+            "cmm": {"serialname": "sice_cmm", "shield": True},
+            "chh": {"serialname": "sice_chh", "shield": True},
+            "evap": {"serialname": "sice_evap", "shield": True},
+            "hflx": {"serialname": "sice_hflx", "shield": True},
         }
         self.stencil_factory = stencil_factory
 
     def compute(self, inputs):
-        self.compute_func = SurfaceExchange(
+        self.compute_func = SurfaceSeaIce(
             self.stencil_factory,
-            self.inputs["dt_atmos"],
+            mom4ice=self.inputs.pop("sice_mom4ice"),
+            lsm=self.inputs.pop("sice_lsm"),
+            dt_atmos=self.inputs.pop("sice_delt"),
         )
         self.make_storage_data_input_vars(inputs)
-        inputs["gq0"] = inputs["gq0"]["qvapor"]
         self.compute_func(**inputs)
         return self.slice_output(inputs)
