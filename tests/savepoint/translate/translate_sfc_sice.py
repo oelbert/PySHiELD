@@ -6,6 +6,7 @@ from tests.savepoint.translate.translate_physics import TranslatePhysicsFortranD
 class TranslateSurfaceSeaIce_iter1(TranslatePhysicsFortranData2Py):
     def __init__(
         self,
+        grid,
         namelist: Namelist,
         stencil_factory: StencilFactory,
     ):
@@ -87,6 +88,7 @@ class TranslateSurfaceSeaIce_iter1(TranslatePhysicsFortranData2Py):
 class TranslateSurfaceSeaIce_iter2(TranslateSurfaceSeaIce_iter1):
     def __init__(
         self,
+        grid,
         namelist: Namelist,
         stencil_factory: StencilFactory,
     ):
