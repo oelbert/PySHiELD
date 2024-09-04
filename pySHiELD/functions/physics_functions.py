@@ -4,21 +4,6 @@ import pySHiELD.constants as physcons
 from gt4py.cartesian import gtscript
 from gt4py.cartesian.gtscript import exp, min, max, floor
 
-@gtscript.function
-def fpvs(t):
-    """
-    Adapted from a lookup table version in Fortran for use in GT4Py
-    """
-    nxpvs = 7501.0
-    xmin = 180.0
-    xmax = 330.0
-    xinc = (xmax - xmin) / (nxpvs - 1)
-    c2xpvs = 1. / xinc
-    c1xpvs = 1. - xmin * c2xpvs
-    xj = min(max(c1xpvs + c2xpvs * t, 1.0), nxpvs)
-    jx = min(xj, nxpvs - 1.0)
-    tx = floor(jx)
-    fpvs = fpvsx(jx - 1) + (xj - jx) * (fpvsx(jx) - fpvsx(jx - 1))
 
 @gtscript.function
 def fpvsx(t):
@@ -81,3 +66,20 @@ def fpvsx(t):
         pvi = physcons.PSAT * (tr**xponai) * exp(xponbi * (1. - tr))
         fpvsx = w * pvl + (1. - w) * pvi
     return fpvsx
+
+
+@gtscript.function
+def fpvs(t):
+    """
+    Adapted from a lookup table version in Fortran for use in GT4Py
+    """
+    nxpvs = 7501.0
+    xmin = 180.0
+    xmax = 330.0
+    xinc = (xmax - xmin) / (nxpvs - 1)
+    c2xpvs = 1. / xinc
+    c1xpvs = 1. - xmin * c2xpvs
+    xj = min(max(c1xpvs + c2xpvs * t, 1.0), nxpvs)
+    jx = min(xj, nxpvs - 1.0)
+    tx = floor(jx)
+    fpvs = fpvsx(jx - 1) + (xj - jx) * (fpvsx(jx) - fpvsx(jx - 1))
