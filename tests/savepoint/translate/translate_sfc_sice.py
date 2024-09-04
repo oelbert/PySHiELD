@@ -3,7 +3,7 @@ from pySHiELD.stencils.surface.sfc_sice import SurfaceSeaIce
 from tests.savepoint.translate.translate_physics import TranslatePhysicsFortranData2Py
 
 
-class TranslateSurfaceExchange(TranslatePhysicsFortranData2Py):
+class TranslateSurfaceSeaIce(TranslatePhysicsFortranData2Py):
     def __init__(
         self,
         namelist: Namelist,
