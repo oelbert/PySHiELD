@@ -34,7 +34,7 @@ class SurfaceConfig:
 
 @dataclasses.dataclass
 class PhysicsConfig:
-    dt_atmos: Int = DEFAULT_INT
+    dt_atmos: Float = DEFAULT_FLOAT
     hydrostatic: bool = DEFAULT_BOOL
     npx: Int = DEFAULT_INT
     npy: Int = DEFAULT_INT
