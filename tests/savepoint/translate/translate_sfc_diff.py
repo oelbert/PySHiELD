@@ -3,7 +3,7 @@ from pySHiELD.stencils.surface.sfc_diff import SurfaceExchange
 from tests.savepoint.translate.translate_physics import TranslatePhysicsFortranData2Py
 
 
-class TranslateSurfaceExchange(TranslatePhysicsFortranData2Py):
+class TranslateSurfaceExchange_iter1(TranslatePhysicsFortranData2Py):
     def __init__(
         self,
         namelist: Namelist,
@@ -79,3 +79,12 @@ class TranslateSurfaceExchange(TranslatePhysicsFortranData2Py):
         )
         self.compute_func(**inputs)
         return self.slice_output(inputs)
+
+
+class TranslateSurfaceExchange_iter2(TranslateSurfaceExchange_iter1):
+    def __init__(
+        self,
+        namelist: Namelist,
+        stencil_factory: StencilFactory,
+    ):
+        super().__init__(namelist, stencil_factory)

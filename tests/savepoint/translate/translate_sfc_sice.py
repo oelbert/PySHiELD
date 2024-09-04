@@ -3,7 +3,7 @@ from pySHiELD.stencils.surface.sfc_sice import SurfaceSeaIce
 from tests.savepoint.translate.translate_physics import TranslatePhysicsFortranData2Py
 
 
-class TranslateSurfaceSeaIce(TranslatePhysicsFortranData2Py):
+class TranslateSurfaceSeaIce_iter1(TranslatePhysicsFortranData2Py):
     def __init__(
         self,
         namelist: Namelist,
@@ -82,3 +82,12 @@ class TranslateSurfaceSeaIce(TranslatePhysicsFortranData2Py):
         self.make_storage_data_input_vars(inputs)
         self.compute_func(**inputs)
         return self.slice_output(inputs)
+
+
+class TranslateSurfaceSeaIce_iter2(TranslateSurfaceSeaIce_iter1):
+    def __init__(
+        self,
+        namelist: Namelist,
+        stencil_factory: StencilFactory,
+    ):
+        super().__init__(namelist, stencil_factory)

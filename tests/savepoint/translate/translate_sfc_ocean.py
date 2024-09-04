@@ -2,7 +2,7 @@ from ndsl import Namelist, StencilFactory
 from pySHiELD.stencils.surface.sfc_ocean import SurfaceOcean
 from tests.savepoint.translate.translate_physics import TranslatePhysicsFortranData2Py
 
-class TranslateSurfaceOcean(TranslatePhysicsFortranData2Py):
+class TranslateSurfaceOcean_iter1(TranslatePhysicsFortranData2Py):
     def __init__(
         self,
         namelist: Namelist,
@@ -49,3 +49,12 @@ class TranslateSurfaceOcean(TranslatePhysicsFortranData2Py):
         self.make_storage_data_input_vars(inputs)
         self.compute_func(**inputs)
         return self.slice_output(inputs)
+
+
+class TranslateSurfaceOcean_iter2(TranslateSurfaceOcean_iter1):
+    def __init__(
+        self,
+        namelist: Namelist,
+        stencil_factory: StencilFactory,
+    ):
+        super().__init__(namelist, stencil_factory)
