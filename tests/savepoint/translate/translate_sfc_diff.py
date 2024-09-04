@@ -37,7 +37,7 @@ class TranslateSurfaceExchange_iter1(TranslatePhysicsFortranData2Py):
             "wind": {"shield": True},
             "fm10": {"shield": True},
             "fh2": {"shield": True},
-            "islimsk": {"shield": True},
+            "islimsk": {"serialname": "islmsk", "shield": True},
             "vegtype": {"shield": True},
             "flag_iter": {"shield": True},
         }
