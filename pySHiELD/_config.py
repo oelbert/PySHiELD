@@ -124,10 +124,10 @@ class PhysicsConfig:
     tice: Float = NamelistDefaults.tice
     alin: Float = NamelistDefaults.alin
     clin: Float = NamelistDefaults.clin
-    mom4ice: bool = NamelistDefaults.mom4ice
-    lsm: Int = NamelistDefaults.lsm
-    redrag: bool = NamelistDefaults.redrag
-    wind_th_hwrf: Float = NamelistDefaults.wind_th_hwrf
+    mom4ice: bool = DEFAULT_BOOL
+    lsm: Int = DEFAULT_INT
+    redrag: bool = DEFAULT_BOOL
+    wind_th_hwrf: Float = DEFAULT_FLOAT
     namelist_override: Optional[str] = None
 
     def __post_init__(self):
