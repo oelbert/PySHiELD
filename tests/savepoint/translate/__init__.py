@@ -11,6 +11,6 @@ from .translate_update_pressure_sfc_winds_phys import (
     TranslatePhysUpdatePressureSurfaceWinds,
 )
 from .translate_update_tracers_phys import TranslatePhysUpdateTracers
-from .translate_sfc_diff import TranslateSurfaceExchange
-from .translate_sfc_ocean import TranslateSurfaceOcean
-from .translate_sfc_sice import TranslateSurfaceSeaIce
+from .translate_sfc_diff import TranslateSurfaceExchange_iter1, TranslateSurfaceExchange_iter2
+from .translate_sfc_ocean import TranslateSurfaceOcean_iter1, TranslateSurfaceOcean_iter2
+from .translate_sfc_sice import TranslateSurfaceSeaIce_iter1, TranslateSurfaceSeaIce_iter2
