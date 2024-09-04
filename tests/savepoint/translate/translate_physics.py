@@ -237,9 +237,7 @@ class TranslatePhysicsFortranData2Py(TranslateFortranData2Py):
                         npz = data_result.shape[-2] - 1
                         n_data = data_result.shape[-1]
                         k_length = info["kend"] if "kend" in info else npz
-                        data_compute = data_result[
-                            ij_slice[0], ij_slice[1], :k_length, :
-                        ]
+                        data_compute = data_result[ij_slice[0], ij_slice[1], :k_length, :]
                         out[serialname] = data_compute
                     elif n_dim == 2:
                         if compute_domain:
