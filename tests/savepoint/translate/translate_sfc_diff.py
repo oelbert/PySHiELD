@@ -16,7 +16,6 @@ class TranslateSurfaceExchange_iter1(TranslatePhysicsFortranData2Py):
             "v1": {"shield": True},
             "t1": {"shield": True},
             "q1": {"shield": True},
-            "ddvel": {"shield": True},
             "tsurf": {"shield": True},
             "tsfc": {"shield": True},
             "prslki": {"shield": True},
@@ -50,6 +49,7 @@ class TranslateSurfaceExchange_iter1(TranslatePhysicsFortranData2Py):
             "redrag",
             "wind_th_hwrf",
             "z0s_max",
+            "ddvel",
         ]
         self.out_vars = {
             "wind": {"shield": True},

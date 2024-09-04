@@ -21,7 +21,6 @@ class TranslateSurfaceOcean_iter1(TranslatePhysicsFortranData2Py):
             "ch": {"serialname": "ocean_ch", "shield": True},
             "prsl1": {"serialname": "ocean_prsl1", "shield": True},
             "prslki": {"serialname": "ocean_prslki", "shield": True},
-            "ddvel": {"serialname": "ocean_ddvel", "shield": True},
             "qsurf": {"serialname": "ocean_qsurf", "shield": True},
             "cmm": {"serialname": "ocean_cmm", "shield": True},
             "chh": {"serialname": "ocean_chh", "shield": True},
@@ -32,6 +31,9 @@ class TranslateSurfaceOcean_iter1(TranslatePhysicsFortranData2Py):
             "islimsk": {"serialname": "ocean_islmsk", "shield": True},
             "flag_iter": {"serialname": "ocean_flag_iter", "shield": True},
         }
+        self.in_vars["parameters"] = [
+            "ocean_ddvel",
+        ]
         self.out_vars = {
             "qsurf": {"serialname": "ocean_qsurf", "shield": True},
             "cmm": {"serialname": "ocean_cmm", "shield": True},
@@ -48,6 +50,7 @@ class TranslateSurfaceOcean_iter1(TranslatePhysicsFortranData2Py):
             self.stencil_factory,
         )
         self.make_storage_data_input_vars(inputs)
+        inputs["ddvel"] = inputs.pop("ocean_ddvel")
         self.compute_func(**inputs)
         return self.slice_output(inputs)
 
