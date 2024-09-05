@@ -16,6 +16,7 @@ from ndsl.dsl.typing import (
     IntFieldIJ,
 )
 from pySHiELD.functions.physics_functions import fpvsx
+from pySHiELD._config import FloatFieldTracer
 
 
 @gtscript.function
@@ -249,8 +250,8 @@ def ice3lay(
 def sfc_sice(
     ps: FloatFieldIJ,
     wind: FloatFieldIJ,
-    t1: FloatFieldIJ,
-    q1: FloatFieldIJ,
+    t1: FloatField,
+    q1: FloatFieldTracer,
     sfcemis: FloatFieldIJ,
     dlwflx: FloatFieldIJ,
     sfcnsw: FloatFieldIJ,
@@ -308,7 +309,7 @@ def sfc_sice(
             # dlwflx has been given a negative sign for downward longwave
             # sfcnsw is the net shortwave flux (direction: dn-up)
 
-            q0 = max(q1, physcons.FLOAT_EPS)
+            q0 = max(q1[0, 0, 0][0], physcons.FLOAT_EPS)
             theta1 = t1 * prslki
             rho = prsl1 / (constants.RDGAS * t1 * (1.0 + constants.ZVIR * q0))
             qs1 = fpvsx(t1)
@@ -427,7 +428,7 @@ def sfc_sice(
 
             # the rest of the output
 
-            qsurf = q1 + evap / (physcons.HOCP * rch)
+            qsurf = [0, 0, 0][0] + evap / (physcons.HOCP * rch)
 
             # convert snow depth back to mm of water equivalent
 
@@ -463,7 +464,7 @@ class SurfaceSeaIce:
         ps: FloatFieldIJ,
         wind: FloatFieldIJ,
         t1: FloatField,
-        q1: FloatField,
+        q1: FloatFieldTracer,
         sfcemis: FloatFieldIJ,
         dlwflx: FloatFieldIJ,
         sfcnsw: FloatFieldIJ,

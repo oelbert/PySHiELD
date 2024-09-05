@@ -17,6 +17,7 @@ from ndsl.dsl.typing import (
 )
 from ndsl.stencils.basic_operations import sign
 from pySHiELD.functions.physics_functions import fpvsx
+from pySHiELD._config import FloatFieldTracer
 
 
 @gtscript.function
@@ -399,7 +400,7 @@ def sfc_diff(
     u1: FloatField,
     v1: FloatField,
     t1: FloatField,
-    q1: FloatField,
+    q1: FloatFieldTracer,
     ddvel: FloatFieldIJ,
     tsurf: FloatFieldIJ,
     tskin: FloatFieldIJ,
@@ -444,7 +445,7 @@ def sfc_diff(
         if flag_iter[0, 0]:
             # Get lowest atmospheric level variables:
             wind = max(sqrt(u1 ** 2 + v1 ** 2) + max(0.0, min(ddvel, 30.0)), 1.0)
-            tem1 = 1.0 + constants.ZVIR * max(q1, 1.0e-8)
+            tem1 = 1.0 + constants.ZVIR * max(q1[0, 0, 0][0], 1.0e-8)
             thv1 = t1 * prslki * tem1
             tvs = 0.5 * (tsurf + tskin) * tem1
             qs1 = fpvsx(t1)
@@ -630,7 +631,7 @@ class SurfaceExchange:
         u1: FloatField,
         v1: FloatField,
         t1: FloatField,
-        q1: FloatField,
+        q1: FloatFieldTracer,
         ddvel: FloatFieldIJ,
         tsurf: FloatFieldIJ,
         tsfc: FloatFieldIJ,
