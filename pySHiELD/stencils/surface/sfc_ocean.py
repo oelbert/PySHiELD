@@ -61,7 +61,7 @@ def sfc_ocean(
             qsurf = qss
 
             tem = 1.0 / rho
-            hflx = hflx * tem / constants.CP
+            hflx = hflx * tem / constants.CP_AIR
             evap = evap * tem / constants.HLV
 
 
