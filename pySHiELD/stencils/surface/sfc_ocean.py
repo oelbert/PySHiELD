@@ -11,7 +11,7 @@ from ndsl.dsl.typing import (
     FloatField,
     IntFieldIJ,
 )
-from pySHiELD.functions.physics_functions import fpvsx
+from pySHiELD.functions.physics_functions import fpvs
 from pySHiELD._config import FloatFieldTracer
 
 
@@ -43,7 +43,7 @@ def sfc_ocean(
             q0 = max(q1[0, 0, 0][0], 1.e-8)
             rho = prsl1 / (constants.RDGAS * t1 * (1.0 + constants.ZVIR * q0))
 
-            qss = fpvsx(tskin)
+            qss = fpvs(tskin)
             qss = constants.EPS * qss / (ps + (constants.EPS - 1.) * qss)
 
             evap = 0.0
