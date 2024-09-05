@@ -11,6 +11,7 @@ from ndsl.dsl.typing import (
     BoolFieldIJ,
     Float,
     FloatFieldIJ,
+    FloatField,
     Int,
     IntFieldIJ,
 )
@@ -461,8 +462,8 @@ class SurfaceSeaIce:
         self,
         ps: FloatFieldIJ,
         wind: FloatFieldIJ,
-        t1: FloatFieldIJ,
-        q1: FloatFieldIJ,
+        t1: FloatField,
+        q1: FloatField,
         sfcemis: FloatFieldIJ,
         dlwflx: FloatFieldIJ,
         sfcnsw: FloatFieldIJ,

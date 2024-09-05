@@ -10,6 +10,7 @@ from ndsl.dsl.typing import (
     Bool,
     BoolFieldIJ,
     Float,
+    FloatField,
     FloatFieldIJ,
     Int,
     IntFieldIJ,
@@ -395,10 +396,10 @@ def cal_z0_moon(ws10m):
 
 
 def sfc_diff(
-    u1: FloatFieldIJ,
-    v1: FloatFieldIJ,
-    t1: FloatFieldIJ,
-    q1: FloatFieldIJ,
+    u1: FloatField,
+    v1: FloatField,
+    t1: FloatField,
+    q1: FloatField,
     ddvel: FloatFieldIJ,
     tsurf: FloatFieldIJ,
     tskin: FloatFieldIJ,
@@ -438,7 +439,7 @@ def sfc_diff(
         z0s_max,
     )
 
-    with computation(FORWARD), interval(...):
+    with computation(FORWARD), interval(0, 1):
 
         if flag_iter[0, 0]:
             # Get lowest atmospheric level variables:
@@ -626,10 +627,10 @@ class SurfaceExchange:
 
     def __call__(
         self,
-        u1: FloatFieldIJ,
-        v1: FloatFieldIJ,
-        t1: FloatFieldIJ,
-        q1: FloatFieldIJ,
+        u1: FloatField,
+        v1: FloatField,
+        t1: FloatField,
+        q1: FloatField,
         ddvel: FloatFieldIJ,
         tsurf: FloatFieldIJ,
         tsfc: FloatFieldIJ,

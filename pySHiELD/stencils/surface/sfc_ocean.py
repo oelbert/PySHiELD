@@ -8,6 +8,7 @@ from ndsl.dsl.stencil import StencilFactory
 from ndsl.dsl.typing import (
     BoolFieldIJ,
     FloatFieldIJ,
+    FloatField,
     IntFieldIJ,
 )
 from pySHiELD.functions.physics_functions import fpvsx
@@ -15,10 +16,10 @@ from pySHiELD.functions.physics_functions import fpvsx
 
 def sfc_ocean(
     ps: FloatFieldIJ,
-    u1: FloatFieldIJ,
-    v1: FloatFieldIJ,
-    t1: FloatFieldIJ,
-    q1: FloatFieldIJ,
+    u1: FloatField,
+    v1: FloatField,
+    t1: FloatField,
+    q1: FloatField,
     tskin: FloatFieldIJ,
     cm: FloatFieldIJ,
     ch: FloatFieldIJ,
@@ -78,10 +79,10 @@ class SurfaceOcean:
     def __call__(
         self,
         ps: FloatFieldIJ,
-        u1: FloatFieldIJ,
-        v1: FloatFieldIJ,
-        t1: FloatFieldIJ,
-        q1: FloatFieldIJ,
+        u1: FloatField,
+        v1: FloatField,
+        t1: FloatField,
+        q1: FloatField,
         tskin: FloatFieldIJ,
         cm: FloatFieldIJ,
         ch: FloatFieldIJ,
