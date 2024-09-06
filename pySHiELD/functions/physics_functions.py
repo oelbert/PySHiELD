@@ -1,5 +1,4 @@
 import ndsl.constants as constants
-import pySHiELD.constants as physcons
 
 from gt4py.cartesian import gtscript
 from gt4py.cartesian.gtscript import exp, min, max, floor
@@ -43,44 +42,49 @@ def fpvsx(t):
     !   Output argument list:
     !     fpvsx      Real(krealfp) saturation vapor pressure in Pascals
     """
-    dldtl = physcons.CPVAP - physcons.CPH2O1
+    tliq = constants.TTP
+    tice = constants.TTP - 20.0
+    dldtl = constants.CP_VAP - constants.C_LIQ
+    heatl = constants.HLV
     xponal = -dldtl / constants.RVGAS
-    xponbl = -dldtl / constants.RVGAS + constants.HLV / (
-        constants.RVGAS * constants.TICE
-    )
-    dldti = physcons.CPVAP - physcons.CPICE
+    xponbl = -dldtl / constants.RVGAS + heatl / (constants.RVGAS * constants.TTP)
+    dldti = constants.CP_VAP - constants.C_ICE_0
     heati = constants.HLV + constants.HLF
     xponai = -dldti / constants.RVGAS
-    xponbi = -dldti / constants.RVGAS + heati / (
-        constants.RVGAS * constants.TICE
-    )
-    tr = constants.TICE / t
-    tice2 = constants.TICE - 20.0
-    if t > constants.TICE:
-        fpvsx = physcons.PSAT * (tr**xponal) * exp(xponbl * (1. - tr))
-    elif t < tice2:
-        fpvsx = physcons.PSAT * (tr**xponai) * exp(xponbi * (1. - tr))
+    xponbi = -dldti / constants.RVGAS + heati / (constants.RVGAS * constants.TTP)
+
+    tr = constants.TTP / t
+
+    fpvsx = 0.0
+    if t > tliq:
+        fpvsx = constants.PSAT * tr ** xponal * exp(xponbl * (1.0 - tr))
+    elif t < tice:
+        fpvsx = constants.PSAT * tr ** xponai * exp(xponbi * (1.0 - tr))
     else:
-        w = (t - tice2) / (constants.TICE - tice2)
-        pvl = physcons.PSAT * (tr**xponal) * exp(xponbl * (1. - tr))
-        pvi = physcons.PSAT * (tr**xponai) * exp(xponbi * (1. - tr))
-        fpvsx = w * pvl + (1. - w) * pvi
+        w = (t - tice) / (tliq - tice)
+        pvl = constants.PSAT * (tr ** xponal) * exp(xponbl * (1.0 - tr))
+        pvi = constants.PSAT * (tr ** xponai) * exp(xponbi * (1.0 - tr))
+        fpvsx = w * pvl + (1.0 - w) * pvi
+
     return fpvsx
 
 
 @gtscript.function
 def fpvs(t):
-    """
-    Adapted from a lookup table version in Fortran for use in GT4Py
-    """
-    nxpvs = 7501.0
     xmin = 180.0
     xmax = 330.0
+    nxpvs = 7501
     xinc = (xmax - xmin) / (nxpvs - 1)
-    c2xpvs = 1. / xinc
-    c1xpvs = 1. - xmin * c2xpvs
+    c2xpvs = 1.0 / xinc
+    c1xpvs = 1.0 - (xmin * c2xpvs)
+
     xj = min(max(c1xpvs + c2xpvs * t, 1.0), nxpvs)
     jx = min(xj, nxpvs - 1.0)
     jx = floor(jx)
-    fpvs = fpvsx(jx - 1) + (xj - jx) * (fpvsx(jx) - fpvsx(jx - 1))
+
+    x = xmin + (jx * xinc)
+    xm = xmin + ((jx - 1) * xinc)
+
+    fpvs = fpvsx(xm) + (xj - jx) * (fpvsx(x) - fpvsx(xm))
+
     return fpvs
