@@ -311,6 +311,7 @@ def cal_z0_hwrf17(ws10m):
     return z0
 
 
+@gtscript.function
 def cal_zt_hwrf17(ws10m):
     # coded by Kun Gao (Kun.Gao@noaa.gov)
     p00 = 1.100000000000000e-04
