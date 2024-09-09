@@ -1,5 +1,5 @@
 from gt4py.cartesian import gtscript
-from gt4py.cartesian.gtscript import PARALLEL, computation, interval
+from gt4py.cartesian.gtscript import FORWARD, computation, interval
 
 import ndsl.constants as constants
 import pySHiELD.constants as physcons
@@ -282,7 +282,7 @@ def sfc_sice(
     snowmt: FloatFieldIJ,
 ):
     from __externals__ import mom4ice, lsm
-    with computation(PARALLEL), interval(0, 1):
+    with computation(FORWARD), interval(0, 1):
         # set flag for sea-ice
         flag = (islimsk == 2) and flag_iter
 
@@ -428,7 +428,7 @@ def sfc_sice(
 
             # the rest of the output
 
-            qsurf = [0, 0, 0][0] + evap / (physcons.HOCP * rch)
+            qsurf = q1[0, 0, 0][0] + evap / (physcons.HOCP * rch)
 
             # convert snow depth back to mm of water equivalent
 
