@@ -205,7 +205,7 @@ def cal_z0_hwrf15(ws10m):
 
 
 @gtscript.function
-def cal_zt_hwrf15(ws10m, zt):
+def cal_zt_hwrf15(ws10m):
     # coded by Kun Gao (Kun.Gao@noaa.gov)
     # originally developed by URI/GFDL
     a0 = 2.51715926619e-09
