@@ -10,7 +10,7 @@ class TranslateSurfaceSeaIce_iter1(TranslatePhysicsFortranData2Py):
         namelist: Namelist,
         stencil_factory: StencilFactory,
     ):
-        super().__init__(namelist, stencil_factory)
+        super().__init__(grid, namelist, stencil_factory)
         self.in_vars["data_vars"] = {
             "u1": {"serialname": "sice_u1", "shield": True},
             "v1": {"serialname": "sice_v1", "shield": True},
