@@ -56,10 +56,10 @@ def fpvsx(t):
     tr = constants.TTP / t
 
     fpvsx = 0.0
-    if t > tliq:
-        fpvsx = constants.PSAT * tr ** xponal * exp(xponbl * (1.0 - tr))
+    if t >= tliq:
+        fpvsx = constants.PSAT * (tr ** xponal) * exp(xponbl * (1.0 - tr)) 
     elif t < tice:
-        fpvsx = constants.PSAT * tr ** xponai * exp(xponbi * (1.0 - tr))
+        fpvsx = constants.PSAT * (tr ** xponai) * exp(xponbi * (1.0 - tr))
     else:
         w = (t - tice) / (tliq - tice)
         pvl = constants.PSAT * (tr ** xponal) * exp(xponbl * (1.0 - tr))
@@ -80,7 +80,7 @@ def fpvs(t):
 
     xj = min(max(c1xpvs + c2xpvs * t, 1.0), nxpvs)
     jx = min(xj, nxpvs - 1.0)
-    jx = floor(jx)
+    jx = floor(jx) + 1
 
     x = xmin + (jx * xinc)
     xm = xmin + ((jx - 1) * xinc)
