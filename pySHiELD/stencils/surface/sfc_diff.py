@@ -376,6 +376,8 @@ def cal_zt_hwrf17(ws10m):
         zt = p60
     return zt
 
+
+@gtscript.function
 def cal_z0_moon(ws10m):
     # coded by Kun Gao (Kun.Gao@noaa.gov)
     charnock = 0.014
