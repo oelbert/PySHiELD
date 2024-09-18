@@ -1,4 +1,5 @@
 import ndsl.constants as constants
+import pySHiELD.constants as physcons
 
 from gt4py.cartesian import gtscript
 from gt4py.cartesian.gtscript import exp, min, max, floor
@@ -44,7 +45,7 @@ def fpvsx(t):
     """
     tliq = constants.TTP
     tice = constants.TTP - 20.0
-    dldtl = constants.CP_VAP - constants.C_LIQ
+    dldtl = constants.CP_VAP - physcons.CPH2O1
     heatl = constants.HLV
     xponal = -dldtl / constants.RVGAS
     xponbl = -dldtl / constants.RVGAS + heatl / (constants.RVGAS * constants.TTP)
@@ -57,7 +58,7 @@ def fpvsx(t):
 
     fpvsx = 0.0
     if t >= tliq:
-        fpvsx = constants.PSAT * (tr ** xponal) * exp(xponbl * (1.0 - tr)) 
+        fpvsx = constants.PSAT * (tr ** xponal) * exp(xponbl * (1.0 - tr))
     elif t < tice:
         fpvsx = constants.PSAT * (tr ** xponai) * exp(xponbi * (1.0 - tr))
     else:
