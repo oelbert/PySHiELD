@@ -314,20 +314,21 @@ def sfc_sice(
             rho = prsl1 / (constants.RDGAS * t1 * (1.0 + constants.ZVIR * q0))
             qs1 = fpvsx(t1)
             qs1 = max(constants.EPS * qs1 / (
-                prsl1 + (constants.EPS - 1) * qs1
+                prsl1 + constants.EPSM1 * qs1
             ), physcons.FLOAT_EPS)
             q0 = min(qs1, q0)
 
+            ffw = 1.0 - fice
             if fice < physcons.CIMIN:
                 fice = physcons.CIMIN
+                ffw = 1.0 - fice
                 tice = physcons.TSICE
                 tskin = physcons.TSICE
-            ffw = 1.0 - fice
 
             qssi = fpvsx(tice)
             qssw = fpvsx(physcons.TSICE)
-            qssi = constants.EPS * qssi / (ps + (constants.EPS - 1) * qssi)
-            qssw = constants.EPS * qssw / (ps + (constants.EPS - 1) * qssw)
+            qssi = constants.EPS * qssi / (ps + constants.EPSM1 * qssi)
+            qssw = constants.EPS * qssw / (ps + constants.EPSM1 * qssw)
 
             # snow depth in water equivalent is converted from mm to m unit
 

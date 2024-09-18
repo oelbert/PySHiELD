@@ -452,7 +452,7 @@ def sfc_diff(
             thv1 = t1 * prslki * tem1
             tvs = 0.5 * (tsurf + tskin) * tem1
             qs1 = fpvsx(t1)
-            qs1 = max(1.0e-8, constants.EPS * qs1 / (prsl1 + (constants.EPS - 1) * qs1))
+            qs1 = max(1.0e-8, constants.EPS * qs1 / (prsl1 + constants.EPSM1 * qs1))
 
             # Get surface level variables:
             if (islimsk[0, 0] == 1) or (islimsk[0, 0] == 2):  # Over land or sea ice:

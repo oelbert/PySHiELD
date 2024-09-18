@@ -44,7 +44,7 @@ def sfc_ocean(
             rho = prsl1 / (constants.RDGAS * t1 * (1.0 + constants.ZVIR * q0))
 
             qss = fpvs(tskin)
-            qss = constants.EPS * qss / (ps + (constants.EPS - 1.) * qss)
+            qss = constants.EPS * qss / (ps + constants.EPSM1 * qss)
 
             evap = 0.0
             hflx = 0.0
