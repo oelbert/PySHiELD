@@ -48,10 +48,9 @@ class FPVS:
         xinc,
     ):
         print("SAVED VALUES ARE ", xmin, xmax, nxpvs, xinc)
-        breakpoint()
-        nt = ((np.arange(24 * 24 * 91) + 1) % 7501).reshape(24, 24, 90)
+        nt = ((np.arange(24 * 24 * 91) + 1) % 7501).reshape(24, 24, 91)
         xx = xmin + (nt - 1) * xinc
-        xx = np.pad(xx, ((3,4), (3,4), (0,2)))
+        xx = np.pad(xx, ((3,4), (3,4), (0,1)))
         self._x = quantity_factory.from_array(
             xx,
             [X_DIM, Y_DIM, Z_DIM],
