@@ -7,7 +7,7 @@ from ndsl.dsl.typing import (
     FloatField,
     Float,
 )
-from pySHiELD.functions import fpvs, fpvsx
+from pySHiELD.functions.physics_functions import fpvs, fpvsx
 from tests.savepoint.translate.translate_physics import TranslatePhysicsFortranData2Py
 import numpy as np
 
