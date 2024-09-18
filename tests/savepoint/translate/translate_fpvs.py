@@ -48,13 +48,14 @@ class FPVS:
         xinc,
     ):
         print("SAVED VALUES ARE ", xmin, xmax, nxpvs, xinc)
-        nt = ((np.arange(24 * 24 * 90) + 1) % 7501).reshape(24, 24, 90)
+        breakpoint()
+        nt = ((np.arange(24 * 24 * 91) + 1) % 7501).reshape(24, 24, 90)
         xx = xmin + (nt - 1) * xinc
+        xx = np.pad(xx, ((3,4), (3,4), (0,2)))
         self._x = quantity_factory.from_array(
             xx,
             [X_DIM, Y_DIM, Z_DIM],
             units="unknown",
-            dtype=Float,
         )
         grid_indexing = stencil_factory.grid_indexing
 
@@ -84,6 +85,10 @@ class FPVS:
         tab_fpvs: FloatField,
         tab_fpvsx: FloatField,
     ):
+        self._set_xval(
+            self._x,
+            xval,
+        )
         self._test_fpvs(
             temp,
             fp,
