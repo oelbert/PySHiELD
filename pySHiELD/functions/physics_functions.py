@@ -81,7 +81,7 @@ def fpvs(t):
 
     xj = min(max(c1xpvs + c2xpvs * t, 1.0), nxpvs)
     jx = min(xj, nxpvs - 1.0)
-    jx = floor(jx) + 1
+    jx = floor(jx)
 
     x = xmin + (jx * xinc)
     xm = xmin + ((jx - 1) * xinc)

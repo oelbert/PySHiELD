@@ -5,7 +5,6 @@ from ndsl.constants import X_DIM, Y_DIM, Z_DIM
 from ndsl.dsl.typing import (
     FloatFieldIJ,
     FloatField,
-    Float,
 )
 from pySHiELD.functions.physics_functions import fpvs, fpvsx
 from tests.savepoint.translate.translate_physics import TranslatePhysicsFortranData2Py
@@ -48,9 +47,15 @@ class FPVS:
         xinc,
     ):
         print("SAVED VALUES ARE ", xmin, xmax, nxpvs, xinc)
-        nt = ((np.arange(24 * 24 * 91) + 1) % 7501).reshape(24, 24, 91)
+        # nt = ((np.arange(24 * 24 * 91) + 1) % 7501).reshape(24, 24, 91)
+        nt = np.zeros((32, 18, 91))
+        for i in range(32):
+            for j in range(18):
+                for k in range(91):
+                    nt[i, j, k] = (i + 1) * 91 + k
+        nt = nt.reshape((24, 24, 91))
         xx = xmin + (nt - 1) * xinc
-        xx = np.pad(xx, ((3,4), (3,4), (0,1)))
+        xx = np.pad(xx, ((3, 4), (3, 4), (0, 1)))
         self._x = quantity_factory.from_array(
             xx,
             [X_DIM, Y_DIM, Z_DIM],
