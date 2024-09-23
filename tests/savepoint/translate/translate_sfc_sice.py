@@ -41,7 +41,7 @@ class TranslateSurfaceSeaIce_iter1(TranslatePhysicsFortranData2Py):
             "snwdph": {"serialname": "sice_snowd", "shield": True},
             "qsurf": {"serialname": "sice_qsurf", "shield": True},
             "cmm": {"serialname": "sice_cmm", "shield": True},
-            "chh": {"serialname": "sice_chh%chh", "shield": True},
+            "chh": {"serialname": "sice_chh", "shield": True},
             "evap": {"serialname": "sice_evap", "shield": True},
             "hflx": {"serialname": "sice_hflx", "shield": True},
             "gflux": {"serialname": "sice_gflux", "shield": True},
@@ -53,23 +53,23 @@ class TranslateSurfaceSeaIce_iter1(TranslatePhysicsFortranData2Py):
             "sice_lsm",
         ]
         self.out_vars = {
-            "hice": {"serialname": "sice_hice", "shield": True},
+            "hice": {"serialname": "sice_hice", "shield": True},  #
             "fice": {"serialname": "sice_fice", "shield": True},
-            "tice": {"serialname": "sice_tice", "shield": True},
-            "weasd": {"serialname": "sice_weasd", "shield": True},
-            "tskin": {"serialname": "sice_tskin", "shield": True},
+            "tice": {"serialname": "sice_tice", "shield": True},  #
+            "weasd": {"serialname": "sice_weasd", "shield": True},  #
+            "tskin": {"serialname": "sice_tskin", "shield": True},  #
             "tprcp": {"serialname": "sice_tprcp", "shield": True},
-            "stc0": {"serialname": "sice_stc0", "shield": True},
-            "stc1": {"serialname": "sice_stc1", "shield": True},
+            "stc0": {"serialname": "sice_stc0", "shield": True},  #
+            "stc1": {"serialname": "sice_stc1", "shield": True},  #
             "ep": {"serialname": "sice_ep", "shield": True},
-            "snwdph": {"serialname": "sice_snowd", "shield": True},
-            "qsurf": {"serialname": "sice_qsurf", "shield": True},
+            "snwdph": {"serialname": "sice_snowd", "shield": True},  #
+            "qsurf": {"serialname": "sice_qsurf", "shield": True},  #
             "snowmt": {"serialname": "sice_snowmt", "shield": True},
-            "gflux": {"serialname": "sice_gflux", "shield": True},
-            "cmm": {"serialname": "sice_cmm", "shield": True},
-            "chh": {"serialname": "sice_chh%chh", "shield": True},
-            "evap": {"serialname": "sice_evap", "shield": True},
-            "hflx": {"serialname": "sice_hflx", "shield": True},
+            "gflux": {"serialname": "sice_gflux", "shield": True},  #
+            "cmm": {"serialname": "sice_cmm", "shield": True},  #
+            "chh": {"serialname": "sice_chh", "shield": True},  #
+            "evap": {"serialname": "sice_evap", "shield": True},  #
+            "hflx": {"serialname": "sice_hflx", "shield": True},  #
         }
         self.stencil_factory = stencil_factory
 
