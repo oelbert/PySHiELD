@@ -15,7 +15,7 @@ from ndsl.dsl.typing import (
     Int,
     IntFieldIJ,
 )
-from pySHiELD.functions.physics_functions import fpvsx
+from pySHiELD.functions.physics_functions import fpvs
 from pySHiELD._config import FloatFieldTracer
 
 
@@ -312,7 +312,7 @@ def sfc_sice(
             q0 = max(q1[0, 0, 0][0], physcons.FLOAT_EPS)
             theta1 = t1 * prslki
             rho = prsl1 / (constants.RDGAS * t1 * (1.0 + constants.ZVIR * q0))
-            qs1 = fpvsx(t1)
+            qs1 = fpvs(t1)
             qs1 = max(constants.EPS * qs1 / (
                 prsl1 + constants.EPSM1 * qs1
             ), physcons.FLOAT_EPS)
@@ -325,8 +325,8 @@ def sfc_sice(
                 tice = physcons.TSICE
                 tskin = physcons.TSICE
 
-            qssi = fpvsx(tice)
-            qssw = fpvsx(physcons.TSICE)
+            qssi = fpvs(tice)
+            qssw = fpvs(physcons.TSICE)
             qssi = constants.EPS * qssi / (ps + constants.EPSM1 * qssi)
             qssw = constants.EPS * qssw / (ps + constants.EPSM1 * qssw)
 
