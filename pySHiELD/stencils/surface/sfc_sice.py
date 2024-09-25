@@ -85,31 +85,30 @@ def ice3lay(
     """
     from __externals__ import delt
     # constants
-    TFI = -physcons.MU * physcons.SI  # sea ice freezing temp = -MU*salinity
-    TFI0 = TFI - 0.0001
+    TFI0 = physcons.TFI - 0.0001
 
     snowd = snowd * constants.RHO_H2O / physcons.RHO_SNO
-    hdi = physcons.RHO_SNO / constants.RHO_H2O * snowd + (
-        physcons.RHO_ICE / constants.RHO_H2O * hice
-    )
+    hdi = physcons.DSDW * snowd + physcons.DIDW * hice
 
     if hice < hdi:
         snowd = snowd + hice - hdi
-        hice = hice + (hdi - hice) * physcons.RHO_SNO / physcons.RHO_ICE
+        hsni = (hdi - hice) * physcons.RHO_SNO / physcons.RHO_ICE
+        hice = hice + hsni
 
     snof = snof * constants.RHO_H2O / physcons.RHO_SNO
     tice = tice - constants.TICE0
-    stc0 = stc0 - constants.TICE0 if stc0 - constants.TICE0 < TFI0 else TFI0
-    stc1 = TFI0 if TFI0 < stc1 - constants.TICE0 else stc1 - constants.TICE0  # degc
+    stc0 = min(stc0 - constants.TICE0, TIF0)  # degc
+    stc1 = min(stc1 - constants.TICE0, TIF0)  # degc
 
     ip = physcons.I0 * sneti  # ip +v here (in winton ip=-I0*sneti)
     if snowd > 0.0:
         tsf = 0.0
         ip = 0.0
     else:
-        tsf = TFI
+        tsf = physcons.TFI
+        ip = physcons.I0 * sneti  # ip +v here (in winton ip=-I0*sneti)
 
-    tice = tsf if tsf < tice else tice
+    tice = min(tice, tsf)
 
     # compute ice temperature
 
@@ -120,24 +119,22 @@ def ice3lay(
     )
     k32 = (physcons.KI + physcons.KI) / hice
 
-    wrk = 1.0 / (6.0 * delt * k32 + physcons.RHO_ICE / physcons.CI * hice)
-    a10 = physcons.RHO_ICE / physcons.CI * hice * (0.5 / delt) + k32 * (
-        4.0 * delt * k32 + physcons.RHO_ICE / physcons.CI * hice
+    wrk = 1.0 / (6.0 * delt * k32 + physcons.DICI * hice)
+    a10 = physcons.DICI * hice * (0.5 / delt) + k32 * (
+        4.0 * delt * k32 + physcons.DICI * hice
     ) * wrk
     b10 = (
         -physcons.RHO_ICE * hice * (
-            physcons.CI * stc0 + physcons.LI * TFI / stc0
-        ) * (0.5 / delt)
-        - ip
-        - k32 * ((
+            physcons.CI * stc0 + physcons.LI * physcons.TFI / stc0
+        ) * (0.5 / delt) - ip - k32 * ((
             4.0 * delt * k32 * physcons.TFW
-        ) + physcons.RHO_ICE / physcons.CI * hice * stc1) * wrk
+        ) + physcons.DICI * hice * stc1) * wrk
     )
 
     wrk1 = k12 / (k12 + bi)
     a1 = a10 + bi * wrk1
     b1 = b10 + ai * wrk1
-    c1 = physcons.RHO_ICE / physcons.LI * TFI * (0.5 / delt) * hice
+    c1 = physcons.DILI * physcons.TFI * (0.5 / delt) * hice
 
     stc0 = -((b1 * b1 - 4.0 * a1 * c1) ** 0.5 + b1) / (a1 + a1)
     tice = (k12 * stc0 - ai) / (k12 + bi)
@@ -154,7 +151,7 @@ def ice3lay(
 
     stc1 = (2.0 * delt * k32 * (
         stc0 + physcons.TFW + physcons.TFW
-    ) + physcons.RHO_ICE / physcons.CI * hice * stc1) * wrk
+    ) + physcons.DICI * hice * stc1) * wrk
     bmelt = (focn + (physcons.KI * 4.0) * (stc1 - physcons.TFW) / hice) * delt
 
     # resize the ice ...
@@ -163,13 +160,13 @@ def ice3lay(
     h2 = 0.5 * hice
 
     # top ...
-    if tmelt <= snowd * physcons.RHO_SNO / physcons.LI:
-        snowmt = tmelt / (physcons.RHO_SNO / physcons.LI)
+    if tmelt <= snowd * physcons.DSLI:
+        snowmt = tmelt / (physcons.DSLI)
         snowd = snowd - snowmt
     else:
         snowmt = snowd
-        h1 = h1 - (tmelt - snowd * physcons.RHO_SNO / physcons.LI) / (
-            physcons.RHO_ICE * (physcons.CI - physcons.LI / stc0) * (TFI - stc0)
+        h1 = h1 - (tmelt - snowd * physcons.DSLI) / (
+            physcons.RHO_ICE * (physcons.CI - physcons.LI / stc0) * (physcons.TFI - stc0)
         )
         snowd = 0.0
 
@@ -177,16 +174,16 @@ def ice3lay(
 
     if bmelt < 0.0:
         dh = -bmelt / (
-            physcons.RHO_ICE / physcons.LI + physcons.RHO_ICE / physcons.CI * (
-                TFI - physcons.TFW
+            physcons.DILI + physcons.DICI * (
+                physcons.TFI - physcons.TFW
             )
         )
         stc1 = (h2 * stc1 + dh * physcons.TFW) / (h2 + dh)
         h2 = h2 + dh
     else:
         h2 = h2 - bmelt / (
-            physcons.RHO_ICE / physcons.LI + physcons.RHO_ICE / physcons.CI * (
-                TFI - stc1
+            physcons.DILI + physcons.DICI * (
+                physcons.TFI - stc1
             )
         )
 
@@ -199,20 +196,20 @@ def ice3lay(
         if h1 > 0.5 * hice:
             f1 = 1.0 - 2.0 * h2 / hice
             stc1 = f1 * (
-                stc0 + physcons.LI * TFI / (physcons.CI * stc0)
+                stc0 + physcons.LI * physcons.TFI / (physcons.CI * stc0)
             ) + (1.0 - f1) * stc1
 
-            if stc1 > TFI:
-                hice = hice - h2 * physcons.CI * (stc1 - TFI) / (physcons.LI * delt)
-                stc1 = TFI
+            if stc1 > physcons.TFI:
+                hice = hice - h2 * physcons.CI * (stc1 - physcons.TFI) / (physcons.LI * delt)
+                stc1 = physcons.TFI
 
         else:
             f1 = 2.0 * h1 / hice
             stc0 = f1 * (
-                stc0 + physcons.LI * TFI / (physcons.CI * stc0)
+                stc0 + physcons.LI * physcons.TFI / (physcons.CI * stc0)
             ) + (1.0 - f1) * stc1
             stc0 = (
-                stc0 - (stc0 * stc0 - 4.0 * TFI * physcons.LI / physcons.CI) ** 0.5
+                stc0 - (stc0 * stc0 - 4.0 * physcons.TFI * physcons.LI / physcons.CI) ** 0.5
             ) * 0.5
 
         k12 = (physcons.KI * 4.0) * physcons.KS / (
@@ -224,22 +221,20 @@ def ice3lay(
         snowd = (
             snowd
             + (
-                h1 * (physcons.CI * (stc0 - TFI) - physcons.LI * (1.0 - TFI / stc0))
-                + h2 * (physcons.CI * (stc1 - TFI) - physcons.LI)
+                h1 * (physcons.CI * (stc0 - physcons.TFI) - physcons.LI * (1.0 - physcons.TFI / stc0))
+                + h2 * (physcons.CI * (stc1 - physcons.TFI) - physcons.LI)
             )
             / physcons.LI
         )
-        hice = snowd * physcons.RHO_SNO / physcons.RHO_ICE if (
-            snowd * physcons.RHO_SNO / physcons.RHO_ICE < 0.
-        ) else 0.0
+        hice = max(0, physcons.RHO_SNO / physcons.RHO_ICE)
         snowd = 0.0
         stc0 = physcons.TFW
         stc1 = physcons.TFW
         gflux = 0.0
 
     gflux = fice * gflux
-    snowmt = snowmt * physcons.RHO_SNO / constants.RHO_H2O
-    snowd = snowd * physcons.RHO_SNO / constants.RHO_H2O
+    snowmt = snowmt * physcons.DSDW
+    snowd = snowd * physcons.DSDW
     tice = tice + constants.TICE0
     stc0 = stc0 + constants.TICE0
     stc1 = stc1 + constants.TICE0

@@ -83,6 +83,8 @@ TFW = -1.8  # TFW - seawater freezing temp (c)
 CIMIN = 0.15  # Minimum ice concentration
 RHO_SNO = 330.0  # Density of snow over sea ice (kg/m^3)
 RHO_ICE = 917.0  # Density of ice   (kg/m^3)
+DSDW = RHO_SNO / constants.RHO_H2O  # Ratio of snow to water density
+DIDW = RHO_ICE / constants.RHO_H2O  # Ratio of ice to water density
 CI = 2054.0  # heat capacity of fresh ice (j/kg/k)
 LI = 3.34e5  # latent heat of fusion of fresh ice (j/kg-ice)
 SI = 1.0  # salinity of sea ice
@@ -90,3 +92,7 @@ MU = 0.054  # relates freezing temp to salinity
 KI = 2.03  # conductivity of ice  (w/mk)
 KS = 0.31  # conductivity of snow   (w/mk)
 I0 = 0.3  # ice surface penetrating solar fraction
+TFI = -MU * SI  # sea ice freezing temp = -MU*salinity
+DICI = RHO_ICE * CI  # Ice density times heat capacity (j/m^3/k)
+DILI = RHO_ICE * LI  # Ice density times latent heat of fusion (j/m^3)
+DSLI = RHO_SNO * LI  # Snow density times latent heat of fusion (j/m^3)
