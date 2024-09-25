@@ -129,12 +129,12 @@ class PhysicsConfig:
     alin: float = NamelistDefaults.alin
     clin: float = NamelistDefaults.clin
     isot: int = 0  # Soil category type:
-                    # isot = 0   => Zobler soil type  ( 9 category)
-                    # isot = 1   => STATSGO soil type (19 category)
+    # isot = 0   => Zobler soil type  ( 9 category)
+    # isot = 1   => STATSGO soil type (19 category)
     ivegsrc: int = 2  # Source for veg and soil categories: 
-                        # ivegsrc = 0   => USGS,
-                        # ivegsrc = 1   => IGBP (20 category)
-                        # ivegsrc = 2   => UMD  (13 category)
+    # ivegsrc = 0   => USGS,
+    # ivegsrc = 1   => IGBP (20 category)
+    # ivegsrc = 2   => UMD  (13 category)
     lheatstrg: bool = DEFAULT_BOOL  # flag for canopy heat storage parameterization
     pertvegf: List[float] = [-999., -999., -999., -999., -999.]
     namelist_override: Optional[str] = None
