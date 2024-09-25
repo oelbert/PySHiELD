@@ -1,6 +1,6 @@
 from gt4py.cartesian import gtscript
 from gt4py.cartesian.gtscript import FORWARD, PARALLEL, computation, exp, interval
-from numpy import ndarray
+from numpy import ndarray, zeros
 
 import ndsl.constants as constants
 import pySHiELD.constants as physcons
@@ -1084,6 +1084,15 @@ class NoahLSM:
 
         grid_indexing = stencil_factory.grid_indexing
 
+        domain = grid_indexing.domain
+        domain[2] = config.lsoil
+        kmask = zeros(domain)
+        for k in range(config.lsoil):
+            kmask[:, :, k] = k
+        self._k_mask = quantity_factory.from_array(
+            kmask, dims=[X_DIM, Y_DIM, Z_DIM], units=""
+        )
+
         (
             nroot,
             zroot,
@@ -1254,7 +1263,7 @@ class NoahLSM:
             externals={
                 "dt": dt,
                 "ivegsrc": config.ivegsrc,
-                "lheatstrg": lheatstrg,
+                "lheatstrg": config.lheatstrg,
             },
             origin=grid_indexing.origin_compute(),
             domain=grid_indexing.domain_compute(),
@@ -1270,7 +1279,7 @@ class NoahLSM:
             stencil_factory,
             quantity_factory,
             config.ivegsrc,
-            lheatstrg,
+            config.lheatstrg,
             dt,
         )
 
@@ -1278,7 +1287,7 @@ class NoahLSM:
             stencil_factory,
             quantity_factory,
             config.ivegsrc,
-            lheatstrg,
+            config.lheatstrg,
             dt,
         )
 
@@ -1348,7 +1357,6 @@ class NoahLSM:
         smcwlt2: FloatFieldIJ,
         smcref2: FloatFieldIJ,
         wet1: FloatFieldIJ,
-        k_mask: IntField,
     ):
         """
         !  ====================  defination of variables  ====================  !
@@ -1547,7 +1555,7 @@ class NoahLSM:
             self._esnow,
             self._t2v,
             self._snowng,
-            k_mask,
+            self._k_mask,
             self._lsm_mask,
             self._snopac_mask,
             self._nopac_mask,
@@ -1572,7 +1580,7 @@ class NoahLSM:
             self._rgl,
             self._hs,
             self._xlai,
-            k_mask,
+            self._k_mask,
             self._shdfac,
             self._rc,
             self._pc,
@@ -1643,7 +1651,7 @@ class NoahLSM:
             self._flx3,
             sbsno,
             self._snopac_mask,
-            k_mask,
+            self._k_mask,
         )
 
         self._nopac(
@@ -1696,7 +1704,7 @@ class NoahLSM:
             self._dew,
             self._flx1,
             self._flx3,
-            k_mask,
+            self._k_mask,
             self._nopac_mask,
         )
 
@@ -1730,7 +1738,7 @@ class NoahLSM:
             self._smcwlt,
             self._smcmax,
             self._lsm_mask,
-            k_mask,
+            self._k_mask,
         )
 
         self._finalize_outputs(
