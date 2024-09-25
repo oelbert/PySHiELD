@@ -20,6 +20,7 @@ class PHYSICS_PACKAGES(Enum, metaclass=MetaEnumStr):
 
 @dataclasses.dataclass
 class LSMConfig:
+    lsoil: int = NamelistDefaults.lsoil
     isot: int = DEFAULT_INT
     ivegsrc: int = DEFAULT_INT
     lheatstrg: bool = DEFAULT_BOOL
@@ -41,6 +42,7 @@ class PhysicsConfig:
     npx: int = DEFAULT_INT
     npy: int = DEFAULT_INT
     npz: int = DEFAULT_INT
+    lsoil: int = NamelistDefaults.lsoil
     nwat: int = DEFAULT_INT
     schemes: List = None
     do_qa: bool = DEFAULT_BOOL
@@ -126,6 +128,15 @@ class PhysicsConfig:
     tice: float = NamelistDefaults.tice
     alin: float = NamelistDefaults.alin
     clin: float = NamelistDefaults.clin
+    isot: int = 0  # Soil category type:
+                    # isot = 0   => Zobler soil type  ( 9 category)
+                    # isot = 1   => STATSGO soil type (19 category)
+    ivegsrc: int = 2  # Source for veg and soil categories: 
+                        # ivegsrc = 0   => USGS,
+                        # ivegsrc = 1   => IGBP (20 category)
+                        # ivegsrc = 2   => UMD  (13 category)
+    lheatstrg: bool = DEFAULT_BOOL  # flag for canopy heat storage parameterization
+    pertvegf: List[float] = [-999., -999., -999., -999., -999.]
     namelist_override: Optional[str] = None
 
     def __post_init__(self):
@@ -226,4 +237,14 @@ class PhysicsConfig:
             do_z0_hwrf17=self.do_z0_hwrf17,
             do_z0_hwrf17_hwonly=self.do_z0_hwrf17_hwonly,
             do_z0_moon=self.do_z0_moon,
+        )
+
+    @property
+    def lsm(self) -> LSMConfig:
+        return LSMConfig(
+            lsoil=self.lsoil,
+            isot=self.isot,
+            ivegsrc=self.ivegsrc,
+            lheatstrg=self.lheatstrg,
+            pertvegf=self.pertvegf,
         )
