@@ -97,8 +97,8 @@ def ice3lay(
 
     snof = snof * constants.RHO_H2O / physcons.RHO_SNO
     tice = tice - constants.TICE0
-    stc0 = min(stc0 - constants.TICE0, TIF0)  # degc
-    stc1 = min(stc1 - constants.TICE0, TIF0)  # degc
+    stc0 = min(stc0 - constants.TICE0, TFI0)  # degc
+    stc1 = min(stc1 - constants.TICE0, TFI0)  # degc
 
     ip = physcons.I0 * sneti  # ip +v here (in winton ip=-I0*sneti)
     if snowd > 0.0:
