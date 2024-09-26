@@ -1086,7 +1086,7 @@ class NoahLSM:
 
         domain = grid_indexing.domain
         kmask = zeros(domain)
-        for k in range(config.lsoil):
+        for k in range(domain[2]):
             kmask[:, :, k] = k
         self._k_mask = quantity_factory.from_array(
             kmask, dims=[X_DIM, Y_DIM, Z_DIM], units=""
