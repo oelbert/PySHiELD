@@ -36,9 +36,12 @@ class TranslateNoahLSM_iter1(TranslatePhysicsFortranData2Py):
             "ps": {"shield": True},
             "t1": {"shield": True},
             "q1": {"shield": True},
+            "soil_data": {"serialname": "soiltyp", "shield": True},
+            "veg_data": {"serialname": "vegtype", "shield": True},
+            "vegfrac_data": {"serialname": "vegfpert", "shield": True},
             "sfcemis": {"shield": True},
             "dlwflx": {"shield": True},
-            "dswflx": {"shield": True},
+            "dswflx": {"serialname": "dswsfc", "shield": True},
             "snet": {"shield": True},
             "tg3": {"shield": True},
             "cm": {"shield": True},
@@ -46,7 +49,9 @@ class TranslateNoahLSM_iter1(TranslatePhysicsFortranData2Py):
             "prsl1": {"shield": True},
             "prslki": {"shield": True},
             "zf": {"shield": True},
+            "land_data": {"serialname": "land", "shield": True},
             "wind": {"shield": True},
+            "slope_data": {"serialname": "slopetyp", "shield": True},
             "snoalb": {"shield": True},
             "sfalb": {"shield": True},
             "flag_iter": {"shield": True},
@@ -142,6 +147,8 @@ class TranslateNoahLSM_iter1(TranslatePhysicsFortranData2Py):
 
     def compute(self, inputs):
         self.make_storage_data_input_vars(inputs)
+        inputs.pop("shdmin")
+        inputs.pop("shdmax")
         config = LSMConfig(
             lsoil=inputs.pop("lsoil"),
             isot=inputs.pop("isot"),
