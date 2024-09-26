@@ -152,7 +152,7 @@ class TranslateNoahLSM_iter1(TranslatePhysicsFortranData2Py):
         inputs.pop("shdmin")
         inputs.pop("shdmax")
         config = LSMConfig(
-            lsoil=inputs.pop("lsoil"),
+            lsoil=inputs.pop("km"),
             isot=inputs.pop("isot"),
             ivegsrc=inputs.pop("ivegsrc"),
             lheatstrg=inputs.pop("lheatstrg"),
