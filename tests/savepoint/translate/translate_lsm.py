@@ -1,4 +1,6 @@
-from ndsl import Namelist, StencilFactory
+from ndsl import Namelist, StencilFactory, QuantityFactory
+from ndsl.initialization.sizer import SubtileGridSizer
+from ndsl.dsl.stencil import GridIndexing
 from pySHiELD.stencils.surface.noah_lsm.lsm_driver import NoahLSM
 from tests.savepoint.translate.translate_physics import TranslatePhysicsFortranData2Py
 from pySHiELD._config import LSMConfig
@@ -11,7 +13,22 @@ class TranslateNoahLSM_iter1(TranslatePhysicsFortranData2Py):
         namelist: Namelist,
         stencil_factory: StencilFactory,
     ):
-        super().__init__(grid, namelist, stencil_factory)
+        grid_domain = stencil_factory.grid_indexing.domain
+        grid_domain[2] = namelist.lsoil
+        surface_grid_index = GridIndexing(
+            grid_domain,
+            stencil_factory.grid_indexing.n_halo,
+            stencil_factory.grid_indexing.south_edge,
+            stencil_factory.grid_indexing.north_edge,
+            stencil_factory.grid_indexing.west_edge,
+            stencil_factory.grid_indexing.east_edge,
+        )
+        surface_factory = StencilFactory(
+            stencil_factory.config,
+            surface_grid_index,
+            stencil_factory.comm,
+        )
+        super().__init__(grid, namelist, surface_factory)
         self.in_vars["data_vars"] = {
             "ps": {"shield": True},
             "t1": {"shield": True},
@@ -38,9 +55,9 @@ class TranslateNoahLSM_iter1(TranslatePhysicsFortranData2Py):
             "tskin": {"shield": True},
             "tprcp": {"shield": True},
             "srflag": {"shield": True},
-            "smc": {"shield": True},
-            "stc": {"shield": True},
-            "slc": {"shield": True},
+            "smc": {"shield": True, "kend": namelist.lsoil},
+            "stc": {"shield": True, "kend": namelist.lsoil},
+            "slc": {"shield": True, "kend": namelist.lsoil},
             "canopy": {"shield": True},
             "trans": {"shield": True},
             "tsurf": {"shield": True},
@@ -78,9 +95,9 @@ class TranslateNoahLSM_iter1(TranslatePhysicsFortranData2Py):
             "tskin": {"shield": True},
             "tprcp": {"shield": True},
             "srflag": {"shield": True},
-            "smc": {"shield": True},
-            "stc": {"shield": True},
-            "slc": {"shield": True},
+            "smc": {"shield": True, "kend": namelist.lsoil},
+            "stc": {"shield": True, "kend": namelist.lsoil},
+            "slc": {"shield": True, "kend": namelist.lsoil},
             "canopy": {"shield": True},
             "trans": {"shield": True},
             "tsurf": {"shield": True},
@@ -105,7 +122,13 @@ class TranslateNoahLSM_iter1(TranslatePhysicsFortranData2Py):
             "smcref2": {"shield": True},
             "wet1": {"shield": True},
         }
-        self.stencil_factory = stencil_factory
+        self.stencil_factory = surface_factory
+        sizer = SubtileGridSizer.from_namelist(Namelist)
+        sizer.nz = namelist.lsoil
+        self.quantity_factory = QuantityFactory(
+            sizer,
+            self.grid.quantity_factory._numpy,
+        )
 
     def compute(self, inputs):
         self.make_storage_data_input_vars(inputs)
@@ -118,7 +141,7 @@ class TranslateNoahLSM_iter1(TranslatePhysicsFortranData2Py):
         )
         self.compute_func = NoahLSM(
             self.stencil_factory,
-            self.grid.quantity_factory,
+            self.quantity_factory,
             config,
             inputs.pop("land_data"),
             inputs.pop("veg_data"),
