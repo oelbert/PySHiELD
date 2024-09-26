@@ -126,7 +126,14 @@ class TranslateNoahLSM_iter1(TranslatePhysicsFortranData2Py):
             "wet1": {"shield": True},
         }
         self.stencil_factory = surface_factory
-        sizer = SubtileGridSizer.from_namelist(namelist)
+        init_sizer = grid.quantity_factory.sizer
+        sizer = SubtileGridSizer(
+            init_sizer.nx,
+            init_sizer.ny,
+            namelist.lsoil,
+            init_sizer.n_halo,
+            init_sizer.extra_dim_lengths,
+        )
         sizer.nz = namelist.lsoil
         self.quantity_factory = QuantityFactory(
             sizer,
