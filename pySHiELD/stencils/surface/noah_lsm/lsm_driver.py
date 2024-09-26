@@ -1062,9 +1062,9 @@ class NoahLSM:
         vegfrac_data: ndarray,
         dt: Float,
     ):
-        assert config.pertvegf[0] < 0, f"pertvegf[0] > 0 not implemented, got {
-            config.pertvegf[0]
-        }"
+        assert (
+            config.pertvegf[0] < 0
+        ), f"pertvegf[0] > 0 not implemented, got {config.pertvegf[0]}"
         assert config.ivegsrc == 1, f"ivegsrc !=1 not implemented, got {config.ivegsrc}"
         assert config.isot == 1, f"isot != 1 not implemented, got {config.isot}"
 
