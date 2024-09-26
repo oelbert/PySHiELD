@@ -52,6 +52,8 @@ class TranslateNoahLSM_iter1(TranslatePhysicsFortranData2Py):
             "land_data": {"serialname": "land", "shield": True},
             "wind": {"shield": True},
             "slope_data": {"serialname": "slopetyp", "shield": True},
+            "shdmin": {"shield": True},
+            "shdmax": {"shield": True},
             "snoalb": {"shield": True},
             "sfalb": {"shield": True},
             "flag_iter": {"shield": True},
