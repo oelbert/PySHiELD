@@ -836,7 +836,7 @@ def set_soil_veg(
     # z0[land_mask] = Z0_DATA[veg_data[land_mask]]
     xlai[land_mask] = LAI_DATA[veg_data[land_mask]]
 
-    shdfac = max(vegfrac_data, 0.01)
+    shdfac = np.maximum(vegfrac_data, 0.01)
     shdfac[veg_data == BARE] = 0.0
 
     # calculate root distribution.  present version assumes uniform
