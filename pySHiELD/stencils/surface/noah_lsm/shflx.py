@@ -23,6 +23,61 @@ from ndsl.stencils.tridiag import tridiag_solve
 
 
 @gtscript.function
+def frh2o_fn(psis, bexp, tavg, smc, sh2o, smcmax):
+    # constant parameters
+    ck = 8.0
+    blim = 5.5
+    error = 0.005
+    bx = min(bexp, blim)
+
+    kcount = True
+    nlog = 0
+
+    if tavg <= (constants.TICE0 - 1.0e-3):
+        swl = smc - sh2o
+        swl = max(min(swl, smc - 0.02), 0.0)
+
+        while (nlog < 10) and kcount:
+            nlog += 1
+            df = log(
+                (psis * physcons.GS2 / physcons.LSUBF)
+                * ((1.0 + ck * swl) ** 2.0)
+                * (smcmax / (smc - swl)) ** bx
+            ) - log(-(tavg - constants.TICE0) / tavg)
+
+            denom = 2.0 * ck / (1.0 + ck * swl) + bx / (smc - swl)
+            swlk = swl - df / denom
+
+            # bounds useful for mathematical solution.
+            swlk = max(min(swlk, smc - 0.02), 0.0)
+
+            # mathematical solution bounds applied.
+            dswl = abs(swlk - swl)
+            swl = swlk
+
+            if dswl <= error:
+                kcount = False
+
+            free = smc - swl
+        if not kcount:
+            fk = (
+                (
+                    (physcons.LSUBF / (physcons.GS2 * (-psis)))
+                    * ((tavg - constants.TICE0) / tavg)
+                )
+                ** (-1 / bx)
+            ) * smcmax
+
+            fk = max(fk, 0.02)
+
+            free = min(fk, smc)
+
+    else:
+        free = smc
+
+    return free
+
+@gtscript.function
 def snksrc_fn(psisat, bexp, tavg, smc, sh2o, smcmax, qtot, dz):
     from __externals__ import dt
 
@@ -151,63 +206,6 @@ def tdfcnd(smc, qz, smcmax, sh2o):
     df = ake * (thksat - thkdry) + thkdry
 
     return df
-
-
-@gtscript.function
-def frh2o_fn(psis, bexp, tavg, smc, sh2o, smcmax):
-    # constant parameters
-    ck = 8.0
-    blim = 5.5
-    error = 0.005
-    bx = min(bexp, blim)
-
-    kcount = True
-    nlog = 0
-
-    if tavg <= (constants.TICE0 - 1.0e-3):
-        swl = smc - sh2o
-        swl = max(min(swl, smc - 0.02), 0.0)
-
-        while (nlog < 10) and kcount:
-            nlog += 1
-            df = log(
-                (psis * physcons.GS2 / physcons.LSUBF)
-                * ((1.0 + ck * swl) ** 2.0)
-                * (smcmax / (smc - swl)) ** bx
-            ) - log(-(tavg - constants.TICE0) / tavg)
-
-            denom = 2.0 * ck / (1.0 + ck * swl) + bx / (smc - swl)
-            swlk = swl - df / denom
-
-            # bounds useful for mathematical solution.
-            swlk = max(min(swlk, smc - 0.02), 0.0)
-
-            # mathematical solution bounds applied.
-            dswl = abs(swlk - swl)
-            swl = swlk
-
-            if dswl <= error:
-                kcount = False
-
-            free = smc - swl
-        if not kcount:
-            fk = (
-                (
-                    (physcons.LSUBF / (physcons.GS2 * (-psis)))
-                    * ((tavg - constants.TICE0) / tavg)
-                )
-                ** (-1 / bx)
-            ) * smcmax
-
-            fk = max(fk, 0.02)
-
-            free = min(fk, smc)
-
-    else:
-        free = smc
-
-    return free
-
 
 def start_shflx(
     ice: IntFieldIJ,
