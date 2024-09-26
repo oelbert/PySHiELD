@@ -126,7 +126,7 @@ class TranslateNoahLSM_iter1(TranslatePhysicsFortranData2Py):
             "wet1": {"shield": True},
         }
         self.stencil_factory = surface_factory
-        sizer = SubtileGridSizer.from_namelist(Namelist)
+        sizer = SubtileGridSizer.from_namelist(namelist)
         sizer.nz = namelist.lsoil
         self.quantity_factory = QuantityFactory(
             sizer,
