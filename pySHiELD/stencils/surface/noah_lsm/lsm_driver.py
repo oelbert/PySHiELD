@@ -345,7 +345,7 @@ def init_lsm(
             ice = 0
 
             # forcing data
-            prcp = physcons.RHOH2O * tprcp / dt
+            prcp = constants.RHO_H2O * tprcp / dt
             dqsdt2 = qs1 * physcons.A23M4 / (t1 - physcons.A4) ** 2
 
             # history variables

@@ -5,8 +5,9 @@ from typing import List, Optional, Tuple
 import f90nml
 
 from ndsl import MetaEnumStr
+from ndsl.dsl.typing import Float, Int, set_4d_field_size
 from ndsl.namelist import Namelist, NamelistDefaults
-from ndsl.dsl.typing import Int, Float, set_4d_field_size
+
 
 # TODO: This is a hack
 FloatFieldTracer = set_4d_field_size(9, Float)
@@ -28,7 +29,9 @@ class LSMConfig:
     isot: int = DEFAULT_INT
     ivegsrc: int = DEFAULT_INT
     lheatstrg: bool = DEFAULT_BOOL
-    pertvegf: List[float] = [-999., -999., -999., -999., -999.]
+    pertvegf: List[Float] = dataclasses.field(
+        default_factory=lambda: [-999.0, -999.0, -999.0, -999.0, -999.0]
+    )
 
 
 @dataclasses.dataclass
@@ -46,10 +49,12 @@ class SurfaceConfig:
     isot: int = DEFAULT_INT
     ivegsrc: int = DEFAULT_INT
     lheatstrg: bool = DEFAULT_BOOL
-    pertvegf: List[float] = [-999., -999., -999., -999., -999.]
+    pertvegf: List[Float] = dataclasses.field(
+        default_factory=lambda: [-999.0, -999.0, -999.0, -999.0, -999.0]
+    )
 
     @property
-    def lsm(self) -> LSMConfig:
+    def lsm_config(self) -> LSMConfig:
         return LSMConfig(
             lsoil=self.lsoil,
             isot=self.isot,
@@ -159,12 +164,14 @@ class PhysicsConfig:
     isot: int = 0  # Soil category type:
     # isot = 0   => Zobler soil type  ( 9 category)
     # isot = 1   => STATSGO soil type (19 category)
-    ivegsrc: int = 2  # Source for veg and soil categories: 
+    ivegsrc: int = 2  # Source for veg and soil categories:
     # ivegsrc = 0   => USGS,
     # ivegsrc = 1   => IGBP (20 category)
     # ivegsrc = 2   => UMD  (13 category)
     lheatstrg: bool = DEFAULT_BOOL  # flag for canopy heat storage parameterization
-    pertvegf: List[float] = [-999., -999., -999., -999., -999.]
+    pertvegf: List[Float] = dataclasses.field(
+        default_factory=lambda: [-999.0, -999.0, -999.0, -999.0, -999.0]
+    )
     namelist_override: Optional[str] = None
 
     def __post_init__(self):
@@ -278,7 +285,7 @@ class PhysicsConfig:
         )
 
     @property
-    def lsm(self) -> LSMConfig:
+    def lsm_config(self) -> LSMConfig:
         return LSMConfig(
             lsoil=self.lsoil,
             isot=self.isot,

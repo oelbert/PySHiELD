@@ -1,9 +1,9 @@
-from ndsl import Namelist, StencilFactory, QuantityFactory
-from ndsl.initialization.sizer import SubtileGridSizer
+from ndsl import Namelist, QuantityFactory, StencilFactory
 from ndsl.dsl.stencil import GridIndexing
+from ndsl.initialization.sizer import SubtileGridSizer
+from pySHiELD._config import LSMConfig
 from pySHiELD.stencils.surface.noah_lsm.lsm_driver import NoahLSM
 from tests.savepoint.translate.translate_physics import TranslatePhysicsFortranData2Py
-from pySHiELD._config import LSMConfig
 
 
 class TranslateNoahLSM_iter1(TranslatePhysicsFortranData2Py):
