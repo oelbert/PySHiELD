@@ -98,6 +98,7 @@ class TranslateNoahLSM_iter1(TranslatePhysicsFortranData2Py):
             "lheatstrg",
             "pertvegf",
             "isot",
+            "delt",
         ]
         self.out_vars = {
             "weasd": {"shield": True},
