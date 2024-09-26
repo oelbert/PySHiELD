@@ -3,7 +3,6 @@ from gt4py.cartesian.gtscript import FORWARD, computation, exp, interval, log, s
 
 import ndsl.constants as constants
 import pySHiELD.constants as physcons
-from ndsl.constants import X_DIM, Y_DIM, Z_DIM
 
 # from pace.dsl.dace.orchestration import orchestrate
 from ndsl.dsl.stencil import StencilFactory
@@ -13,12 +12,12 @@ from ndsl.dsl.typing import (
     Float,
     FloatField,
     FloatFieldIJ,
+    Int,
     IntFieldIJ,
 )
-from ndsl.initialization.allocator import QuantityFactory
 from ndsl.stencils.basic_operations import sign
-from pySHiELD._config import COND_DIM, TRACER_DIM, SurfaceConfig
 from pySHiELD.functions.physics_functions import fpvs
+from pySHiELD._config import FloatFieldTracer
 
 
 @gtscript.function
@@ -206,7 +205,7 @@ def cal_z0_hwrf15(ws10m):
 
 
 @gtscript.function
-def cal_zt_hwrf15(ws10m, zt):
+def cal_zt_hwrf15(ws10m):
     # coded by Kun Gao (Kun.Gao@noaa.gov)
     # originally developed by URI/GFDL
     a0 = 2.51715926619e-09
@@ -312,6 +311,7 @@ def cal_z0_hwrf17(ws10m):
     return z0
 
 
+@gtscript.function
 def cal_zt_hwrf17(ws10m):
     # coded by Kun Gao (Kun.Gao@noaa.gov)
     p00 = 1.100000000000000e-04
@@ -377,6 +377,7 @@ def cal_zt_hwrf17(ws10m):
     return zt
 
 
+@gtscript.function
 def cal_z0_moon(ws10m):
     # coded by Kun Gao (Kun.Gao@noaa.gov)
     charnock = 0.014
@@ -399,10 +400,10 @@ def cal_z0_moon(ws10m):
 
 
 def sfc_diff(
-    u1: FloatFieldIJ,
-    v1: FloatFieldIJ,
-    t1: FloatFieldIJ,
-    q1: FloatFieldIJ,
+    u1: FloatField,
+    v1: FloatField,
+    t1: FloatField,
+    q1: FloatFieldTracer,
     ddvel: FloatFieldIJ,
     tsurf: FloatFieldIJ,
     tskin: FloatFieldIJ,
@@ -415,8 +416,6 @@ def sfc_diff(
     ustar: FloatFieldIJ,
     snwdph: FloatFieldIJ,
     ztrl: FloatFieldIJ,
-    z0s_max: Float,
-    wind_th_hwrf: Float,
     cm: FloatFieldIJ,
     ch: FloatFieldIJ,
     rb: FloatFieldIJ,
@@ -427,10 +426,8 @@ def sfc_diff(
     fm10: FloatFieldIJ,
     fh2: FloatFieldIJ,
     islimsk: IntFieldIJ,
-    ivegsrc: IntFieldIJ,
     vegtype: IntFieldIJ,
     flag_iter: BoolFieldIJ,
-    redrag: Bool,
 ):
     """
     Probably want to split this into functions and rename a bunch
@@ -440,18 +437,22 @@ def sfc_diff(
         do_z0_hwrf17,
         do_z0_hwrf17_hwonly,
         do_z0_moon,
+        ivegsrc,
+        redrag,
+        wind_th_hwrf,
+        z0s_max,
     )
 
-    with computation(FORWARD), interval(...):
+    with computation(FORWARD), interval(0, 1):
 
         if flag_iter[0, 0]:
             # Get lowest atmospheric level variables:
             wind = max(sqrt(u1 ** 2 + v1 ** 2) + max(0.0, min(ddvel, 30.0)), 1.0)
-            tem1 = 1.0 + constants.ZVIR * max(q1, 1.0e-8)
+            tem1 = 1.0 + constants.ZVIR * max(q1[0, 0, 0][0], 1.0e-8)
             thv1 = t1 * prslki * tem1
             tvs = 0.5 * (tsurf + tskin) * tem1
             qs1 = fpvs(t1)
-            qs1 = max(1.0e-8, constants.EPS * qs1 / (prsl1 + (constants.EPS - 1) * qs1))
+            qs1 = max(1.0e-8, constants.EPS * qs1 / (prsl1 + constants.EPSM1 * qs1))
 
             # Get surface level variables:
             if (islimsk[0, 0] == 1) or (islimsk[0, 0] == 2):  # Over land or sea ice:
@@ -586,7 +587,14 @@ class SurfaceExchange:
     def __init__(
         self,
         stencil_factory: StencilFactory,
-        config: SurfaceConfig,
+        ivegsrc: Int,
+        do_z0_hwrf15: Bool,
+        do_z0_hwrf17: Bool,
+        do_z0_hwrf17_hwonly: Bool,
+        do_z0_moon: Bool,
+        redrag: Bool,
+        wind_th_hwrf: Float,
+        z0s_max: Float,
     ):
         """
         Calculates surface exchanges and near-surface winds.
@@ -596,10 +604,10 @@ class SurfaceExchange:
         assert (
             sum(
                 [
-                    config.do_z0_hwrf15,
-                    config.do_z0_hwrf17,
-                    config.do_z0_hwrf17_hwonly,
-                    config.do_z0_moon,
+                    do_z0_hwrf15,
+                    do_z0_hwrf17,
+                    do_z0_hwrf17_hwonly,
+                    do_z0_moon,
                 ]
             )
             == 1
@@ -608,22 +616,25 @@ class SurfaceExchange:
         self._sfc_diff = stencil_factory.from_origin_domain(
             sfc_diff,
             externals={
-                "do_z0_hwrf15": config.do_z0_hwrf15,
-                "do_z0_hwrf17": config.do_z0_hwrf17,
-                "do_z0_hwrf17_hwonly": config.do_z0_hwrf17_hwonly,
-                "do_z0_moon": config.do_z0_moon,
+                "do_z0_hwrf15": do_z0_hwrf15,
+                "do_z0_hwrf17": do_z0_hwrf17,
+                "do_z0_hwrf17_hwonly": do_z0_hwrf17_hwonly,
+                "do_z0_moon": do_z0_moon,
+                "ivegsrc": ivegsrc,
+                "redrag": redrag,
+                "wind_th_hwrf": wind_th_hwrf,
+                "z0s_max": z0s_max,
             },
             origin=grid_indexing.origin_compute(),
             domain=grid_indexing.domain_compute(),
         )
-        pass
 
     def __call__(
         self,
-        u1: FloatFieldIJ,
-        v1: FloatFieldIJ,
-        t1: FloatFieldIJ,
-        q1: FloatFieldIJ,
+        u1: FloatField,
+        v1: FloatField,
+        t1: FloatField,
+        q1: FloatFieldTracer,
         ddvel: FloatFieldIJ,
         tsurf: FloatFieldIJ,
         tsfc: FloatFieldIJ,
@@ -636,8 +647,6 @@ class SurfaceExchange:
         ustar: FloatFieldIJ,
         snowdepth: FloatFieldIJ,
         ztrl: FloatFieldIJ,
-        z0s_max: Float,
-        wind_th_hwrf: Float,
         cm: FloatFieldIJ,
         ch: FloatFieldIJ,
         rb: FloatFieldIJ,
@@ -648,10 +657,8 @@ class SurfaceExchange:
         fm10: FloatFieldIJ,
         fh2: FloatFieldIJ,
         islimsk: IntFieldIJ,
-        ivegsrc: IntFieldIJ,
         vegtype: IntFieldIJ,
         flag_iter: BoolFieldIJ,
-        redrag: Bool,
     ):
         self._sfc_diff(
             u1,
@@ -670,8 +677,6 @@ class SurfaceExchange:
             ustar,
             snowdepth,
             ztrl,
-            z0s_max,
-            wind_th_hwrf,
             cm,
             ch,
             rb,
@@ -682,8 +687,6 @@ class SurfaceExchange:
             fm10,
             fh2,
             islimsk,
-            ivegsrc,
             vegtype,
             flag_iter,
-            redrag,
         )
