@@ -1085,7 +1085,6 @@ class NoahLSM:
         grid_indexing = stencil_factory.grid_indexing
 
         domain = grid_indexing.domain
-        domain[2] = config.lsoil
         kmask = zeros(domain)
         for k in range(config.lsoil):
             kmask[:, :, k] = k
