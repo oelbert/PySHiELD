@@ -15,7 +15,6 @@ from ndsl.dsl.typing import (
     FloatField,
     FloatFieldIJ,
     FloatFieldK,
-    Int,
     IntField,
     IntFieldIJ,
 )
@@ -1121,19 +1120,19 @@ class NoahLSM:
         ) = set_soil_veg(land_data, veg_data, soil_data, vegfrac_data)
 
         self._vegtype = quantity_factory.from_array(
-            veg_data, dims=[X_DIM, Y_DIM], units="", dtype=Int
+            veg_data, dims=[X_DIM, Y_DIM], units="",
         )
         self._soiltype = quantity_factory.from_array(
-            soil_data, dims=[X_DIM, Y_DIM], units="", dtype=Int
+            soil_data, dims=[X_DIM, Y_DIM], units="",
         )
         self._slope = quantity_factory.from_array(
-            slope_data, dims=[X_DIM, Y_DIM], units="", dtype=Int
+            slope_data, dims=[X_DIM, Y_DIM], units="",
         )
         self._land = quantity_factory.from_array(
-            land, dims=[X_DIM, Y_DIM], units="", dtype=Bool
+            land, dims=[X_DIM, Y_DIM], units="",
         )
         self._ice = quantity_factory.from_array(
-            ice, dims=[X_DIM, Y_DIM], units="", dtype=Bool
+            ice, dims=[X_DIM, Y_DIM], units="",
         )
         self._nroot = quantity_factory.from_array(nroot, dims=[X_DIM, Y_DIM], units="")
         self._zroot = quantity_factory.from_array(zroot, dims=[X_DIM, Y_DIM], units="")
