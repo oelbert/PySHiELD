@@ -13,8 +13,11 @@ class TranslateNoahLSM_iter1(TranslatePhysicsFortranData2Py):
         namelist: Namelist,
         stencil_factory: StencilFactory,
     ):
-        grid_domain = stencil_factory.grid_indexing.domain
-        grid_domain[2] = namelist.lsoil
+        grid_domain = (
+            stencil_factory.grid_indexing.domain[0],
+            stencil_factory.grid_indexing.domain[1],
+            int(namelist.lsoil),
+        )
         surface_grid_index = GridIndexing(
             grid_domain,
             stencil_factory.grid_indexing.n_halo,
