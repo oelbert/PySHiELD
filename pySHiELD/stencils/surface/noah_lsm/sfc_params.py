@@ -849,12 +849,12 @@ def set_soil_veg(
     for i in range(nroot.shape[0]):
         for j in range(nroot.shape[1]):
             for k in range(len(ZSOIL_DATA)):
-                if isl_mask == 1:
+                if isl_mask[i, j] == 1:
                     sldpth[i, j, k + 1] = ZSOIL_DATA[k] - ZSOIL_DATA[k - 1]
                     zsoil[i, j] = ZSOIL_DATA[k]
                     if k < nroot[i, j]:
                         rtdis[i, j, k] = -sldpth[i, j, k] * zroot[i, j]
-                elif isl_mask == 2:
+                elif isl_mask[i, j] == 2:
                     zsoil[i, j, k] = -3.0 * (k + 1) / (len(ZSOIL_DATA) + 1)
 
     return (
