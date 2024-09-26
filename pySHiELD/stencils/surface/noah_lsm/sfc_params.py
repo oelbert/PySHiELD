@@ -842,9 +842,9 @@ def set_soil_veg(
     # calculate root distribution.  present version assumes uniform
     # distribution based on soil layer depths.
 
-    rtdis = np.zeros((nroot.shape[0], nroot.shape[1], ZSOIL_DATA.shape))
-    sldpth = np.zeros((nroot.shape[0], nroot.shape[1], ZSOIL_DATA.shape + 1))
-    zsoil = np.zeros((nroot.shape[0], nroot.shape[1], ZSOIL_DATA.shape))
+    rtdis = np.zeros((nroot.shape[0], nroot.shape[1], ZSOIL_DATA.shape[0]))
+    sldpth = np.zeros((nroot.shape[0], nroot.shape[1], ZSOIL_DATA.shape[0] + 1))
+    zsoil = np.zeros((nroot.shape[0], nroot.shape[1], ZSOIL_DATA.shape[0]))
 
     for i in range(nroot.shape[0]):
         for j in range(nroot.shape[1]):
