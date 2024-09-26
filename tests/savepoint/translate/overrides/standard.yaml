@@ -30,7 +30,3 @@ Microph:
       mph_qg_dt: 1e-18
       mph_udt: 1e-8
       mph_vdt: 1e-8
-
-SurfaceSeaIce_iter1:
-  - backend: numpy
-    max_error: 2e-16
