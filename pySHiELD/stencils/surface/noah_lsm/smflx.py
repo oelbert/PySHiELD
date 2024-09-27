@@ -87,7 +87,7 @@ def srt(
     et: FloatField,
     sh2o: FloatField,
     pcpdrp: FloatFieldIJ,
-    zsoil: FloatField,
+    zsoil: FloatFieldK,
     dwsat: FloatFieldIJ,
     dksat: FloatFieldIJ,
     smcmax: FloatFieldIJ,

@@ -98,7 +98,7 @@ def prep_for_flux_calc(
     quartz: FloatFieldIJ,
     smcmax: FloatFieldIJ,
     sh2o: FloatField,
-    zsoil: FloatField,
+    zsoil: FloatFieldK,
     df1: FloatFieldIJ,
     vegtype: IntFieldIJ,
     shdfac: FloatFieldIJ,
