@@ -412,7 +412,6 @@ class SoilMoistureFlux:
         """
         self._start_smflx(
             smcmax,
-            smcwlt,
             prcp1,
             zsoil,
             shdfac,
