@@ -814,8 +814,7 @@ def sflx_1(
 
             esnow = 0.0
 
-    # TODO: Split these out completely
-    with computation(PARALLEL), interval(...):
+        # TODO: Split these out completely
         if lsm_mask:
             esnow = 0.0
 
