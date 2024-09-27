@@ -289,7 +289,7 @@ def init_lsm(
     snowh: FloatFieldIJ,
     sneqv: FloatFieldIJ,
     rho: FloatFieldIJ,
-    ice: BoolFieldIJ,
+    ice: IntFieldIJ,
     land: BoolFieldIJ,
     flag_guess: BoolFieldIJ,
     flag_iter: BoolFieldIJ,
