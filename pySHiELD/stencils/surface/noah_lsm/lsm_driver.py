@@ -1174,7 +1174,11 @@ class NoahLSM:
         self._rtdis = quantity_factory.from_array(
             rtdis, dims=[X_DIM, Y_DIM, Z_DIM], units=""
         )
-        self._zsoil = quantity_factory.from_array(zsoil, dims=[Z_DIM], units="")
+        self._zsoil = quantity_factory.from_array(
+            zsoil,
+            dims=[X_DIM, Y_DIM, Z_DIM],
+            units="",
+        )
 
         self._lsm_mask = quantity_factory.zeros(
             dims=[X_DIM, Y_DIM],
