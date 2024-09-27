@@ -15,8 +15,9 @@ from ndsl.dsl.typing import (
     FloatField,
     FloatFieldIJ,
     FloatFieldK,
-    IntField,
+    Int,
     IntFieldIJ,
+    IntFieldK,
 )
 from ndsl.initialization.allocator import QuantityFactory
 from ndsl.quantity import Quantity
@@ -71,7 +72,7 @@ def canres(
     rgl: FloatFieldIJ,
     hs: FloatFieldIJ,
     xlai: FloatFieldIJ,
-    k_mask: IntFieldIJ,
+    k_mask: IntFieldK,
     shdfac: FloatFieldIJ,
     rc: FloatFieldIJ,
     pc: FloatFieldIJ,
@@ -442,7 +443,6 @@ def sflx_1(
     esnow: FloatFieldIJ,
     t2v: FloatFieldIJ,
     snowng: BoolFieldIJ,
-    k_mask: IntField,
     lsm_mask: BoolFieldIJ,
     snopac_mask: BoolFieldIJ,
     nopac_mask: BoolFieldIJ,
@@ -860,7 +860,7 @@ def sflx_2(
     smcwlt: FloatFieldIJ,
     smcmax: FloatFieldIJ,
     lsm_mask: BoolFieldIJ,
-    k_mask: IntField,
+    k_mask: IntFieldK,
 ):
     with computation(PARALLEL), interval(...):
         from __externals__ import dt
@@ -1088,11 +1088,11 @@ class NoahLSM:
         grid_indexing = stencil_factory.grid_indexing
 
         domain = grid_indexing.domain
-        kmask = zeros(domain)
+        kmask = zeros(domain[2], dtype=Int)
         for k in range(domain[2]):
-            kmask[:, :, k] = k
+            kmask[k] = k
         self._k_mask = quantity_factory.from_compute_array(
-            kmask, dims=[X_DIM, Y_DIM, Z_DIM], units=""
+            kmask, dims=[Z_DIM], units=""
         )
 
         (
