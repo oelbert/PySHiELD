@@ -1,4 +1,5 @@
 import numpy as np
+from ndsl.dsl.typing import Float, Int
 
 import pySHiELD.constants as physcons
 
@@ -782,26 +783,26 @@ def set_soil_veg(
     !  ====================    end of description    =====================  !
     """
 
-    bexp = np.zeros_like(soil_data)
-    dksat = np.zeros_like(soil_data)
-    dwsat = np.zeros_like(soil_data)
-    f1 = np.zeros_like(soil_data)
-    psisat = np.zeros_like(soil_data)
-    quartz = np.zeros_like(soil_data)
-    smcdry = np.zeros_like(soil_data)
-    smcmax = np.zeros_like(soil_data)
-    smcref = np.zeros_like(soil_data)
-    smcwlt = np.zeros_like(soil_data)
-    frzfact = np.zeros_like(soil_data)
+    bexp = np.zeros_like(soil_data, dtype=Float)
+    dksat = np.zeros_like(soil_data, dtype=Float)
+    dwsat = np.zeros_like(soil_data, dtype=Float)
+    f1 = np.zeros_like(soil_data, dtype=Float)
+    psisat = np.zeros_like(soil_data, dtype=Float)
+    quartz = np.zeros_like(soil_data, dtype=Float)
+    smcdry = np.zeros_like(soil_data, dtype=Float)
+    smcmax = np.zeros_like(soil_data, dtype=Float)
+    smcref = np.zeros_like(soil_data, dtype=Float)
+    smcwlt = np.zeros_like(soil_data, dtype=Float)
+    frzfact = np.zeros_like(soil_data, dtype=Float)
 
-    nroot = np.zeros_like(veg_data)
-    zroot = np.zeros_like(veg_data)
-    snup = np.zeros_like(veg_data)
-    rsmin = np.zeros_like(veg_data)
-    rgl = np.zeros_like(veg_data)
-    hs = np.zeros_like(veg_data)
-    xlai = np.zeros_like(veg_data)
-    shdfac = np.zeros_like(veg_data)
+    nroot = np.zeros_like(veg_data, dtype=Int)
+    zroot = np.zeros_like(veg_data, dtype=Float)
+    snup = np.zeros_like(veg_data, dtype=Float)
+    rsmin = np.zeros_like(veg_data, dtype=Float)
+    rgl = np.zeros_like(veg_data, dtype=Float)
+    hs = np.zeros_like(veg_data, dtype=Float)
+    xlai = np.zeros_like(veg_data, dtype=Float)
+    shdfac = np.zeros_like(veg_data, dtype=Float)
     land_mask = isl_mask >= 1
     ice_mask = isl_mask == 2
     ice_mask = ice_mask.astype(int)
@@ -844,8 +845,10 @@ def set_soil_veg(
     # distribution based on soil layer depths.
 
     rtdis = np.zeros((nroot.shape[0], nroot.shape[1], ZSOIL_DATA.shape[0] + 1))
-    sldpth = np.zeros((nroot.shape[0], nroot.shape[1], ZSOIL_DATA.shape[0] + 1))
-    zsoil = np.zeros((ZSOIL_DATA.shape[0] + 1))
+    sldpth = np.zeros(
+        (nroot.shape[0], nroot.shape[1], ZSOIL_DATA.shape[0] + 1), dtype=Float
+    )
+    zsoil = np.zeros((ZSOIL_DATA.shape[0] + 1), dtype=Float)
 
     for i in range(nroot.shape[0]):
         for j in range(nroot.shape[1]):
