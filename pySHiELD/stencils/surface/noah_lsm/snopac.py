@@ -456,7 +456,7 @@ class SNOPAC:
         )
 
         self._update_temp_and_melt_snow = (
-            stencil_factory.stencil_factory.from_origin_domain(
+            stencil_factory.from_origin_domain(
                 func=update_temp_and_melt_snow,
                 externals={
                     "dt": dt,
@@ -481,7 +481,7 @@ class SNOPAC:
         )
 
         self._adjust_for_snow_compaction = (
-            stencil_factory.stencil_factory.from_origin_domain(
+            stencil_factory.from_origin_domain(
                 func=adjust_for_snow_compaction,
                 externals={
                     "dt": dt,

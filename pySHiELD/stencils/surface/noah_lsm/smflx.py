@@ -324,20 +324,20 @@ class SoilMoistureFlux:
         self._rhsct = make_quantity_2d()
         self._trhsct = make_quantity_2d()
 
-        self._start_smflx = stencil_factory.stencil_factory.from_origin_domain(
+        self._start_smflx = stencil_factory.from_origin_domain(
             func=start_smflx,
             externals={"dt": dt},
             origin=grid_indexing.origin_compute(),
             domain=grid_indexing.domain_compute(),
         )
 
-        self._average_in = stencil_factory.stencil_factory.from_origin_domain(
+        self._average_in = stencil_factory.from_origin_domain(
             func=average_in,
             origin=grid_indexing.origin_compute(),
             domain=grid_indexing.domain_compute(),
         )
 
-        self._srt = stencil_factory.stencil_factory.from_origin_domain(
+        self._srt = stencil_factory.from_origin_domain(
             func=srt,
             externals={"dt": dt},
             origin=grid_indexing.origin_compute(),

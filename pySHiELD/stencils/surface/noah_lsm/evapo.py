@@ -225,17 +225,17 @@ class EvapoTranspiration:
             dtype=Float,
         )
 
-        self._start_evaporation = stencil_factory.stencil_factory.from_origin_domain(
+        self._start_evaporation = stencil_factory.from_origin_domain(
             func=start_evaporation,
             origin=grid_indexing.origin_compute(),
             domain=grid_indexing.domain_compute(),
         )
-        self._transpiration = stencil_factory.stencil_factory.from_origin_domain(
+        self._transpiration = stencil_factory.from_origin_domain(
             func=transpiration,
             origin=grid_indexing.origin_compute(),
             domain=grid_indexing.domain_compute(),
         )
-        self._finish_evaporation = stencil_factory.stencil_factory.from_origin_domain(
+        self._finish_evaporation = stencil_factory.from_origin_domain(
             func=finish_evaporation,
             externals={"dt": dt},
             origin=grid_indexing.origin_compute(),
