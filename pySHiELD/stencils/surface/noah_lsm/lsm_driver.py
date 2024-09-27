@@ -65,7 +65,7 @@ def canres(
     sh2o: FloatField,
     smcwlt: FloatFieldIJ,
     smcref: FloatFieldIJ,
-    zsoil: FloatField,
+    zsoil: FloatFieldK,
     zroot: FloatFieldIJ,
     rsmin: FloatFieldIJ,
     rgl: FloatFieldIJ,
