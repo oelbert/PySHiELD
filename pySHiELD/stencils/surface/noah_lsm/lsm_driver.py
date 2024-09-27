@@ -265,6 +265,7 @@ def init_lsm(
     canopy_old: FloatFieldIJ,
     tprcp_old: FloatFieldIJ,
     srflag_old: FloatFieldIJ,
+    sfctmp: FloatFieldIJ,
     ep: FloatFieldIJ,
     evap: FloatFieldIJ,
     hflx: FloatFieldIJ,
@@ -351,6 +352,7 @@ def init_lsm(
             cmc = canopy * 0.001
             snowh = snwdph * 0.001
             sneqv = weasd * 0.001
+            sfctmp = t1
 
             if (sneqv != 0.0) and (snowh == 0.0):
                 snowh = 10.0 * sneqv
@@ -951,6 +953,7 @@ def finalize_outputs(
     ch: FloatFieldIJ,
     wind: FloatFieldIJ,
     q1: FloatFieldTracer,
+    t1: FloatField,
     smc_old: FloatField,
     stc_old: FloatField,
     slc_old: FloatField,
@@ -960,6 +963,7 @@ def finalize_outputs(
     canopy_old: FloatFieldIJ,
     tprcp_old: FloatFieldIJ,
     srflag_old: FloatFieldIJ,
+    sfctmp: FloatFieldIJ,
     tsurf: FloatFieldIJ,
     smc: FloatField,
     evap: FloatFieldIJ,
@@ -1007,6 +1011,7 @@ def finalize_outputs(
             weasd = sneqv * 1000.0
             sncovr1 = snowc
             zorl = z0 * 100.0
+            t1 = sfctmp
 
             # compute qsurf
             rch = rho * constants.CP_AIR * ch * wind
@@ -1251,6 +1256,7 @@ class NoahLSM:
         self._beta = make_quantity_2d()
         self._t2v = make_quantity_2d()
         self._soilw = make_quantity_2d()
+        self._sfctmp = make_quantity_2d()
 
         self._init_lsm = stencil_factory.from_origin_domain(
             func=init_lsm,
@@ -1311,7 +1317,7 @@ class NoahLSM:
     def __call__(
         self,
         ps: FloatFieldIJ,
-        t1: FloatFieldIJ,
+        t1: FloatField,
         q1: FloatFieldTracer,
         sfcemis: FloatFieldIJ,
         dlwflx: FloatFieldIJ,
@@ -1452,6 +1458,7 @@ class NoahLSM:
             self._canopy_old,
             self._tprcp_old,
             self._srflag_old,
+            self._sfctmp,
             ep,
             evap,
             hflx,
@@ -1491,7 +1498,7 @@ class NoahLSM:
             dlwflx,
             sfcemis,
             prsl1,
-            t1,
+            self._sfctmp,
             self._prcp,
             self._q0,
             self._qsi,
@@ -1505,7 +1512,7 @@ class NoahLSM:
             bexppert,
             xlaipert,
             self._cmc,
-            t1,
+            tg3,
             stc,
             smc,
             slc,
@@ -1572,7 +1579,7 @@ class NoahLSM:
             self._q0,
             self._qsi,
             self._dqsdt2,
-            t1,
+            self._sfctmp,
             prsl1,
             sfcemis,
             slc,
@@ -1605,7 +1612,7 @@ class NoahLSM:
             self._smcdry,
             self._df1,
             sfcemis,
-            t1,
+            self._sfctmp,
             self._t24,
             self._theta1,
             self._fdown,
@@ -1667,7 +1674,7 @@ class NoahLSM:
             self._smcref,
             self._smcdry,
             self._shdfac,
-            t1,
+            self._sfctmp,
             sfcemis,
             self._t24,
             self._theta1,
@@ -1719,7 +1726,7 @@ class NoahLSM:
             self._t2v,
             self._theta1,
             prsl1,
-            t1,
+            self._sfctmp,
             smc,
             ch,
             evap,
@@ -1762,6 +1769,7 @@ class NoahLSM:
             ch,
             wind,
             q1,
+            t1,
             self._smc_old,
             self._stc_old,
             self._slc_old,
@@ -1771,6 +1779,7 @@ class NoahLSM:
             self._canopy_old,
             self._tprcp_old,
             self._srflag_old,
+            self._sfctmp,
             tsurf,
             smc,
             evap,
