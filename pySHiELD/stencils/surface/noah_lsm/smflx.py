@@ -260,7 +260,7 @@ def srt(
             numer = (
                 (wdf * dsmdz)
                 + slopx * wcnd
-                - wdf[0, 0, -1] * dsmdz[-1]
+                - wdf[0, 0, -1] * dsmdz[0, 0, -1]
                 - wcnd[0, 0, -1]
                 + et
             )
