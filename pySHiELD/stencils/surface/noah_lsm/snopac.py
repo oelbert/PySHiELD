@@ -440,7 +440,7 @@ class SNOPAC:
             dtype=Bool,
         )
 
-        self._start_snopac = stencil_factory.stencil_factory.from_origin_domain(
+        self._start_snopac = stencil_factory.from_origin_domain(
             func=start_snopac,
             externals={
                 "dt": dt,

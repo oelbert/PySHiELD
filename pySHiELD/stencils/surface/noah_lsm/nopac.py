@@ -197,7 +197,7 @@ class NOPAC:
             dtype=Bool,
         )
 
-        self._start_nopac = stencil_factory.stencil_factory.from_origin_domain(
+        self._start_nopac = stencil_factory.from_origin_domain(
             func=start_nopac,
             origin=grid_indexing.origin_compute(),
             domain=grid_indexing.domain_compute(),
@@ -215,7 +215,7 @@ class NOPAC:
             dt,
         )
 
-        self._prep_for_flux_calc = stencil_factory.stencil_factory.from_origin_domain(
+        self._prep_for_flux_calc = stencil_factory.from_origin_domain(
             func=prep_for_flux_calc,
             externals={
                 "dt": dt,
