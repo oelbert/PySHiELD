@@ -18,6 +18,7 @@ ZSOIL_DATA = np.array([-0.1, -0.4, -1.0, -2.0])
 
 SLOPE_DATA = np.zeros(30)
 SLOPE_DATA[:20] = 1.0
+
 SNUPX = np.array(
     [
         0.080,
@@ -616,6 +617,7 @@ def set_soil_veg(
     veg_data: np.ndarray,
     soil_data: np.ndarray,
     vegfrac_data: np.ndarray,
+    slope_types: np.ndarray,
 ):
     """
     Handles initialization of LSM fields. Includes redprm Fortran subroutine
@@ -794,6 +796,7 @@ def set_soil_veg(
     smcref = np.zeros_like(soil_data, dtype=Float)
     smcwlt = np.zeros_like(soil_data, dtype=Float)
     frzfact = np.zeros_like(soil_data, dtype=Float)
+    slope = np.zeros_like(soil_data, dtype=Float)
 
     nroot = np.zeros_like(veg_data, dtype=Int)
     zroot = np.zeros_like(veg_data, dtype=Float)
@@ -811,6 +814,7 @@ def set_soil_veg(
     dksat[land_mask] = SATDK[soil_data[land_mask]]
     dwsat[land_mask] = SATDW[soil_data[land_mask]]
     f1[land_mask] = F11[soil_data[land_mask]]
+    slope[land_mask] = SLOPE_DATA[slope_types[land_mask]]
 
     psisat[land_mask] = SATPSI[soil_data[land_mask]]
     quartz[land_mask] = QTZ[soil_data[land_mask]]
@@ -866,6 +870,7 @@ def set_soil_veg(
         zroot,
         sldpth,
         zsoil,
+        slope,
         snup,
         rsmin,
         rgl,
