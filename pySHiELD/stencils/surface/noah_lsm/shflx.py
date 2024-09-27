@@ -269,28 +269,28 @@ def hrtice(
 
                 # 1. Top Layer
                 # calc the matrix coefficients ai, bi, and ci for the top layer
-                ddz = 1.0 / (-0.5 * zsoil[0, 0, 1])
+                ddz = 1.0 / (-0.5 * zsoil[1])
                 ai = 0.0
                 ci = (df1 * ddz) / (zsoil * hcpct)
                 bi = -ci + df1 / (0.5 * zsoil * zsoil * hcpct * zz1)
 
                 # calc the vertical soil temp gradient btwn the top and 2nd soil
-                dtsdz = (stc - stc[0, 0, 1]) / (-0.5 * zsoil[0, 0, 1])
+                dtsdz = (stc - stc[0, 0, 1]) / (-0.5 * zsoil[1])
                 ssoil = df1 * (stc - yy) / (0.5 * zsoil * zz1)
                 rhsts = (df1 * dtsdz - ssoil) / (zsoil * hcpct)
 
         with interval(1, -1):
             if surface_mask:
                 # 2. Inner Layers
-                denom = 0.5 * (zsoil[0, 0, -1] - zsoil[0, 0, 1])
+                denom = 0.5 * (zsoil[-1] - zsoil[1])
                 dtsdz2 = (stc - stc[0, 0, 1]) / denom
-                ddz2 = 2.0 / (zsoil[0, 0, -1] - zsoil[0, 0, 1])
-                ci = -df1 * ddz2 / ((zsoil[0, 0, -1] - zsoil) * hcpct)
+                ddz2 = 2.0 / (zsoil[-1] - zsoil[1])
+                ci = -df1 * ddz2 / ((zsoil[-1] - zsoil) * hcpct)
 
-                denom = (zsoil - zsoil[0, 0, -1]) * hcpct
+                denom = (zsoil - zsoil[-1]) * hcpct
                 rhsts = (df1 * dtsdz2 - df1 * dtsdz) / denom
 
-                ai = -df1 * ddz / ((zsoil[0, 0, -1] - zsoil) * hcpct)
+                ai = -df1 * ddz / ((zsoil[-1] - zsoil) * hcpct)
                 bi = -(ai + ci)
 
                 dtsdz = dtsdz2
@@ -304,13 +304,13 @@ def hrtice(
                     zbot = zsoil
                 else:
                     zbot = -25.0
-                dtsdz2 = (stc - tbot) / (0.5 * (zsoil[0, 0, -1] - zsoil) - zbot)
+                dtsdz2 = (stc - tbot) / (0.5 * (zsoil[-1] - zsoil) - zbot)
                 ci = 0.0
 
-                denom = (zsoil - zsoil[0, 0, -1]) * hcpct
+                denom = (zsoil - zsoil[-1]) * hcpct
                 rhsts = (df1 * dtsdz2 - df1 * dtsdz) / denom
 
-                ai = -df1 * ddz / ((zsoil[0, 0, -1] - zsoil) * hcpct)
+                ai = -df1 * ddz / ((zsoil[-1] - zsoil) * hcpct)
                 bi = -(ai + ci)
 
 
@@ -354,13 +354,13 @@ def hrt(
                 )
 
                 # calc the matrix coefficients ai, bi, and ci for the top layer
-                ddz = 1.0 / (-0.5 * zsoil[0, 0, 1])
+                ddz = 1.0 / (-0.5 * zsoil[1])
                 ai = 0.0
                 ci = (df1 * ddz) / (zsoil * hcpct)
                 bi = -ci + df1 / (0.5 * zsoil * zsoil * hcpct * zz1)
 
                 # calc the vertical soil temp gradient btwn the top and 2nd soil
-                dtsdz = (stc - stc[0, 0, 1]) / (-0.5 * zsoil[0, 0, 1])
+                dtsdz = (stc - stc[0, 0, 1]) / (-0.5 * zsoil[1])
                 ssoil = df1 * (stc - yy) / (0.5 * zsoil * zz1)
                 rhsts = (df1 * dtsdz - ssoil) / (zsoil * hcpct)
 
@@ -371,7 +371,7 @@ def hrt(
                 tsurf = (yy + (zz1 - 1) * stc) / zz1
 
                 # linear interpolation between the average layer temperatures
-                tbk = stc + (stc[0, 0, 1] - stc) * zsoil / zsoil[0, 0, 1]
+                tbk = stc + (stc[0, 0, 1] - stc) * zsoil / zsoil[1]
                 # calculate frozen water content in 1st soil layer.
                 sice = smc - sh2o
 
@@ -407,18 +407,18 @@ def hrt(
                 if (not lheatstrg) and (ivegsrc == 1) and (vegtype == 13):
                     df1k = 3.24 * (1.0 - shdfac) + shdfac * df1k
 
-                tbk = stc + (stc[0, 0, 1] - stc) * (zsoil[0, 0, -1] - zsoil) / (
-                    zsoil[0, 0, -1] - zsoil[0, 0, 1]
+                tbk = stc + (stc[0, 0, 1] - stc) * (zsoil[-1] - zsoil) / (
+                    zsoil[-1] - zsoil[1]
                 )
                 # calc the vertical soil temp gradient thru each layer
-                denom = 0.5 * (zsoil[0, 0, -1] - zsoil[0, 0, 1])
+                denom = 0.5 * (zsoil[-1] - zsoil[1])
                 dtsdz = (stc - stc[0, 0, 1]) / denom
-                ddz = 2.0 / (zsoil[0, 0, -1] - zsoil[0, 0, 1])
+                ddz = 2.0 / (zsoil[-1] - zsoil[1])
 
-                ci = -df1k * ddz / ((zsoil[0, 0, -1] - zsoil) * hcpct)
+                ci = -df1k * ddz / ((zsoil[-1] - zsoil) * hcpct)
 
                 # calculate rhsts
-                denom = (zsoil - zsoil[0, 0, -1]) * hcpct
+                denom = (zsoil - zsoil[-1]) * hcpct
                 rhsts = (df1k * dtsdz - df1k[0, 0, -1] * dtsdz[0, 0, -1]) / denom
 
                 qtot = -1.0 * denom * rhsts
@@ -430,7 +430,7 @@ def hrt(
                     or (stc < constants.TICE0)
                     or (tbk < constants.TICE0)
                 ):
-                    dz = zsoil[0, 0, -1] - zsoil
+                    dz = zsoil[-1] - zsoil
                     tavg = tmpavg_fn(tbk[0, 0, -1], stc, tbk, dz)
                     tsnsr, sh2o = snksrc_fn(
                         psisat, bexp, tavg, smc, sh2o, smcmax, qtot, dz
@@ -438,7 +438,7 @@ def hrt(
                     rhsts -= tsnsr / denom
 
                 # calc matrix coefs, ai, and bi for this layer.
-                ai = -df1 * ddz[0, 0, -1] / ((zsoil[0, 0, -1] - zsoil) * hcpct)
+                ai = -df1 * ddz[0, 0, -1] / ((zsoil[-1] - zsoil) * hcpct)
                 bi = -(ai + ci)
 
         with interval(-1, None):
@@ -457,16 +457,16 @@ def hrt(
                 if (not lheatstrg) and (ivegsrc == 1) and (vegtype == 13):
                     df1k = 3.24 * (1.0 - shdfac) + shdfac * df1k
 
-                tbk = stc + (tbot - stc) * (zsoil[0, 0, -1] - zsoil) / (
-                    zsoil[0, 0, -1] + zsoil - 2.0 * physcons.ZBOT
+                tbk = stc + (tbot - stc) * (zsoil[-1] - zsoil) / (
+                    zsoil[-1] + zsoil - 2.0 * physcons.ZBOT
                 )
 
-                denom = 0.5 * (zsoil[0, 0, -1] + zsoil) - physcons.ZBOT
+                denom = 0.5 * (zsoil[-1] + zsoil) - physcons.ZBOT
                 dtsdz = (stc - tbot) / denom
                 ci = 0.0
 
                 # calculate rhsts
-                denom = (zsoil - zsoil[0, 0, -1]) * hcpct
+                denom = (zsoil - zsoil[-1]) * hcpct
                 rhsts = (df1k * dtsdz - df1k[0, 0, -1] * dtsdz[0, 0, -1]) / denom
 
                 qtot = -1.0 * denom * rhsts
@@ -478,7 +478,7 @@ def hrt(
                     or (stc < constants.TICE0)
                     or (tbk < constants.TICE0)
                 ):
-                    dz = zsoil[0, 0, -1] - zsoil
+                    dz = zsoil[-1] - zsoil
                     tavg = tmpavg_fn(tbk[0, 0, -1], stc, tbk, dz)
                     tsnsr, sh2o = snksrc_fn(
                         psisat, bexp, tavg, smc, sh2o, smcmax, qtot, dz
@@ -486,7 +486,7 @@ def hrt(
 
                     rhsts -= tsnsr / denom
                 # calc matrix coefs, ai, and bi for this layer.
-                ai = -df1 * ddz[0, 0, -1] / ((zsoil[0, 0, -1] - zsoil) * hcpct)
+                ai = -df1 * ddz[0, 0, -1] / ((zsoil[-1] - zsoil) * hcpct)
                 bi = -(ai + ci)
 
 

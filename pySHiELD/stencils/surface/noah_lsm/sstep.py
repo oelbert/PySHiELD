@@ -50,7 +50,7 @@ def finish_sstep(
                 ddz = -zsoil
         with interval(1, None):
             if surface_mask:
-                ddz = zsoil[0, 0, -1] - zsoil
+                ddz = zsoil[-1] - zsoil
 
     with computation(FORWARD), interval(...):
         if surface_mask:

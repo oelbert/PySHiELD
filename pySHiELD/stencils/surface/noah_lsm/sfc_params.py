@@ -844,14 +844,14 @@ def set_soil_veg(
 
     rtdis = np.zeros((nroot.shape[0], nroot.shape[1], ZSOIL_DATA.shape[0] + 1))
     sldpth = np.zeros((nroot.shape[0], nroot.shape[1], ZSOIL_DATA.shape[0] + 1))
-    zsoil = np.zeros((nroot.shape[0], nroot.shape[1], ZSOIL_DATA.shape[0] + 1))
+    zsoil = np.zeros((ZSOIL_DATA.shape[0] + 1))
 
     for i in range(nroot.shape[0]):
         for j in range(nroot.shape[1]):
             for k in range(len(ZSOIL_DATA)):
                 if isl_mask[i, j] == 1:
                     sldpth[i, j, k + 1] = ZSOIL_DATA[k] - ZSOIL_DATA[k - 1]
-                    zsoil[i, j] = ZSOIL_DATA[k]
+                    zsoil[k] = ZSOIL_DATA[k]
                     if k < nroot[i, j]:
                         rtdis[i, j, k] = -sldpth[i, j, k] * zroot[i, j]
                 elif isl_mask[i, j] == 2:

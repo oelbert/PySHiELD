@@ -114,7 +114,7 @@ def canres(
                 if shdfac > 0.0:
                     if k_mask < nroot:
                         gx = max(0.0, min(1.0, (sh2o - smcwlt) / (smcref - smcwlt)))
-                        rcsoil = rcsoil + ((zsoil - zsoil[0, 0, -1]) / zroot * gx)
+                        rcsoil = rcsoil + ((zsoil - zsoil[-1]) / zroot * gx)
     with computation(FORWARD), interval(0, 1):
         if lsm_mask:
             if shdfac > 0.0:
@@ -366,7 +366,7 @@ def init_lsm(
 def sflx_1(
     ice: IntFieldIJ,
     ffrozp: FloatFieldIJ,
-    zsoil: FloatField,
+    zsoil: FloatFieldK,
     swdn: FloatFieldIJ,
     swnet: FloatFieldIJ,
     lwdn: FloatFieldIJ,
@@ -920,14 +920,14 @@ def sflx_2(
                 soilwm = -(smcmax - smcwlt) * zsoil
         with interval(1, -1):
             if lsm_mask:
-                soilm = soilm + smc * (zsoil[0, 0, -1] - zsoil)
+                soilm = soilm + smc * (zsoil[-1] - zsoil)
                 if k_mask < nroot:
-                    soilww = soilww + (smc - smcwlt) * (zsoil[0, 0, -1] - zsoil)
+                    soilww = soilww + (smc - smcwlt) * (zsoil[-1] - zsoil)
         with interval(-1, None):
             if lsm_mask:
-                soilm = soilm + smc * (zsoil[0, 0, -1] - zsoil)
+                soilm = soilm + smc * (zsoil[-1] - zsoil)
                 if k_mask < nroot:
-                    soilww = soilww + (smc - smcwlt) * (zsoil[0, 0, -1] - zsoil)
+                    soilww = soilww + (smc - smcwlt) * (zsoil[-1] - zsoil)
     with computation(FORWARD), interval(0, 1):
         if lsm_mask:
             soilw = soilww / soilwm
@@ -1175,7 +1175,7 @@ class NoahLSM:
         )
         self._zsoil = quantity_factory.from_array(
             zsoil,
-            dims=[X_DIM, Y_DIM, Z_DIM],
+            dims=[Z_DIM],
             units="",
         )
 

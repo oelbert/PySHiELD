@@ -43,24 +43,16 @@ def wdfcnd_fn(smc, smcmax, bexp, dksat, dwsat, sicemax):
 
 
 def start_smflx(
-    kdt,
-    smcmax,
-    smcwlt,
-    prcp1,
-    zsoil,
-    slope,
-    frzx,
-    bexp,
-    dksat,
-    dwsat,
-    shdfac,
-    edir1,
-    ec1,
-    et1,
-    cmc,
-    sh2o,
-    smc,
-    sh2o_in,
+    smcmax: FloatFieldIJ,
+    prcp1: FloatFieldIJ,
+    zsoil: FloatFieldK,
+    shdfac: FloatFieldIJ,
+    ec1: FloatFieldIJ,
+    cmc: FloatFieldIJ,
+    sh2o: FloatField,
+    smc: FloatField,
+    sh2o_in: FloatField,
+    sice: FloatField,
     surface_mask: BoolFieldIJ,
     frozen_ground: BoolFieldIJ,
 ):
@@ -225,21 +217,21 @@ def srt(
                 wdf, wcnd = wdfcnd_fn(sh2o, smcmax, bexp, dksat, dwsat, sicemax)
 
                 # calc the matrix coefficients ai, bi, and ci for the top layer
-                ddz = 1.0 / (-0.5 * zsoil[0, 0, 1])
+                ddz = 1.0 / (-0.5 * zsoil[1])
                 ai0 = 0.0
                 bi0 = wdf0 * ddz / (-zsoil)
                 ci0 = -bi0
 
                 # calc rhstt for the top layer
-                dsmdz = (sh2o - sh2o[0, 0, 1]) / (-0.5 * zsoil[0, 0, 1])
+                dsmdz = (sh2o - sh2o[0, 0, 1]) / (-0.5 * zsoil[1])
                 rhstt = (wdf0 * dsmdz + wcnd0 - pddum + edir + et) / zsoil
 
     with computation(FORWARD), interval(1, -1):
         if surface_mask:
             # 2. Interior Layers
             wdf, wcnd = wdfcnd_fn(sh2o, smcmax, bexp, dksat, dwsat, sicemax)
-            denom2 = zsoil[0, 0, -1] - zsoil
-            denom = zsoil[0, 0, -1] - zsoil[0, 0, 1]
+            denom2 = zsoil[-1] - zsoil
+            denom = zsoil[-1] - zsoil[1]
             dsmdz = (sh2o - sh2o[0, 0, 1]) / (denom * 0.5)
             ddz = 2.0 / denom
             ci = -wdf * ddz / denom2
@@ -260,7 +252,7 @@ def srt(
     with computation(FORWARD), interval(-1, None):
         if surface_mask:
             # 3. Bottom Layer
-            denom2 = zsoil[0, 0, -1] - zsoil
+            denom2 = zsoil[-1] - zsoil
             slopx = slope
             wdf, wcnd = wdfcnd_fn(sh2o, smcmax, bexp, dksat, dwsat, sicemax)
             dsmdz = 0.0
@@ -419,24 +411,17 @@ class SoilMoistureFlux:
         !  ====================    end of description    =====================  !
         """
         self._start_smflx(
-            kdt,
             smcmax,
             smcwlt,
             prcp1,
             zsoil,
-            slope,
-            frzx,
-            bexp,
-            dksat,
-            dwsat,
             shdfac,
-            edir1,
             ec1,
-            et1,
             cmc,
             sh2o,
             smc,
             self._mid_sh20,
+            self._sice,
             surface_mask,
             self._frozen_ground,
         )
