@@ -333,7 +333,7 @@ def hrt(
     ai: FloatField,
     bi: FloatField,
     ci: FloatField,
-    surface_mask: FloatFieldIJ,
+    surface_mask: BoolFieldIJ,
 ):
     from __externals__ import ivegsrc, lheatstrg
 
