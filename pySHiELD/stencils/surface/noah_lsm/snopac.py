@@ -215,7 +215,7 @@ def update_temp_and_melt_snow(
     sfcems: FloatFieldIJ,
     t24: FloatFieldIJ,
     th2: FloatFieldIJ,
-    stc: FloatFieldIJ,
+    stc: FloatField,
     esdmin: FloatFieldIJ,
     prcp1: FloatFieldIJ,
     snowng: BoolFieldIJ,
