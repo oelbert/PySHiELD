@@ -20,7 +20,7 @@ from ndsl.dsl.typing import (
 )
 from ndsl.initialization.allocator import QuantityFactory
 from ndsl.quantity import Quantity
-from pySHiELD._config import LSMConfig
+from pySHiELD._config import LSMConfig, FloatFieldTracer
 from pySHiELD.functions.physics_functions import fpvs
 from pySHiELD.stencils.surface.noah_lsm.nopac import NOPAC
 from pySHiELD.stencils.surface.noah_lsm.sfc_params import set_soil_veg
@@ -248,7 +248,7 @@ def init_lsm(
     canopy: FloatFieldIJ,
     tprcp: FloatFieldIJ,
     srflag: FloatFieldIJ,
-    q1: FloatFieldIJ,
+    q1: FloatFieldTracer,
     t1: FloatFieldIJ,
     prslki: FloatFieldIJ,
     prsl1: FloatFieldIJ,
@@ -330,7 +330,7 @@ def init_lsm(
             snowc = 0.0
             snohf = 0.0
 
-            q0 = max(q1, 1.0e-8)
+            q0 = max(q1[0, 0, 0][0], 1.0e-8)
             theta1 = t1 * prslki
             rho = prsl1 / (constants.RDGAS * t1 * (1.0 + constants.ZVIR * q0))
             qs1 = fpvs(t1)
@@ -950,7 +950,7 @@ def finalize_outputs(
     rho: FloatFieldIJ,
     ch: FloatFieldIJ,
     wind: FloatFieldIJ,
-    q1: FloatFieldIJ,
+    q1: FloatFieldTracer,
     smc_old: FloatField,
     stc_old: FloatField,
     slc_old: FloatField,
@@ -1010,7 +1010,7 @@ def finalize_outputs(
 
             # compute qsurf
             rch = rho * constants.CP_AIR * ch * wind
-            qsurf = q1 + evap / (physcons.HOCP * rch)
+            qsurf = q1[0, 0, 0][0] + evap / (physcons.HOCP * rch)
             tem = 1.0 / rho
             hflx = hflx * tem / constants.CP_AIR
             evap = evap * tem / constants.HLV
@@ -1312,7 +1312,7 @@ class NoahLSM:
         self,
         ps: FloatFieldIJ,
         t1: FloatFieldIJ,
-        q1: FloatFieldIJ,
+        q1: FloatFieldTracer,
         sfcemis: FloatFieldIJ,
         dlwflx: FloatFieldIJ,
         dswflx: FloatFieldIJ,
