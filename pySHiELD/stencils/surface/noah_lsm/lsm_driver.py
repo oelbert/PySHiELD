@@ -590,7 +590,7 @@ def sflx_1(
     """
     from __externals__ import dt, ivegsrc, lheatstrg
 
-    with computation(PARALLEL), interval(0, 1):
+    with computation(FORWARD), interval(0, 1):
         if lsm_mask:
 
             # initialization
@@ -638,7 +638,7 @@ def sflx_1(
                 smc = 1.0
                 sh2o = 1.0
 
-    with computation(PARALLEL), interval(0, 1):
+    with computation(FORWARD), interval(0, 1):
         if lsm_mask:
             # if input snowpack is nonzero, then compute snow density "sndens"
             # and snow thermal conductivity "sncond"
