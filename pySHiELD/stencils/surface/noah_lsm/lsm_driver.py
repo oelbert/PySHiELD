@@ -1566,7 +1566,6 @@ class NoahLSM:
             self._esnow,
             self._t2v,
             self._snowng,
-            self._k_mask,
             self._lsm_mask,
             self._snopac_mask,
             self._nopac_mask,
