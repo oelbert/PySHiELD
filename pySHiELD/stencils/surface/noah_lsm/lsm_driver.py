@@ -1294,6 +1294,9 @@ class NoahLSM:
 
         self._sflx_2 = stencil_factory.from_origin_domain(
             func=sflx_2,
+            externals={
+                "dt": dt,
+            },
             origin=grid_indexing.origin_compute(),
             domain=grid_indexing.domain_compute(),
         )
