@@ -803,7 +803,8 @@ def set_soil_veg(
     xlai = np.zeros_like(veg_data)
     shdfac = np.zeros_like(veg_data)
     land_mask = isl_mask >= 1
-    ice_mask = int(isl_mask == 2)
+    ice_mask = isl_mask == 2
+    ice_mask = ice_mask.astype(int)
 
     bexp[land_mask] = BB[soil_data[land_mask]]
     dksat[land_mask] = SATDK[soil_data[land_mask]]
