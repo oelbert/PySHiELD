@@ -15,7 +15,7 @@ from ndsl.dsl.typing import (
     FloatFieldIJ,
     FloatFieldK,
     Int,
-    IntField,
+    IntFieldK,
     IntFieldIJ,
 )
 from ndsl.initialization.allocator import QuantityFactory
@@ -552,7 +552,7 @@ class SNOPAC:
         flx3: FloatFieldIJ,
         esnow: FloatFieldIJ,
         snopac_mask: BoolFieldIJ,
-        k_mask: IntField,
+        k_mask: IntFieldK,
     ):
         """
         Fortran description:

@@ -13,7 +13,7 @@ from ndsl.dsl.typing import (
     FloatFieldIJ,
     FloatFieldK,
     Int,
-    IntField,
+    IntFieldK,
     IntFieldIJ,
 )
 from ndsl.initialization.allocator import QuantityFactory
@@ -285,7 +285,7 @@ class NOPAC:
         dew: FloatFieldIJ,
         flx1: FloatFieldIJ,
         flx3: FloatFieldIJ,
-        k_mask: IntField,
+        k_mask: IntFieldK,
         nopac_mask: BoolFieldIJ,
     ):
         """

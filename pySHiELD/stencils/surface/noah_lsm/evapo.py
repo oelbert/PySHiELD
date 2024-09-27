@@ -12,7 +12,7 @@ from ndsl.dsl.typing import (
     Float,
     FloatField,
     FloatFieldIJ,
-    IntField,
+    IntFieldK,
     IntFieldIJ,
 )
 from ndsl.initialization.allocator import QuantityFactory
@@ -81,7 +81,7 @@ def transpiration(
     et1: FloatField,
     sgx: FloatFieldIJ,
     transp_mask: BoolFieldIJ,
-    k_mask: IntField,
+    k_mask: IntFieldK,
 ):
     """
     Fortran name is transp
@@ -260,7 +260,7 @@ class EvapoTranspiration:
         ec1: FloatFieldIJ,
         et1: FloatField,
         ett1: FloatFieldIJ,
-        k_mask: IntField,
+        k_mask: IntFieldK,
         evapo_mask: BoolFieldIJ,
     ):
         """
