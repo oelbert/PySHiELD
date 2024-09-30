@@ -32,7 +32,7 @@ def finish_sstep(
     rhsct: FloatFieldIJ,
     smcmax: FloatFieldIJ,
     zsoil: FloatFieldK,
-    sice: FloatFieldIJ,
+    sice: FloatField,
     cmc: FloatFieldIJ,
     p: FloatField,
     runoff3: FloatFieldIJ,
