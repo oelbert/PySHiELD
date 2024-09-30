@@ -589,7 +589,7 @@ class SoilHeatFlux:
         self._ctfil1 = make_quantity_2d()
         self._ctfil2 = make_quantity_2d()
         self._oldt1 = make_quantity_2d()
-        self._stsoil = make_quantity_2d()
+        self._stsoil = make_quantity()
         self._rhsts = make_quantity()
         self._ai = make_quantity()
         self._bi = make_quantity()
