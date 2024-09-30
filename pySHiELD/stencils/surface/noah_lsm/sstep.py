@@ -7,7 +7,7 @@ from ndsl.constants import X_DIM, Y_DIM, Z_DIM
 from ndsl.dsl.stencil import StencilFactory
 from ndsl.dsl.typing import BoolFieldIJ, Float, FloatField, FloatFieldIJ, FloatFieldK
 from ndsl.initialization.allocator import QuantityFactory
-from ndsl.stencils.tridiag import tridiag_solve
+from ndsl.stencils.tridiag import masked_tridiag_solve
 
 
 def init_sstep(
@@ -104,7 +104,7 @@ class SoilCanopyMoisture:
         )
 
         self._tridiag = stencil_factory.from_origin_domain(
-            func=tridiag_solve,
+            func=masked_tridiag_solve,
             origin=grid_indexing.origin_compute(),
             domain=grid_indexing.domain_compute(),
         )
@@ -173,6 +173,7 @@ class SoilCanopyMoisture:
             ai,
             bi,
             ci,
+            surface_mask,
         )
 
         self._tridiag(
@@ -182,6 +183,7 @@ class SoilCanopyMoisture:
             rhstt,
             self._p,
             self._delta,
+            surface_mask,
         )
 
         self._finish_sstep(
@@ -194,4 +196,5 @@ class SoilCanopyMoisture:
             self._p,
             runoff3,
             smc,
+            surface_mask,
         )

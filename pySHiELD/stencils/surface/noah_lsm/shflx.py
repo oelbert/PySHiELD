@@ -19,7 +19,7 @@ from ndsl.dsl.typing import (
 )
 from ndsl.initialization.allocator import QuantityFactory
 from ndsl.quantity import Quantity
-from ndsl.stencils.tridiag import tridiag_solve
+from ndsl.stencils.tridiag import masked_tridiag_solve
 
 
 @gtscript.function
@@ -496,14 +496,16 @@ def prep_hstep(
     ai: FloatField,
     bi: FloatField,
     ci: FloatField,
+    surface_mask: BoolFieldIJ,
 ):
     from __externals__ import dt
 
     with computation(PARALLEL), interval(...):
-        ai *= dt
-        bi = 1.0 + dt * bi
-        ci *= dt
-        rhsts *= dt
+        if surface_mask:
+            ai *= dt
+            bi = 1.0 + dt * bi
+            ci *= dt
+            rhsts *= dt
 
 
 def finish_hstep(
@@ -628,7 +630,7 @@ class SoilHeatFlux:
         )
 
         self._tridiag_solve = stencil_factory.from_origin_domain(
-            func=tridiag_solve,
+            func=masked_tridiag_solve,
             origin=grid_indexing.origin_compute(),
             domain=grid_indexing.domain_compute(),
         )
@@ -768,6 +770,7 @@ class SoilHeatFlux:
             self._ai,
             self._bi,
             self._ci,
+            surface_mask,
         )
 
         self._tridiag_solve(
@@ -777,6 +780,7 @@ class SoilHeatFlux:
             self._rhsts,
             self._heat_flux,
             self._delta,
+            surface_mask,
         )
 
         self._finish_hstep(
