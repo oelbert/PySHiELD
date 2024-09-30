@@ -256,7 +256,7 @@ def init_lsm(
     ch: FloatFieldIJ,
     cm: FloatFieldIJ,
     wind: FloatFieldIJ,
-    zorl: FloatFieldIJ,
+    z0rl: FloatFieldIJ,
     smc_old: FloatField,
     stc_old: FloatField,
     slc_old: FloatField,
@@ -363,7 +363,7 @@ def init_lsm(
             chh = chx * rho
             cmm = cmx
 
-            z0 = zorl / 100.0
+            z0 = z0rl / 100.0
 
 
 def sflx_1(
@@ -936,7 +936,6 @@ def sflx_2(
 
 
 def finalize_outputs(
-    soilm: FloatFieldIJ,
     flx1: FloatFieldIJ,
     flx2: FloatFieldIJ,
     flx3: FloatFieldIJ,
@@ -968,7 +967,6 @@ def finalize_outputs(
     smc: FloatField,
     evap: FloatFieldIJ,
     hflx: FloatFieldIJ,
-    gflux: FloatFieldIJ,
     snowc: FloatFieldIJ,
     stm: FloatFieldIJ,
     snohf: FloatFieldIJ,
@@ -981,7 +979,7 @@ def finalize_outputs(
     snwdph: FloatFieldIJ,
     weasd: FloatFieldIJ,
     sncovr1: FloatFieldIJ,
-    zorl: FloatFieldIJ,
+    z0rl: FloatFieldIJ,
     rch: FloatFieldIJ,
     qsurf: FloatFieldIJ,
     stc: FloatField,
@@ -1010,7 +1008,7 @@ def finalize_outputs(
             snwdph = snowh * 1000.0
             weasd = sneqv * 1000.0
             sncovr1 = snowc
-            zorl = z0 * 100.0
+            z0rl = z0 * 100.0
             t1 = sfctmp
 
             # compute qsurf
@@ -1349,7 +1347,7 @@ class NoahLSM:
         canopy: FloatFieldIJ,
         trans: FloatFieldIJ,
         tsurf: FloatFieldIJ,
-        zorl: FloatFieldIJ,
+        z0rl: FloatFieldIJ,
         sncovr1: FloatFieldIJ,
         qsurf: FloatFieldIJ,
         gflux: FloatFieldIJ,
@@ -1408,7 +1406,7 @@ class NoahLSM:
         !     canopy   - real, canopy moisture content (m)                 im   !
         !     trans    - real, total plant transpiration (m/s)             im   !
         !     tsurf    - real, surface skin temperature (after iteration)  im   !
-        !     zorl     - real, surface roughness                           im   !
+        !     z0rl     - real, surface roughness                           im   !
         !                                                                       !
         !  outputs:                                                             !
         !     sncovr1  - real, snow cover over land (fractional)           im   !
@@ -1450,7 +1448,7 @@ class NoahLSM:
             ch,
             cm,
             wind,
-            zorl,
+            z0rl,
             self._smc_old,
             self._stc_old,
             self._slc_old,
@@ -1785,7 +1783,6 @@ class NoahLSM:
             smc,
             evap,
             hflx,
-            gflux,
             snowc,
             stm,
             snohf,
@@ -1798,7 +1795,7 @@ class NoahLSM:
             snwdph,
             weasd,
             sncovr1,
-            zorl,
+            z0rl,
             self._rch,
             qsurf,
             stc,
@@ -1810,5 +1807,3 @@ class NoahLSM:
             self._land,
             flag_guess,
         )
-
-        pass
