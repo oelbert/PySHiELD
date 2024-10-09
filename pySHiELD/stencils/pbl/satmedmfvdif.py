@@ -21,8 +21,8 @@ from ndsl.dsl.typing import (
     FloatField,
     FloatFieldIJ,
     Int,
-    IntField,
     IntFieldIJ,
+    IntFieldK,
 )
 from ndsl.initialization.allocator import QuantityFactory
 from pySHiELD._config import TRACER_DIM, PBLConfig, FloatFieldTracer
@@ -48,7 +48,7 @@ def init_turbulence(
     prn: FloatField,
     kx1: IntFieldIJ,
     prsi: FloatField,
-    k_mask: IntField,
+    k_mask: IntFieldK,
     kinver: IntFieldIJ,
     tx1: FloatFieldIJ,
     tx2: FloatFieldIJ,
@@ -297,7 +297,7 @@ def mrf_pbl_scheme_part1(
     crb: FloatFieldIJ,
     flg: BoolFieldIJ,
     kpblx: IntFieldIJ,
-    k_mask: IntField,
+    k_mask: IntFieldK,
     rbdn: FloatFieldIJ,
     rbup: FloatFieldIJ,
     rbsoil: FloatFieldIJ,
@@ -348,7 +348,7 @@ def mrf_pbl_2_thermal_excess(
     hpblx: FloatFieldIJ,
     kpbl: IntFieldIJ,
     kpblx: IntFieldIJ,
-    k_mask: IntField,
+    k_mask: IntFieldK,
     pblflg: BoolFieldIJ,
     pcnvflg: BoolFieldIJ,
     phih: FloatFieldIJ,
@@ -435,7 +435,7 @@ def thermal_excess_2(
     crb: FloatFieldIJ,
     flg: BoolFieldIJ,
     kpbl: IntFieldIJ,
-    k_mask: IntField,
+    k_mask: IntFieldK,
     rbdn: FloatFieldIJ,
     rbup: FloatFieldIJ,
     thermal: FloatFieldIJ,
@@ -477,7 +477,7 @@ def enhance_pbl_height_thermal(
     hpbl: FloatFieldIJ,
     kpbl: IntFieldIJ,
     lcld: IntFieldIJ,
-    k_mask: IntField,
+    k_mask: IntFieldK,
     pblflg: BoolFieldIJ,
     pcnvflg: BoolFieldIJ,
     rbdn: FloatFieldIJ,
@@ -522,7 +522,7 @@ def stratocumulus(
     kcld: IntFieldIJ,
     krad: IntFieldIJ,
     lcld: IntFieldIJ,
-    k_mask: IntField,
+    k_mask: IntFieldK,
     radmin: FloatFieldIJ,
     radx: FloatField,
     qlx: FloatField,
@@ -628,7 +628,7 @@ def compute_prandtl_num_exchange_coeff(
     ckz: FloatField,
     hpbl: FloatFieldIJ,
     kpbl: IntFieldIJ,
-    k_mask: IntField,
+    k_mask: IntFieldK,
     pcnvflg: BoolFieldIJ,
     phih: FloatFieldIJ,
     phim: FloatFieldIJ,
@@ -782,7 +782,7 @@ def compute_eddy_diffusivity_buoy_shear(
     elm: FloatField,
     gotvx: FloatField,
     kpbl: IntFieldIJ,
-    k_mask: IntField,
+    k_mask: IntFieldK,
     mrad: IntFieldIJ,
     krad: IntFieldIJ,
     pblflg: BoolFieldIJ,
@@ -1002,7 +1002,7 @@ def tke_up_down_prop(
     scuflg: BoolFieldIJ,
     tke: FloatField,
     kpbl: IntFieldIJ,
-    k_mask: IntField,
+    k_mask: IntFieldK,
     xlamue: FloatField,
     zl: FloatField,
     ad: FloatField,
@@ -1056,7 +1056,7 @@ def tke_tridiag_matrix_ele_comp(
     f1_p1: FloatFieldIJ,
     kpbl: IntFieldIJ,
     krad: IntFieldIJ,
-    k_mask: IntField,
+    k_mask: IntFieldK,
     mrad: IntFieldIJ,
     pcnvflg: BoolFieldIJ,
     prsl: FloatField,
@@ -1185,7 +1185,7 @@ def heat_moist_tridiag_mat_ele_comp(
     f2_p1: FloatFieldIJ,
     kpbl: IntFieldIJ,
     krad: IntFieldIJ,
-    k_mask: IntField,
+    k_mask: IntFieldK,
     mrad: IntFieldIJ,
     pcnvflg: BoolFieldIJ,
     prsl: FloatField,
@@ -1315,7 +1315,7 @@ def heat_moist_tridiag_mat_ele_comp(
 
 def setup_multi_tracer_tridiag(
     pcnvflg: BoolFieldIJ,
-    k_mask: IntField,
+    k_mask: IntFieldK,
     kpbl: IntFieldIJ,
     delta: FloatField,
     prsl: FloatField,
@@ -1480,7 +1480,7 @@ def moment_tridiag_mat_ele_comp(
     f2_p1: FloatFieldIJ,
     kpbl: IntFieldIJ,
     krad: IntFieldIJ,
-    k_mask: IntField,
+    k_mask: IntFieldK,
     mrad: IntFieldIJ,
     pcnvflg: BoolFieldIJ,
     prsl: FloatField,
@@ -1611,7 +1611,7 @@ def recover_momentum_tendency_and_finish(
     hpblx: FloatFieldIJ,
     kpbl: IntFieldIJ,
     kpblx: IntFieldIJ,
-    k_mask: IntField,
+    k_mask: IntFieldK,
     u1: FloatField,
     v1: FloatField,
     dkt: FloatField,
@@ -1702,12 +1702,12 @@ class ScaleAwareTKEMoistEDMF:
 
         # Layer mask:
         self._k_mask = quantity_factory.zeros(
-            [X_DIM, Y_DIM, Z_DIM],
+            [Z_DIM],
             units="unknown",
             dtype=Int,
         )
         for k in range(idx.domain[2]):
-            self._k_mask.data[:, :, k] = k
+            self._k_mask.data[k] = k
 
         # Internal compute variables
         self._lcld = make_quantity_2D(Int)

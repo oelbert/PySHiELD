@@ -20,8 +20,8 @@ from ndsl.dsl.typing import (
     FloatField,
     FloatFieldIJ,
     Int,
-    IntField,
     IntFieldIJ,
+    IntFieldK,
 )
 from ndsl.initialization.allocator import QuantityFactory
 from pySHiELD._config import FloatFieldTracer
@@ -30,7 +30,7 @@ from pySHiELD.functions.physics_functions import fpvs
 
 def mfscu_s2(
     zl: FloatField,
-    k_mask: IntField,
+    k_mask: IntFieldK,
     mrad: IntFieldIJ,
     krad: IntFieldIJ,
     zm: FloatField,
@@ -61,7 +61,7 @@ def mfscu_s2(
 
 def mfscu_s6(
     zl: FloatField,
-    k_mask: IntField,
+    k_mask: IntFieldK,
     mrad: IntFieldIJ,
     krad: IntFieldIJ,
     zm: FloatField,
@@ -96,7 +96,7 @@ def mfscu_10(
     cnvflg: BoolFieldIJ,
     krad: IntFieldIJ,
     mrad: IntFieldIJ,
-    k_mask: IntField,
+    k_mask: IntFieldK,
     zl: FloatField,
     xlamde: FloatField,
     qcdo: FloatFieldTracer,
@@ -125,7 +125,7 @@ def mfscu_s0(
     hrad: FloatFieldIJ,
     krad: IntFieldIJ,
     krad1: IntFieldIJ,
-    k_mask: IntField,
+    k_mask: IntFieldK,
     mrad: IntFieldIJ,
     q1: FloatFieldTracer,
     qtd: FloatField,
@@ -186,7 +186,7 @@ def mfscu_s1(
     cnvflg: BoolFieldIJ,
     flg: BoolFieldIJ,
     krad: IntFieldIJ,
-    k_mask: IntField,
+    k_mask: IntFieldK,
     mrad: IntFieldIJ,
     thlvd: FloatFieldIJ,
     thlvx: FloatField,
@@ -216,7 +216,7 @@ def mfscu_s3(
     buo: FloatField,
     cnvflg: BoolFieldIJ,
     krad: IntFieldIJ,
-    k_mask: IntField,
+    k_mask: IntFieldK,
     pix: FloatField,
     plyr: FloatField,
     thld: FloatField,
@@ -263,7 +263,7 @@ def mfscu_s4(
     buo: FloatField,
     cnvflg: BoolFieldIJ,
     krad1: IntFieldIJ,
-    k_mask: IntField,
+    k_mask: IntFieldK,
     wd2: FloatField,
     xlamde: FloatField,
     zm: FloatField,
@@ -285,7 +285,7 @@ def mfscu_s5(
     flg: BoolFieldIJ,
     krad: IntFieldIJ,
     krad1: IntFieldIJ,
-    k_mask: IntField,
+    k_mask: IntFieldK,
     mrad: IntFieldIJ,
     mradx: IntFieldIJ,
     mrady: IntFieldIJ,
@@ -332,7 +332,7 @@ def mfscu_s7(
     cnvflg: BoolFieldIJ,
     gdx: FloatFieldIJ,
     krad: IntFieldIJ,
-    k_mask: IntField,
+    k_mask: IntFieldK,
     mrad: IntFieldIJ,
     ra1: FloatFieldIJ,
     scaldfunc: FloatFieldIJ,
@@ -409,7 +409,7 @@ def mfscu_s7(
 def mfscu_s8(
     cnvflg: BoolFieldIJ,
     krad: IntFieldIJ,
-    k_mask: IntField,
+    k_mask: IntFieldK,
     thld: FloatField,
     thlx: FloatField,
 ):
@@ -422,7 +422,7 @@ def mfscu_s8(
 def mfscu_s9(
     cnvflg: BoolFieldIJ,
     krad: IntFieldIJ,
-    k_mask: IntField,
+    k_mask: IntFieldK,
     mrad: IntFieldIJ,
     pix: FloatField,
     plyr: FloatField,
@@ -666,7 +666,7 @@ class StratocumulusMassFlux:
         ucdo: FloatField,
         vcdo: FloatField,
         xlamde: FloatField,
-        k_mask: IntField,
+        k_mask: IntFieldK,
     ):
 
         totflg = True

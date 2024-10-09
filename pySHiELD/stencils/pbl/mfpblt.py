@@ -19,8 +19,8 @@ from ndsl.dsl.typing import (
     FloatField,
     FloatFieldIJ,
     Int,
-    IntField,
     IntFieldIJ,
+    IntFieldK,
 )
 from ndsl.initialization.allocator import QuantityFactory
 from pySHiELD._config import FloatFieldTracer
@@ -79,7 +79,7 @@ def mfpblt_s1(
     kpbl: IntFieldIJ,
     kpblx: IntFieldIJ,
     kpbly: IntFieldIJ,
-    k_mask: IntField,
+    k_mask: IntFieldK,
     pix: FloatField,
     plyr: FloatField,
     qtu: FloatField,
@@ -173,7 +173,7 @@ def mfpblt_s1a(
     cnvflg: BoolFieldIJ,
     hpblx: FloatFieldIJ,
     kpblx: IntFieldIJ,
-    k_mask: IntField,
+    k_mask: IntFieldK,
     rbdn: FloatFieldIJ,
     rbup: FloatFieldIJ,
     zm: FloatField,
@@ -202,7 +202,7 @@ def mfpblt_s2(
     kpbl: IntFieldIJ,
     kpblx: IntFieldIJ,
     kpbly: IntFieldIJ,
-    k_mask: IntField,
+    k_mask: IntFieldK,
     pix: FloatField,
     plyr: FloatField,
     qcko: FloatFieldTracer,
@@ -345,7 +345,7 @@ def mfpblt_s2(
 def mfpblt_s3(
     cnvflg: BoolFieldIJ,
     kpbl: IntFieldIJ,
-    k_mask: IntField,
+    k_mask: IntFieldK,
     xlamue: FloatField,
     qcko: FloatFieldTracer,
     q1: FloatFieldTracer,
@@ -472,7 +472,7 @@ class PBLMassFlux:
         ucko: FloatField,
         vcko: FloatField,
         xlamue: FloatField,
-        k_mask: IntField,
+        k_mask: IntFieldK,
     ):
         totflag = True
 

@@ -12,3 +12,5 @@ from .translate_update_pressure_sfc_winds_phys import (
 )
 from .translate_update_tracers_phys import TranslatePhysUpdateTracers
 from .translate_pbl import TranslatePBL
+from .translate_mfpblt import TranslateMFPBLT
+from .translate_mfscu import TranslateMFSCU
