@@ -98,7 +98,7 @@ def mfpblt_s1(
     with computation(PARALLEL), interval(...):
         if cnvflg[0, 0]:
             dz = zl[0, 0, 1] - zl[0, 0, 0]
-            if k_mask[0, 0, 0] < kpbl[0, 0]:
+            if k_mask[0] < kpbl[0, 0]:
                 xlamue = physcons.CE0 * (
                     1.0 / (zm[0, 0, 0] + dz)
                     + 1.0 / max(hpbl[0, 0] - zm[0, 0, 0] + dz, dz)
@@ -165,7 +165,7 @@ def mfpblt_s1(
             if not flg[0, 0]:
                 rbdn = rbup[0, 0]
                 rbup = wu2[0, 0, 0]
-                kpblx = k_mask[0, 0, 0]
+                kpblx = k_mask[0]
                 flg = rbup[0, 0] <= 0.0
 
 
@@ -182,7 +182,7 @@ def mfpblt_s1a(
     with computation(FORWARD), interval(1, None):
         rbint = 0.0
 
-        if k_mask[0, 0, 0] == kpblx[0, 0]:
+        if k_mask[0] == kpblx[0, 0]:
             if cnvflg[0, 0]:
                 if rbdn[0, 0] <= 0.0:
                     rbint = 0.0
@@ -237,7 +237,7 @@ def mfpblt_s2(
     with computation(PARALLEL), interval(...):
         if cnvflg[0, 0] and (kpbly[0, 0] > kpblx[0, 0]):
             dz = zl[0, 0, 1] - zl[0, 0, 0]
-            if k_mask[0, 0, 0] < kpbl[0, 0]:
+            if k_mask[0] < kpbl[0, 0]:
                 ptem = 1 / (zm[0, 0, 0] + dz)
                 ptem1 = 1 / max(hpbl[0, 0] - zm[0, 0, 0] + dz, dz)
                 xlamue = physcons.CE0 * (ptem + ptem1)
@@ -248,12 +248,12 @@ def mfpblt_s2(
     with computation(FORWARD):
         with interval(0, 1):
             dz = zl[0, 0, 1] - zl[0, 0, 0]
-            if cnvflg[0, 0] and (k_mask[0, 0, 0] < kpbl[0, 0]):
+            if cnvflg[0, 0] and (k_mask[0] < kpbl[0, 0]):
                 xlamavg = xlamavg[0, 0] + xlamue[0, 0, 0] * dz
                 sumx = sumx[0, 0] + dz
         with interval(1, None):
             dz = zl[0, 0, 1] - zl[0, 0, 0]
-            if cnvflg[0, 0] and (k_mask[0, 0, 0] < kpbl[0, 0]):
+            if cnvflg[0, 0] and (k_mask[0] < kpbl[0, 0]):
                 xlamavg = xlamavg[0, 0] + xlamue[0, 0, 0] * dz
                 sumx = sumx[0, 0] + dz
 
@@ -262,7 +262,7 @@ def mfpblt_s2(
             xlamavg = xlamavg[0, 0] / sumx[0, 0]
 
     with computation(PARALLEL), interval(...):
-        if cnvflg[0, 0] and (k_mask[0, 0, 0] < kpbl[0, 0]):
+        if cnvflg[0, 0] and (k_mask[0] < kpbl[0, 0]):
             if wu2[0, 0, 0] > 0.0:
                 xmf = physcons.A1 * sqrt(wu2[0, 0, 0])
             else:
@@ -284,7 +284,7 @@ def mfpblt_s2(
 
     with computation(PARALLEL), interval(...):
         xmmx = (zl[0, 0, 1] - zl[0, 0, 0]) / dt2
-        if cnvflg[0, 0] and (k_mask[0, 0, 0] < kpbl[0, 0]):
+        if cnvflg[0, 0] and (k_mask[0] < kpbl[0, 0]):
             xmf = min(scaldfunc[0, 0] * xmf[0, 0, 0], xmmx)
 
     with computation(FORWARD):
@@ -296,7 +296,7 @@ def mfpblt_s2(
             tem = 0.5 * xlamue[0, 0, -1] * dz
             factor = 1.0 + tem
 
-            if cnvflg[0, 0] and (k_mask[0, 0, 0] <= kpbl[0, 0]):
+            if cnvflg[0, 0] and (k_mask[0] <= kpbl[0, 0]):
                 thlu = (
                     (1.0 - tem) * thlu[0, 0, -1]
                     + tem * (thlx[0, 0, -1] + thlx[0, 0, 0])
@@ -314,7 +314,7 @@ def mfpblt_s2(
             dq = qtu[0, 0, 0] - qs
             qlu = dq / (1.0 + (physcons.EL2ORC * qs / (tlu ** 2)))
 
-            if cnvflg[0, 0] and (k_mask[0, 0, 0] <= kpbl[0, 0]):
+            if cnvflg[0, 0] and (k_mask[0] <= kpbl[0, 0]):
                 if dq > 0.0:
                     qtu = qs + qlu
                     qcko[0, 0, 0][0] = qs
@@ -329,7 +329,7 @@ def mfpblt_s2(
             tem = 0.5 * xlamuem[0, 0, -1] * dz
             factor = 1.0 + tem
 
-            if cnvflg[0, 0] and (k_mask[0, 0, 0] <= kpbl[0, 0]):
+            if cnvflg[0, 0] and (k_mask[0] <= kpbl[0, 0]):
                 ucko = (
                     (1.0 - tem) * ucko[0, 0, -1]
                     + (tem + physcons.PGCON) * u1[0, 0, 0]
@@ -353,7 +353,7 @@ def mfpblt_s3(
     n_tracer: int,
 ):
     with computation(FORWARD), interval(1, None):
-        if cnvflg[0, 0] and k_mask[0, 0, 0] <= kpbl[0, 0]:
+        if cnvflg[0, 0] and k_mask[0] <= kpbl[0, 0]:
             dz = zl[0, 0, 0] - zl[0, 0, -1]
             tem = 0.5 * xlamue[0, 0, -1] * dz
             factor = 1.0 + tem
