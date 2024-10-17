@@ -379,7 +379,6 @@ class PBLMassFlux:
         ntcw: Int,
         ntrac1: Int,
         kmpbl: Int,
-        ntke: Int,
     ):
         idx = stencil_factory.grid_indexing
         self._im = idx.iec - idx.isc
@@ -387,7 +386,6 @@ class PBLMassFlux:
 
         self._ntcw = ntcw
         self._ntrac1 = ntrac1
-        self._ntke = ntke
 
         def make_quantity():
             return quantity_factory.zeros(
@@ -588,7 +586,7 @@ class PBLMassFlux:
                 )
         if self._ntrac1 > self._ntcw:
             for n in range(self._ntcw, self._ntrac1):
-                dim_n = n if n < self._ntke else n + 1
+                dim_n = n if n < self._ntcw else n + 1
                 self._mfpblt_s3(
                     cnvflg,
                     kpbl,

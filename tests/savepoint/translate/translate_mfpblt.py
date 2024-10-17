@@ -85,7 +85,6 @@ class TranslateMFPBLT(TranslatePhysicsFortranData2Py):
             ntcw=inputs.pop("ntcw"),
             ntrac1=inputs.pop("ntrac1"),
             kmpbl=inputs.pop("kmpbl"),
-            ntke=inputs.pop("ntke"),
         )
 
         compute_func(**inputs, k_mask=k_mask)
