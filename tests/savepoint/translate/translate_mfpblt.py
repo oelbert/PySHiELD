@@ -43,7 +43,7 @@ class TranslateMFPBLT(TranslatePhysicsFortranData2Py):
         self.out_vars = {
             "hpbl": {"shield": True},
             "kpbl": {"shield": True},
-            "buo": {"serialname": "buou", "shield": True},
+            "buo": {"shield": True},
             "xmf": {"shield": True},
             "tcko": {"shield": True},
             "qcko": {"shield": True},
