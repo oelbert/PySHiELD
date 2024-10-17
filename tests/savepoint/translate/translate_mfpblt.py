@@ -25,7 +25,7 @@ class TranslateMFPBLT(TranslatePhysicsFortranData2Py):
             "hpbl": {"shield": True},
             "kpbl": {"shield": True},
             "vpert": {"shield": True},
-            "buo": {"shield": True},
+            "buo": {"serialname": "buou", "shield": True},
             "xmf": {"shield": True},
             "tcko": {"shield": True},
             "qcko": {"shield": True},
@@ -42,7 +42,7 @@ class TranslateMFPBLT(TranslatePhysicsFortranData2Py):
         self.out_vars = {
             "hpbl": {"shield": True},
             "kpbl": {"shield": True},
-            "buo": {"shield": True},
+            "buo": {"serialname": "buou", "shield": True},
             "xmf": {"shield": True},
             "tcko": {"shield": True},
             "qcko": {"shield": True},
