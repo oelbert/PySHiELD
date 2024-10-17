@@ -34,7 +34,8 @@ class TranslateMFPBLT(TranslatePhysicsFortranData2Py):
             "xlamue": {"shield": True},
         }
         self.in_vars["parameters"] = [
-            "kmpbl" "ntcw",
+            "kmpbl",
+            "ntcw",
             "dt2",
             "ntrac1",
         ]
