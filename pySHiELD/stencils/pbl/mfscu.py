@@ -28,96 +28,6 @@ from pySHiELD._config import FloatFieldTracer
 from pySHiELD.functions.physics_functions import fpvs
 
 
-def mfscu_s2(
-    zl: FloatField,
-    k_mask: IntFieldK,
-    mrad: IntFieldIJ,
-    krad: IntFieldIJ,
-    zm: FloatField,
-    zm_mrad: FloatFieldIJ,
-    xlamde: FloatField,
-    xlamdem: FloatField,
-    hrad: FloatFieldIJ,
-    cnvflg: BoolFieldIJ,
-):
-    with computation(PARALLEL), interval(...):
-        if cnvflg[0, 0]:
-            dz = zl[0, 0, 1] - zl[0, 0, 0]
-            if k_mask[0] >= mrad[0, 0] and k_mask[0] < krad[0, 0]:
-                if mrad[0, 0] == 0:
-                    xlamde = physcons.CE0 * (
-                        (1.0 / (zm[0, 0, 0] + dz))
-                        + 1.0 / max(hrad[0, 0] - zm[0, 0, 0] + dz, dz)
-                    )
-                else:
-                    xlamde = physcons.CE0 * (
-                        (1.0 / (zm[0, 0, 0] - zm_mrad[0, 0] + dz))
-                        + 1.0 / max(hrad[0, 0] - zm[0, 0, 0] + dz, dz)
-                    )
-            else:
-                xlamde = physcons.CE0 / dz
-            xlamdem = physcons.CM * xlamde[0, 0, 0]
-
-
-def mfscu_s6(
-    zl: FloatField,
-    k_mask: IntFieldK,
-    mrad: IntFieldIJ,
-    krad: IntFieldIJ,
-    zm: FloatField,
-    zm_mrad: FloatFieldIJ,
-    xlamde: FloatField,
-    xlamdem: FloatField,
-    hrad: FloatFieldIJ,
-    cnvflg: BoolFieldIJ,
-    mrady: IntFieldIJ,
-    mradx: IntFieldIJ,
-):
-    with computation(PARALLEL), interval(...):
-        if cnvflg[0, 0] and (mrady[0, 0] < mradx[0, 0]):
-            dz = zl[0, 0, 1] - zl[0, 0, 0]
-            if k_mask[0] >= mrad[0, 0] and k_mask[0] < krad[0, 0]:
-                if mrad[0, 0] == 0:
-                    xlamde = physcons.CE0 * (
-                        (1.0 / (zm[0, 0, 0] + dz))
-                        + 1.0 / max(hrad[0, 0] - zm[0, 0, 0] + dz, dz)
-                    )
-                else:
-                    xlamde = physcons.CE0 * (
-                        (1.0 / (zm[0, 0, 0] - zm_mrad[0, 0] + dz))
-                        + 1.0 / max(hrad[0, 0] - zm[0, 0, 0] + dz, dz)
-                    )
-            else:
-                xlamde = physcons.CE0 / dz
-            xlamdem = physcons.CM * xlamde[0, 0, 0]
-
-
-def mfscu_10(
-    cnvflg: BoolFieldIJ,
-    krad: IntFieldIJ,
-    mrad: IntFieldIJ,
-    k_mask: IntFieldK,
-    zl: FloatField,
-    xlamde: FloatField,
-    qcdo: FloatFieldTracer,
-    q1: FloatFieldTracer,
-    n_tracer: int
-):
-    with computation(BACKWARD), interval(...):
-        if (
-            cnvflg[0, 0]
-            and k_mask[0] < krad[0, 0]
-            and k_mask[0] >= mrad[0, 0]
-        ):
-            dz = zl[0, 0, 1] - zl[0, 0, 0]
-            tem = 0.5 * xlamde[0, 0, 0] * dz
-            factor = 1.0 + tem
-            qcdo[0, 0, 0][n_tracer] = (
-                (1.0 - tem) * qcdo[0, 0, 1][n_tracer]
-                + tem * (q1[0, 0, 0][n_tracer] + q1[0, 0, 1][n_tracer])
-            ) / factor
-
-
 def mfscu_s0(
     buo: FloatField,
     cnvflg: BoolFieldIJ,
@@ -210,6 +120,37 @@ def mfscu_s1(
         if cnvflg[0, 0]:
             if kk < 1:
                 cnvflg[0, 0] = 0
+
+
+def mfscu_s2(
+    zl: FloatField,
+    k_mask: IntFieldK,
+    mrad: IntFieldIJ,
+    krad: IntFieldIJ,
+    zm: FloatField,
+    zm_mrad: FloatFieldIJ,
+    xlamde: FloatField,
+    xlamdem: FloatField,
+    hrad: FloatFieldIJ,
+    cnvflg: BoolFieldIJ,
+):
+    with computation(PARALLEL), interval(...):
+        if cnvflg[0, 0]:
+            dz = zl[0, 0, 1] - zl[0, 0, 0]
+            if k_mask[0] >= mrad[0, 0] and k_mask[0] < krad[0, 0]:
+                if mrad[0, 0] == 0:
+                    xlamde = physcons.CE0 * (
+                        (1.0 / (zm[0, 0, 0] + dz))
+                        + 1.0 / max(hrad[0, 0] - zm[0, 0, 0] + dz, dz)
+                    )
+                else:
+                    xlamde = physcons.CE0 * (
+                        (1.0 / (zm[0, 0, 0] - zm_mrad[0, 0] + dz))
+                        + 1.0 / max(hrad[0, 0] - zm[0, 0, 0] + dz, dz)
+                    )
+            else:
+                xlamde = physcons.CE0 / dz
+            xlamdem = physcons.CM * xlamde[0, 0, 0]
 
 
 def mfscu_s3(
@@ -328,6 +269,39 @@ def mfscu_s5(
                 cnvflg = 0
 
 
+def mfscu_s6(
+    zl: FloatField,
+    k_mask: IntFieldK,
+    mrad: IntFieldIJ,
+    krad: IntFieldIJ,
+    zm: FloatField,
+    zm_mrad: FloatFieldIJ,
+    xlamde: FloatField,
+    xlamdem: FloatField,
+    hrad: FloatFieldIJ,
+    cnvflg: BoolFieldIJ,
+    mrady: IntFieldIJ,
+    mradx: IntFieldIJ,
+):
+    with computation(PARALLEL), interval(...):
+        if cnvflg[0, 0] and (mrady[0, 0] < mradx[0, 0]):
+            dz = zl[0, 0, 1] - zl[0, 0, 0]
+            if k_mask[0] >= mrad[0, 0] and k_mask[0] < krad[0, 0]:
+                if mrad[0, 0] == 0:
+                    xlamde = physcons.CE0 * (
+                        (1.0 / (zm[0, 0, 0] + dz))
+                        + 1.0 / max(hrad[0, 0] - zm[0, 0, 0] + dz, dz)
+                    )
+                else:
+                    xlamde = physcons.CE0 * (
+                        (1.0 / (zm[0, 0, 0] - zm_mrad[0, 0] + dz))
+                        + 1.0 / max(hrad[0, 0] - zm[0, 0, 0] + dz, dz)
+                    )
+            else:
+                xlamde = physcons.CE0 / dz
+            xlamdem = physcons.CM * xlamde[0, 0, 0]
+
+
 def mfscu_s7(
     cnvflg: BoolFieldIJ,
     gdx: FloatFieldIJ,
@@ -350,19 +324,11 @@ def mfscu_s7(
         sumx = 0.0
 
     with computation(BACKWARD), interval(-1, None):
-        if (
-            cnvflg[0, 0]
-            and k_mask[0] >= mrad[0, 0]
-            and k_mask[0] < krad[0, 0]
-        ):
+        if cnvflg[0, 0] and k_mask[0] >= mrad[0, 0] and k_mask[0] < krad[0, 0]:
             dz = zl[0, 0, 1] - zl[0, 0, 0]
             xlamavg = xlamavg[0, 0] + xlamde[0, 0, 0] * dz
             sumx = sumx[0, 0] + dz
-        if (
-            cnvflg[0, 0]
-            and k_mask[0] >= mrad[0, 0]
-            and k_mask[0] < krad[0, 0]
-        ):
+        if cnvflg[0, 0] and k_mask[0] >= mrad[0, 0] and k_mask[0] < krad[0, 0]:
             dz = zl[0, 0, 1] - zl[0, 0, 0]
             xlamavg = xlamavg[0, 0] + xlamde[0, 0, 0] * dz
             sumx = sumx[0, 0] + dz
@@ -372,11 +338,7 @@ def mfscu_s7(
             xlamavg = xlamavg[0, 0] / sumx[0, 0]
 
     with computation(BACKWARD), interval(...):
-        if (
-            cnvflg[0, 0]
-            and k_mask[0] >= mrad[0, 0]
-            and k_mask[0] < krad[0, 0]
-        ):
+        if cnvflg[0, 0] and k_mask[0] >= mrad[0, 0] and k_mask[0] < krad[0, 0]:
             if wd2[0, 0, 0] > 0:
                 xmfd = ra1[0, 0] * sqrt(wd2[0, 0, 0])
             else:
@@ -397,11 +359,7 @@ def mfscu_s7(
                     scaldfunc = 1.0
 
     with computation(BACKWARD), interval(...):
-        if (
-            cnvflg[0, 0]
-            and k_mask[0] >= mrad[0, 0]
-            and k_mask[0] < krad[0, 0]
-        ):
+        if cnvflg[0, 0] and k_mask[0] >= mrad[0, 0] and k_mask[0] < krad[0, 0]:
             xmmx = (zl[0, 0, 1] - zl[0, 0, 0]) / dt2
             xmfd = min(scaldfunc[0, 0] * xmfd[0, 0, 0], xmmx)
 
@@ -444,11 +402,7 @@ def mfscu_s9(
 
     with computation(BACKWARD), interval(...):
         dz = zl[0, 0, 1] - zl[0, 0, 0]
-        if (
-            cnvflg[0, 0]
-            and k_mask[0] >= mrad[0, 0]
-            and k_mask[0] < krad[0, 0]
-        ):
+        if cnvflg[0, 0] and k_mask[0] >= mrad[0, 0] and k_mask[0] < krad[0, 0]:
             tem = 0.5 * xlamde[0, 0, 0] * dz
             factor = 1.0 + tem
             thld = (
@@ -467,11 +421,7 @@ def mfscu_s9(
         gamma = physcons.EL2ORC * qs / (tld ** 2)
         qld = dq / (1.0 + gamma)
 
-        if (
-            cnvflg[0, 0]
-            and k_mask[0] >= mrad[0, 0]
-            and k_mask[0] < krad[0, 0]
-        ):
+        if cnvflg[0, 0] and k_mask[0] >= mrad[0, 0] and k_mask[0] < krad[0, 0]:
             if dq > 0.0:
                 qtd = qs + qld
                 qcdo[0, 0, 0][0] = qs
@@ -482,11 +432,7 @@ def mfscu_s9(
                 qcdo[0, 0, 0][ntcw - 1] = 0.0
                 tcdo = tld
 
-        if (
-            cnvflg[0, 0]
-            and k_mask[0] < krad[0, 0]
-            and k_mask[0] >= mrad[0, 0]
-        ):
+        if cnvflg[0, 0] and k_mask[0] < krad[0, 0] and k_mask[0] >= mrad[0, 0]:
             tem = 0.5 * xlamdem[0, 0, 0] * dz
             factor = 1.0 + tem
             ptem = tem - physcons.PGCON
@@ -496,6 +442,28 @@ def mfscu_s9(
             ) / factor
             vcdo = (
                 (1.0 - tem) * vcdo[0, 0, 1] + ptem * v1[0, 0, 1] + ptem1 * v1[0, 0, 0]
+            ) / factor
+
+
+def mfscu_10(
+    cnvflg: BoolFieldIJ,
+    krad: IntFieldIJ,
+    mrad: IntFieldIJ,
+    k_mask: IntFieldK,
+    zl: FloatField,
+    xlamde: FloatField,
+    qcdo: FloatFieldTracer,
+    q1: FloatFieldTracer,
+    n_tracer: int,
+):
+    with computation(BACKWARD), interval(...):
+        if cnvflg[0, 0] and k_mask[0] < krad[0, 0] and k_mask[0] >= mrad[0, 0]:
+            dz = zl[0, 0, 1] - zl[0, 0, 0]
+            tem = 0.5 * xlamde[0, 0, 0] * dz
+            factor = 1.0 + tem
+            qcdo[0, 0, 0][n_tracer] = (
+                (1.0 - tem) * qcdo[0, 0, 1][n_tracer]
+                + tem * (q1[0, 0, 0][n_tracer] + q1[0, 0, 1][n_tracer])
             ) / factor
 
 

@@ -1,9 +1,10 @@
-from ndsl.initialization.allocator import QuantityFactory
-from ndsl.initialization.sizer import SubtileGridSizer
 from ndsl.constants import Z_DIM
 from ndsl.dsl.typing import Int
+from ndsl.initialization.allocator import QuantityFactory
+from ndsl.initialization.sizer import SubtileGridSizer
 from pySHiELD.stencils.pbl.mfscu import StratocumulusMassFlux
 from tests.savepoint.translate.translate_physics import TranslatePhysicsFortranData2Py
+
 
 class TranslateMFSCU(TranslatePhysicsFortranData2Py):
     def __init__(self, grid, namelist, stencil_factory):
@@ -35,8 +36,7 @@ class TranslateMFSCU(TranslatePhysicsFortranData2Py):
             "xlamde": {"shield": True},
         }
         self.in_vars["parameters"] = [
-            "kmscu"
-            "ntcw",
+            "kmscu" "ntcw",
             "dt2",
             "ntrac1",
         ]

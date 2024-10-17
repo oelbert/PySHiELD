@@ -1,9 +1,10 @@
-from ndsl.initialization.allocator import QuantityFactory
-from ndsl.initialization.sizer import SubtileGridSizer
 from ndsl.constants import Z_DIM
 from ndsl.dsl.typing import Int
+from ndsl.initialization.allocator import QuantityFactory
+from ndsl.initialization.sizer import SubtileGridSizer
 from pySHiELD.stencils.pbl.mfpblt import PBLMassFlux
 from tests.savepoint.translate.translate_physics import TranslatePhysicsFortranData2Py
+
 
 class TranslateMFPBLT(TranslatePhysicsFortranData2Py):
     def __init__(self, grid, namelist, stencil_factory):
@@ -33,8 +34,7 @@ class TranslateMFPBLT(TranslatePhysicsFortranData2Py):
             "xlamue": {"shield": True},
         }
         self.in_vars["parameters"] = [
-            "kmpbl"
-            "ntcw",
+            "kmpbl" "ntcw",
             "dt2",
             "ntrac1",
         ]

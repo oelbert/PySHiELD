@@ -25,7 +25,7 @@ from ndsl.dsl.typing import (
     IntFieldK,
 )
 from ndsl.initialization.allocator import QuantityFactory
-from pySHiELD._config import TRACER_DIM, PBLConfig, FloatFieldTracer
+from pySHiELD._config import TRACER_DIM, FloatFieldTracer, PBLConfig
 from pySHiELD.functions.physics_functions import fpvs
 from pySHiELD.stencils.pbl.mfpblt import PBLMassFlux
 from pySHiELD.stencils.pbl.mfscu import StratocumulusMassFlux
@@ -116,7 +116,15 @@ def init_turbulence(
     temp_q10: FloatField,
 ):
     from __externals__ import (
-        dt2, km1, ntcw, ntiw, ntke, xkzm_h, xkzm_m, xkzm_s, cap_k0_land
+        cap_k0_land,
+        dt2,
+        km1,
+        ntcw,
+        ntiw,
+        ntke,
+        xkzm_h,
+        xkzm_m,
+        xkzm_s,
     )
 
     with computation(FORWARD), interval(0, 1):
@@ -424,9 +432,7 @@ def mrf_pbl_2_thermal_excess(
             hgamt = heat[0, 0] / wscale
             hgamq = evap[0, 0] / wscale
             vpert = max(hgamt + hgamq * constants.ZVIR * theta[0, 0, 0], 0.0)
-            thermal = thermal[0, 0] + min(
-                physcons.CFAC * vpert[0, 0], physcons.GAMCRT
-            )
+            thermal = thermal[0, 0] + min(physcons.CFAC * vpert[0, 0], physcons.GAMCRT)
             flg = 0
             rbup = rbsoil[0, 0]
 
@@ -608,13 +614,14 @@ def compute_mass_flux_prelim(
             ucdo = u1[0, 0, 0]
             vcdo = v1[0, 0, 0]
 
+
 def compute_mass_flux_tracer_prelim(
     qcko: FloatFieldTracer,
     qcdo: FloatFieldTracer,
     q1: FloatFieldTracer,
     pcnvflg: BoolFieldIJ,
     scuflg: BoolFieldIJ,
-    n_extra: int
+    n_extra: int,
 ):
     with computation(PARALLEL), interval(...):
         if pcnvflg[0, 0]:
@@ -990,9 +997,7 @@ def predict_tke(
             ),
             0.0,
         )
-        tke = max(
-            tke[0, 0, 0] + dtn * (prod[0, 0, 0] - diss[0, 0, 0]), physcons.TKMIN
-        )
+        tke = max(tke[0, 0, 0] + dtn * (prod[0, 0, 0] - diss[0, 0, 0]), physcons.TKMIN)
 
 
 def tke_up_down_prop(
@@ -1030,11 +1035,7 @@ def tke_up_down_prop(
     with computation(BACKWARD), interval(...):
         if k_mask[0] < krad:
             tem = 0.5 * xlamde[0, 0, 0] * (zl[0, 0, 1] - zl[0, 0, 0])
-            if (
-                scuflg[0, 0]
-                and k_mask[0] < krad[0, 0]
-                and k_mask[0] >= mrad[0, 0]
-            ):
+            if scuflg[0, 0] and k_mask[0] < krad[0, 0] and k_mask[0] >= mrad[0, 0]:
                 qcdo[0, 0, 0][7] = (
                     (1.0 - tem) * qcdo[0, 0, 1][7] + tem * (tke[0, 0, 0] + tke[0, 0, 1])
                 ) / (1.0 + tem)
@@ -1092,11 +1093,7 @@ def tke_tridiag_matrix_ele_comp(
             else:
                 f1_p1 = tke[0, 0, 1]
 
-            if (
-                scuflg[0, 0]
-                and k_mask[0] >= mrad[0, 0]
-                and k_mask[0] < krad[0, 0]
-            ):
+            if scuflg[0, 0] and k_mask[0] >= mrad[0, 0] and k_mask[0] < krad[0, 0]:
                 tem = (
                     qcdo[0, 0, 0][7] + qcdo[0, 0, 1][7] - (tke[0, 0, 0] + tke[0, 0, 1])
                 )
@@ -1125,11 +1122,7 @@ def tke_tridiag_matrix_ele_comp(
             else:
                 f1_p1 = tke[0, 0, 1]
 
-            if (
-                scuflg[0, 0]
-                and k_mask[0] >= mrad[0, 0]
-                and k_mask[0] < krad[0, 0]
-            ):
+            if scuflg[0, 0] and k_mask[0] >= mrad[0, 0] and k_mask[0] < krad[0, 0]:
                 tem = (
                     qcdo[0, 0, 0][7] + qcdo[0, 0, 1][7] - (tke[0, 0, 0] + tke[0, 0, 1])
                 )
@@ -1152,7 +1145,7 @@ def recover_tke_tendency_start_tridiag(
     heat: FloatFieldIJ,
     t1: FloatField,
 ):
-    from __externals__ import rdt, ntke
+    from __externals__ import ntke, rdt
 
     with computation(PARALLEL), interval(...):
         rtg[0, 0, 0][ntke - 1] = (
@@ -1164,6 +1157,7 @@ def recover_tke_tendency_start_tridiag(
         f1 = t1[0, 0, 0] + dtdz1[0, 0] * heat[0, 0]
         f2[0, 0, 0][0] = q1[0, 0, 0][0] + dtdz1[0, 0] * evap[0, 0]
 
+
 def reset_tracers(
     f2: FloatFieldTracer,
     q1: FloatFieldTracer,
@@ -1171,6 +1165,7 @@ def reset_tracers(
 ):
     with computation(FORWARD), interval(0, 1):
         f2[0, 0, 0][n_index] = q1[0, 0, 0][n_index]
+
 
 def heat_moist_tridiag_mat_ele_comp(
     ad: FloatField,
@@ -1235,11 +1230,7 @@ def heat_moist_tridiag_mat_ele_comp(
                 f1_p1 = t1[0, 0, 1] - dtodsu * dsdzt
                 f2_p1 = q1[0, 0, 1][0]
 
-            if (
-                scuflg[0, 0]
-                and k_mask[0] >= mrad[0, 0]
-                and k_mask[0] < krad[0, 0]
-            ):
+            if scuflg[0, 0] and k_mask[0] >= mrad[0, 0] and k_mask[0] < krad[0, 0]:
                 ptem = 0.5 * dsig * rdz * xmfd[0, 0, 0]
                 ptem1 = dtodsd * ptem
                 ptem2 = dtodsu * ptem
@@ -1289,11 +1280,7 @@ def heat_moist_tridiag_mat_ele_comp(
                 f1_p1 = t1[0, 0, 1] - dtodsu * dsdzt
                 f2_p1 = q1[0, 0, 1][0]
 
-            if (
-                scuflg[0, 0]
-                and k_mask[0] >= mrad[0, 0]
-                and k_mask[0] < krad[0, 0]
-            ):
+            if scuflg[0, 0] and k_mask[0] >= mrad[0, 0] and k_mask[0] < krad[0, 0]:
                 ptem = 0.5 * dsig * rdz * xmfd[0, 0, 0]
                 ptem1 = dtodsd * ptem
                 ptem2 = dtodsu * ptem
@@ -1329,7 +1316,7 @@ def setup_multi_tracer_tridiag(
     krad: IntFieldIJ,
     xmfd: FloatField,
     qcdo: FloatFieldTracer,
-    n_index: int
+    n_index: int,
 ):
     from __externals__ import dt2
 
@@ -1346,11 +1333,7 @@ def setup_multi_tracer_tridiag(
             tem2 = q1[0, 0, 0][n_index] + q1[0, 0, 1][n_index]
             f2[0, 0, 0][n_index] = f2[0, 0, 0][n_index] - (tem1 - tem2) * ptem1
 
-        if (
-            scuflg[0, 0]
-            and k_mask[0] >= mrad[0, 0]
-            and k_mask[0] < krad[0, 0]
-        ):
+        if scuflg[0, 0] and k_mask[0] >= mrad[0, 0] and k_mask[0] < krad[0, 0]:
             dtodsd = dt2 / delta[0, 0, 0]
             dtodsu = dt2 / delta[0, 0, 1]
             dsig = prsl[0, 0, 0] - prsl[0, 0, 1]
@@ -1375,11 +1358,7 @@ def setup_multi_tracer_tridiag(
         else:
             f2[0, 0, 0][n_index] = q1[0, 0, 0][n_index]
 
-        if (
-            scuflg[0, 0]
-            and k_mask[-1] >= mrad[0, 0]
-            and k_mask[-1] < krad[0, 0]
-        ):
+        if scuflg[0, 0] and k_mask[-1] >= mrad[0, 0] and k_mask[-1] < krad[0, 0]:
             dtodsu = dt2 / delta[0, 0, 0]
             dsig = prsl[0, 0, -1] - prsl[0, 0, 0]
             tem = dsig * rdzt[0, 0, -1]
@@ -1401,11 +1380,7 @@ def setup_multi_tracer_tridiag(
             tem2 = q1[0, 0, 0][n_index] + q1[0, 0, 1][n_index]
             f2[0, 0, 0][n_index] = f2[0, 0, 0][n_index] - (tem1 - tem2) * ptem1
 
-        if (
-            scuflg[0, 0]
-            and k_mask[0] >= mrad[0, 0]
-            and k_mask[0] < krad[0, 0]
-        ):
+        if scuflg[0, 0] and k_mask[0] >= mrad[0, 0] and k_mask[0] < krad[0, 0]:
             dtodsd = dt2 / delta[0, 0, 0]
             dtodsu = dt2 / delta[0, 0, 1]
             dsig = prsl[0, 0, 0] - prsl[0, 0, 1]
@@ -1440,9 +1415,10 @@ def recover_moisture_tendency(
     from __externals__ import rdt
 
     with computation(PARALLEL), interval(...):
-        rtg[0, 0, 0][n_index] = rtg[0, 0, 0][n_index] + (
-            f2[0, 0, 0][n_index] - q1[0, 0, 0][n_index]
-        ) * rdt
+        rtg[0, 0, 0][n_index] = (
+            rtg[0, 0, 0][n_index] + (f2[0, 0, 0][n_index] - q1[0, 0, 0][n_index]) * rdt
+        )
+
 
 def recover_heat_tendency_add_diss_heat(
     tdt: FloatField,
@@ -1455,6 +1431,7 @@ def recover_heat_tendency_add_diss_heat(
     dqsfc: FloatFieldIJ,
 ):
     from __externals__ import rdt
+
     with computation(FORWARD), interval(...):
         tdt = tdt[0, 0, 0] + (f1[0, 0, 0] - t1[0, 0, 0]) * rdt
         dtsfc = dtsfc[0, 0] + (constants.CP_AIR / constants.GRAV) * delta[0, 0, 0] * (
@@ -1535,11 +1512,7 @@ def moment_tridiag_mat_ele_comp(
                 f1_p1 = u1[0, 0, 1]
                 f2_p1 = v1[0, 0, 1]
 
-            if (
-                scuflg[0, 0]
-                and k_mask[0] >= mrad[0, 0]
-                and k_mask[0] < krad[0, 0]
-            ):
+            if scuflg[0, 0] and k_mask[0] >= mrad[0, 0] and k_mask[0] < krad[0, 0]:
                 ptem = 0.5 * dsig * rdz * xmfd[0, 0, 0]
                 ptem1 = dtodsd * ptem
                 ptem2 = dtodsu * ptem
@@ -1578,11 +1551,7 @@ def moment_tridiag_mat_ele_comp(
                 f1_p1 = u1[0, 0, 1]
                 f2_p1 = v1[0, 0, 1]
 
-            if (
-                scuflg[0, 0]
-                and k_mask[0] >= mrad[0, 0]
-                and k_mask[0] < krad[0, 0]
-            ):
+            if scuflg[0, 0] and k_mask[0] >= mrad[0, 0] and k_mask[0] < krad[0, 0]:
                 ptem = 0.5 * dsig * rdz * xmfd[0, 0, 0]
                 ptem1 = dtodsd * ptem
                 ptem2 = dtodsu * ptem
@@ -1657,8 +1626,7 @@ class ScaleAwareTKEMoistEDMF:
 
         self._ntracers = config.ntracers
         assert self._ntracers == 9, (
-            "PBL scheme satmedmfvdif requires ntracer "
-            f"({config.ntracers}) == 9"
+            "PBL scheme satmedmfvdif requires ntracer " f"({config.ntracers}) == 9"
         )
 
         self._ntrac1 = self._ntracers - 1
@@ -1855,7 +1823,7 @@ class ScaleAwareTKEMoistEDMF:
                 "ntke": self._ntke,
                 "ntiw": self._ntiw,
                 "ntcw": self._ntcw,
-                "cap_k0_land": config.cap_k0_land
+                "cap_k0_land": config.cap_k0_land,
             },
             origin=idx.origin_compute(),
             domain=idx.domain_compute(),
@@ -1971,10 +1939,7 @@ class ScaleAwareTKEMoistEDMF:
 
         self._recover_tke_tendency_start_tridiag = stencil_factory.from_origin_domain(
             func=recover_tke_tendency_start_tridiag,
-            externals={
-                "rdt": self._rdt,
-                "ntke": self._ntke
-            },
+            externals={"rdt": self._rdt, "ntke": self._ntke},
             origin=idx.origin_compute(),
             domain=idx.domain_compute(),
         )
@@ -2007,26 +1972,22 @@ class ScaleAwareTKEMoistEDMF:
             domain=idx.domain_compute(),
         )
 
-        self._recover_moisture_tendency = (
-            stencil_factory.from_origin_domain(
-                func=recover_moisture_tendency,
-                externals={
-                    "rdt": self._rdt,
-                },
-                origin=idx.origin_compute(),
-                domain=idx.domain_compute(),
-            )
+        self._recover_moisture_tendency = stencil_factory.from_origin_domain(
+            func=recover_moisture_tendency,
+            externals={
+                "rdt": self._rdt,
+            },
+            origin=idx.origin_compute(),
+            domain=idx.domain_compute(),
         )
 
-        self._recover_heat_tendency_add_diss_heat = (
-            stencil_factory.from_origin_domain(
-                func=recover_heat_tendency_add_diss_heat,
-                externals={
-                    "rdt": self._rdt,
-                },
-                origin=idx.origin_compute(),
-                domain=idx.domain_compute(),
-            )
+        self._recover_heat_tendency_add_diss_heat = stencil_factory.from_origin_domain(
+            func=recover_heat_tendency_add_diss_heat,
+            externals={
+                "rdt": self._rdt,
+            },
+            origin=idx.origin_compute(),
+            domain=idx.domain_compute(),
         )
 
         self._moment_tridiag_mat_ele_comp = stencil_factory.from_origin_domain(
@@ -2550,7 +2511,7 @@ class ScaleAwareTKEMoistEDMF:
                     self._krad,
                     self._xmfd,
                     self._qcdo,
-                    dim_n
+                    dim_n,
                 )
 
             self._tridin(

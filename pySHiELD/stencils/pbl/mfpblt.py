@@ -1,10 +1,4 @@
-from gt4py.cartesian.gtscript import (
-    FORWARD,
-    PARALLEL,
-    computation,
-    interval,
-    sqrt,
-)
+from gt4py.cartesian.gtscript import FORWARD, PARALLEL, computation, interval, sqrt
 
 import ndsl.constants as constants
 import pySHiELD.constants as physcons
@@ -54,7 +48,7 @@ def mfpblt_s0(
         if cnvflg[0, 0]:
             buo = 0.0
             wu2 = 0.0
-            qtx = q1[0, 0, 0][0] + q1[0, 0, 0][ntcw]
+            qtx = q1[0, 0, 0][0] + q1[0, 0, 0][ntcw - 1]
 
     with computation(FORWARD), interval(0, 1):
         kpblx = 0
@@ -64,6 +58,7 @@ def mfpblt_s0(
         hpblx = 0.0
         xlamavg = 0.0
         sumx = 0.0
+        # Compute thermal excess
         if cnvflg[0, 0]:
             ptem = min(physcons.ALP * vpert[0, 0], 3.0)
             thlu = thlx[0, 0, 0] + ptem
@@ -96,6 +91,11 @@ def mfpblt_s1(
     zm: FloatField,
 ):
     with computation(PARALLEL), interval(...):
+        # From our tuning:
+        bb1 = 2.0
+        bb2 = 4.0
+
+        # Compute entrainment rate
         if cnvflg[0, 0]:
             dz = zl[0, 0, 1] - zl[0, 0, 0]
             if k_mask[0] < kpbl[0, 0]:
@@ -109,6 +109,7 @@ def mfpblt_s1(
 
     with computation(FORWARD):
         with interval(1, None):
+            # Compute buoyancy for updraft air parcel
             if cnvflg[0, 0]:
                 tem = 0.5 * xlamue[0, 0, -1] * (zl[0, 0, 0] - zl[0, 0, -1])
                 factor = 1.0 + tem
@@ -140,19 +141,21 @@ def mfpblt_s1(
                 buo = constants.GRAV * (thvu / thvx[0, 0, 0] - 1.0)
 
     with computation(FORWARD):
+        # Compute updraft velocity squared (wu2)
         with interval(0, 1):
             if cnvflg[0, 0]:
-                wu2 = (4.0 * buo[0, 0, 0] * zm[0, 0, 0]) / (
-                    1.0 + (0.5 * 2.0 * xlamue[0, 0, 0] * zm[0, 0, 0])
+                wu2 = (bb2 * buo[0, 0, 0] * zm[0, 0, 0]) / (
+                    1.0 + (0.5 * bb1 * xlamue[0, 0, 0] * zm[0, 0, 0])
                 )
         with interval(1, None):
             if cnvflg[0, 0]:
-                dz = zm[0, 0, 0] - zm[0, 0, -1]
-                tem = 0.25 * 2.0 * (xlamue[0, 0, 0] + xlamue[0, 0, -1]) * dz
-                wu2 = (((1.0 - tem) * wu2[0, 0, -1]) + (4.0 * buo[0, 0, 0] * dz)) / (
-                    1.0 + tem
-                )
-
+                if k_mask[0] < kpbl:
+                    dz = zm[0, 0, 0] - zm[0, 0, -1]
+                    tem = 0.25 * bb1 * (xlamue[0, 0, 0] + xlamue[0, 0, -1]) * dz
+                    wu2 = (
+                        ((1.0 - tem) * wu2[0, 0, -1]) + (bb2 * buo[0, 0, 0] * dz)
+                    ) / (1.0 + tem)
+    # Update pbl height as the height where updraft velocity vanishes
     with computation(FORWARD):
         with interval(0, 1):
             flg = True
@@ -178,7 +181,6 @@ def mfpblt_s1a(
     rbup: FloatFieldIJ,
     zm: FloatField,
 ):
-
     with computation(FORWARD), interval(1, None):
         rbint = 0.0
 
@@ -225,7 +227,7 @@ def mfpblt_s2(
     zl: FloatField,
     zm: FloatField,
 ):
-    from __externals__ import dt2
+    from __externals__ import dt2, ntcw
 
     with computation(FORWARD):
         with interval(0, 1):
@@ -235,6 +237,7 @@ def mfpblt_s2(
                     hpbl = hpblx[0, 0]
 
     with computation(PARALLEL), interval(...):
+        # Update entrainment rate
         if cnvflg[0, 0] and (kpbly[0, 0] > kpblx[0, 0]):
             dz = zl[0, 0, 1] - zl[0, 0, 0]
             if k_mask[0] < kpbl[0, 0]:
@@ -245,23 +248,19 @@ def mfpblt_s2(
                 xlamue = physcons.CE0 / dz
             xlamuem = physcons.CM * xlamue[0, 0, 0]
 
-    with computation(FORWARD):
-        with interval(0, 1):
-            dz = zl[0, 0, 1] - zl[0, 0, 0]
-            if cnvflg[0, 0] and (k_mask[0] < kpbl[0, 0]):
-                xlamavg = xlamavg[0, 0] + xlamue[0, 0, 0] * dz
-                sumx = sumx[0, 0] + dz
-        with interval(1, None):
-            dz = zl[0, 0, 1] - zl[0, 0, 0]
-            if cnvflg[0, 0] and (k_mask[0] < kpbl[0, 0]):
-                xlamavg = xlamavg[0, 0] + xlamue[0, 0, 0] * dz
-                sumx = sumx[0, 0] + dz
+    # Compute entrainment rate averaged over the whole pbl
+    with computation(FORWARD), interval(...):
+        dz = zl[0, 0, 1] - zl[0, 0, 0]
+        if cnvflg[0, 0] and (k_mask[0] < kpbl[0, 0]):
+            xlamavg = xlamavg[0, 0] + xlamue[0, 0, 0] * dz
+            sumx = sumx[0, 0] + dz
 
     with computation(FORWARD), interval(0, 1):
         if cnvflg[0, 0]:
             xlamavg = xlamavg[0, 0] / sumx[0, 0]
 
     with computation(PARALLEL), interval(...):
+        # Updraft mass flux as a function of updraft velocity profile
         if cnvflg[0, 0] and (k_mask[0] < kpbl[0, 0]):
             if wu2[0, 0, 0] > 0.0:
                 xmf = physcons.A1 * sqrt(wu2[0, 0, 0])
@@ -270,6 +269,8 @@ def mfpblt_s2(
 
     with computation(FORWARD):
         with interval(0, 1):
+            # Compute updraft fraction as a function of mean entrainment rate
+            # (Grell & Freitas, 2014)
             if cnvflg[0, 0]:
                 tem = 0.2 / xlamavg[0, 0]
                 sigma = min(
@@ -277,26 +278,29 @@ def mfpblt_s2(
                     0.999,
                 )
 
+                # compute scale-aware function based on Arakawa & Wu (2013)
                 if sigma > physcons.A1:
                     scaldfunc = max(min((1.0 - sigma) * (1.0 - sigma), 1.0), 0.0)
                 else:
                     scaldfunc = 1.0
 
     with computation(PARALLEL), interval(...):
-        xmmx = (zl[0, 0, 1] - zl[0, 0, 0]) / dt2
+        # Final scale-aware updraft mass flux
         if cnvflg[0, 0] and (k_mask[0] < kpbl[0, 0]):
+            xmmx = (zl[0, 0, 1] - zl[0, 0, 0]) / dt2
             xmf = min(scaldfunc[0, 0] * xmf[0, 0, 0], xmmx)
 
+    # Compute updraft property using updated entranment rate
     with computation(FORWARD):
         with interval(0, 1):
             if cnvflg[0, 0]:
                 thlu = thlx[0, 0, 0]
         with interval(1, None):
-            dz = zl[0, 0, 0] - zl[0, 0, -1]
-            tem = 0.5 * xlamue[0, 0, -1] * dz
-            factor = 1.0 + tem
-
             if cnvflg[0, 0] and (k_mask[0] <= kpbl[0, 0]):
+                dz = zl[0, 0, 0] - zl[0, 0, -1]
+                tem = 0.5 * xlamue[0, 0, -1] * dz
+                factor = 1.0 + tem
+
                 thlu = (
                     (1.0 - tem) * thlu[0, 0, -1]
                     + tem * (thlx[0, 0, -1] + thlx[0, 0, 0])
@@ -305,31 +309,28 @@ def mfpblt_s2(
                     (1.0 - tem) * qtu[0, 0, -1] + tem * (qtx[0, 0, -1] + qtx[0, 0, 0])
                 ) / factor
 
-            tlu = thlu[0, 0, 0] / pix[0, 0, 0]
-            es = 0.01 * fpvs(tlu)
-            qs = max(
-                physcons.QMIN,
-                constants.EPS * es / (plyr[0, 0, 0] + constants.EPSM1 * es),
-            )
-            dq = qtu[0, 0, 0] - qs
-            qlu = dq / (1.0 + (physcons.EL2ORC * qs / (tlu ** 2)))
-
-            if cnvflg[0, 0] and (k_mask[0] <= kpbl[0, 0]):
+                tlu = thlu[0, 0, 0] / pix[0, 0, 0]
+                es = 0.01 * fpvs(tlu)  # fpvs in pa
+                qs = max(
+                    physcons.QMIN,
+                    constants.EPS * es / (plyr[0, 0, 0] + constants.EPSM1 * es),
+                )
+                dq = qtu[0, 0, 0] - qs
                 if dq > 0.0:
+                    qlu = dq / (1.0 + (physcons.EL2ORC * qs / (tlu ** 2)))
                     qtu = qs + qlu
                     qcko[0, 0, 0][0] = qs
-                    qcko[0, 0, 0][1] = qlu
+                    qcko[0, 0, 0][ntcw - 1] = qlu
                     tcko = tlu + physcons.ELOCP * qlu
                 else:
                     qcko[0, 0, 0][0] = qtu[0, 0, 0]
-                    qcko[0, 0, 0][1] = 0.0
+                    qcko[0, 0, 0][ntcw - 1] = 0.0
                     qcko_track = 1
                     tcko = tlu
 
-            tem = 0.5 * xlamuem[0, 0, -1] * dz
-            factor = 1.0 + tem
-
             if cnvflg[0, 0] and (k_mask[0] <= kpbl[0, 0]):
+                tem = 0.5 * xlamuem[0, 0, -1] * dz
+                factor = 1.0 + tem
                 ucko = (
                     (1.0 - tem) * ucko[0, 0, -1]
                     + (tem + physcons.PGCON) * u1[0, 0, 0]
@@ -437,6 +438,7 @@ class PBLMassFlux:
             func=mfpblt_s2,
             externals={
                 "dt2": dt2,
+                "ntcw": ntcw,
             },
             origin=idx.origin_compute(),
             domain=(idx.iec, idx.jec, kmpbl),
@@ -573,7 +575,7 @@ class PBLMassFlux:
         )
 
         if self._ntcw > 2:
-            for n in range(1, self._ntcw):
+            for n in range(1, self._ntcw - 1):
                 self._mfpblt_s3(
                     cnvflg,
                     kpbl,
