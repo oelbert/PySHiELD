@@ -82,9 +82,9 @@ class TranslateMFPBLT(TranslatePhysicsFortranData2Py):
             self.stencil_factory,
             quantity_factory,
             dt2=inputs.pop("dt2"),
-            ntcw=inputs.pop("ntcw"),
-            ntrac1=inputs.pop("ntrac1"),
-            kmpbl=inputs.pop("kmpbl"),
+            ntcw=int(inputs.pop("ntcw")),
+            ntrac1=int(inputs.pop("ntrac1")),
+            kmpbl=int(inputs.pop("kmpbl")),
         )
 
         compute_func(**inputs, k_mask=k_mask)
