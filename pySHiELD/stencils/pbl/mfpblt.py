@@ -21,18 +21,11 @@ from pySHiELD._config import FloatFieldTracer
 from pySHiELD.functions.physics_functions import fpvs
 
 
-def mfpblt_s0(
+def init_pbl(
     buo: FloatField,
     cnvflg: BoolFieldIJ,
-    hpbl: FloatFieldIJ,
-    kpbl: IntFieldIJ,
     q1: FloatFieldTracer,
-    qtu: FloatField,
     qtx: FloatField,
-    thlu: FloatField,
-    thlx: FloatField,
-    thvx: FloatField,
-    vpert: FloatFieldIJ,
     wu2: FloatField,
     kpblx: IntFieldIJ,
     kpbly: IntFieldIJ,
@@ -58,12 +51,6 @@ def mfpblt_s0(
         hpblx = 0.0
         xlamavg = 0.0
         sumx = 0.0
-        # Compute thermal excess
-        if cnvflg[0, 0]:
-            ptem = min(physcons.ALP * vpert[0, 0], 3.0)
-            thlu = thlx[0, 0, 0] + ptem
-            qtu = qtx[0, 0, 0]
-            buo = constants.GRAV * ptem / thvx[0, 0, 0]
 
 
 def mfpblt_s1(
@@ -84,12 +71,21 @@ def mfpblt_s1(
     thlu: FloatField,
     thlx: FloatField,
     thvx: FloatField,
+    vpert: FloatFieldIJ,
     wu2: FloatField,
     xlamue: FloatField,
     xlamuem: FloatField,
     zl: FloatField,
     zm: FloatField,
 ):
+    with computation(FORWARD), interval(0, 1):
+        # Compute thermal excess
+        if cnvflg[0, 0]:
+            ptem = min(physcons.ALP * vpert[0, 0], 3.0)
+            thlu = thlx[0, 0, 0] + ptem
+            qtu = qtx[0, 0, 0]
+            buo = constants.GRAV * ptem / thvx[0, 0, 0]
+
     with computation(PARALLEL), interval(...):
         # From our tuning:
         bb1 = 2.0
@@ -149,12 +145,11 @@ def mfpblt_s1(
                 )
         with interval(1, None):
             if cnvflg[0, 0]:
-                if k_mask[0] < kpbl:
-                    dz = zm[0, 0, 0] - zm[0, 0, -1]
-                    tem = 0.25 * bb1 * (xlamue[0, 0, 0] + xlamue[0, 0, -1]) * dz
-                    wu2 = (
-                        ((1.0 - tem) * wu2[0, 0, -1]) + (bb2 * buo[0, 0, 0] * dz)
-                    ) / (1.0 + tem)
+                dz = zm[0, 0, 0] - zm[0, 0, -1]
+                tem = 0.25 * bb1 * (xlamue[0, 0, 0] + xlamue[0, 0, -1]) * dz
+                wu2 = (
+                    ((1.0 - tem) * wu2[0, 0, -1]) + (bb2 * buo[0, 0, 0] * dz)
+                ) / (1.0 + tem)
     # Update pbl height as the height where updraft velocity vanishes
     with computation(FORWARD):
         with interval(0, 1):
@@ -172,8 +167,10 @@ def mfpblt_s1(
                 flg = rbup[0, 0] <= 0.0
 
 
-def mfpblt_s1a(
+def finish_pbl_height(
     cnvflg: BoolFieldIJ,
+    kpbl: IntFieldIJ,
+    hpbl: FloatFieldIJ,
     hpblx: FloatFieldIJ,
     kpblx: IntFieldIJ,
     k_mask: IntFieldK,
@@ -195,12 +192,18 @@ def mfpblt_s1a(
 
                 hpblx = zm[0, 0, -1] + rbint * (zm[0, 0, 0] - zm[0, 0, -1])
 
+    with computation(FORWARD):
+        with interval(0, 1):
+            if cnvflg[0, 0]:
+                if kpbl[0, 0] > kpblx[0, 0]:
+                    kpbl = kpblx[0, 0]
+                    hpbl = hpblx[0, 0]
+
 
 def mfpblt_s2(
     cnvflg: BoolFieldIJ,
     gdx: FloatFieldIJ,
     hpbl: FloatFieldIJ,
-    hpblx: FloatFieldIJ,
     kpbl: IntFieldIJ,
     kpblx: IntFieldIJ,
     kpbly: IntFieldIJ,
@@ -228,13 +231,6 @@ def mfpblt_s2(
     zm: FloatField,
 ):
     from __externals__ import dt2, ntcw
-
-    with computation(FORWARD):
-        with interval(0, 1):
-            if cnvflg[0, 0]:
-                if kpbl[0, 0] > kpblx[0, 0]:
-                    kpbl = kpblx[0, 0]
-                    hpbl = hpblx[0, 0]
 
     with computation(PARALLEL), interval(...):
         # Update entrainment rate
@@ -343,7 +339,7 @@ def mfpblt_s2(
                 ) / factor
 
 
-def mfpblt_s3(
+def tracer_updraft(
     cnvflg: BoolFieldIJ,
     kpbl: IntFieldIJ,
     k_mask: IntFieldK,
@@ -413,8 +409,8 @@ class PBLMassFlux:
         self._sumx = make_quantity_2D(Float)
         self._flg = make_quantity_2D(Bool)
 
-        self._mfpblt_s0 = stencil_factory.from_origin_domain(
-            func=mfpblt_s0,
+        self._init_pbl = stencil_factory.from_origin_domain(
+            func=init_pbl,
             externals={"ntcw": ntcw},
             origin=idx.origin_compute(),
             domain=idx.domain_compute(),
@@ -426,8 +422,8 @@ class PBLMassFlux:
             domain=(idx.iec, idx.jec, kmpbl),
         )
 
-        self._mfpblt_s1a = stencil_factory.from_origin_domain(
-            func=mfpblt_s1a,
+        self._finish_pbl_height = stencil_factory.from_origin_domain(
+            func=finish_pbl_height,
             origin=idx.origin_compute(),
             domain=idx.domain_compute(),
         )
@@ -443,8 +439,8 @@ class PBLMassFlux:
         )
 
         if (self._ntcw > 2) or (self._ntrac1 > self._ntcw):
-            self._mfpblt_s3 = stencil_factory.from_origin_domain(
-                func=mfpblt_s3,
+            self._tracer_updraft = stencil_factory.from_origin_domain(
+                func=tracer_updraft,
                 origin=idx.origin_compute(),
                 domain=(idx.iec, idx.jec, kmpbl),
             )
@@ -483,18 +479,11 @@ class PBLMassFlux:
         if totflag:
             return
 
-        self._mfpblt_s0(
+        self._init_pbl(
             buo,
             cnvflg,
-            hpbl,
-            kpbl,
             q1,
-            self._qtu,
             self._qtx,
-            self._thlu,
-            thlx,
-            thvx,
-            vpert,
             self._wu2,
             self._kpblx,
             self._kpbly,
@@ -523,6 +512,7 @@ class PBLMassFlux:
             self._thlu,
             thlx,
             thvx,
+            vpert,
             self._wu2,
             xlamue,
             self._xlamuem,
@@ -530,8 +520,10 @@ class PBLMassFlux:
             zm,
         )
 
-        self._mfpblt_s1a(
+        self._finish_pbl_height(
             cnvflg,
+            kpbl,
+            hpbl,
             self._hpblx,
             self._kpblx,
             k_mask,
@@ -544,7 +536,6 @@ class PBLMassFlux:
             cnvflg,
             gdx,
             hpbl,
-            self._hpblx,
             kpbl,
             self._kpblx,
             self._kpbly,
@@ -574,7 +565,7 @@ class PBLMassFlux:
 
         if self._ntcw > 2:
             for n in range(1, self._ntcw - 1):
-                self._mfpblt_s3(
+                self._tracer_updraft(
                     cnvflg,
                     kpbl,
                     k_mask,
@@ -587,7 +578,7 @@ class PBLMassFlux:
         if self._ntrac1 > self._ntcw:
             for n in range(self._ntcw, self._ntrac1):
                 dim_n = n if n < self._ntcw else n + 1
-                self._mfpblt_s3(
+                self._tracer_updraft(
                     cnvflg,
                     kpbl,
                     k_mask,
