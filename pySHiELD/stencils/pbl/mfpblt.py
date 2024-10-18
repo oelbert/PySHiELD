@@ -478,7 +478,7 @@ class PBLMassFlux:
 
         for i in range(self._im):
             for j in range(self._jm):
-                totflag = totflag and (not cnvflg.view()[i, j])
+                totflag = totflag and (not cnvflg.view[i, j])
 
         if totflag:
             return
