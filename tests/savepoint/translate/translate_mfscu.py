@@ -1,4 +1,4 @@
-from ndsl.constants import Z_DIM
+from ndsl.constants import X_DIM, Y_DIM, Z_DIM
 from ndsl.dsl.typing import Int
 from ndsl.initialization.allocator import QuantityFactory
 from ndsl.initialization.sizer import SubtileGridSizer
@@ -79,6 +79,21 @@ class TranslateMFSCU(TranslatePhysicsFortranData2Py):
             k_mask.data[k] = k
         self.make_storage_data_input_vars(inputs)
         inputs.pop("t1")
+        cnvflg = quantity_factory.from_array(
+            data=inputs.pop('cnvflg'),
+            dims=[X_DIM, Y_DIM],
+            units="",
+        )
+        mrad = quantity_factory.from_array(
+            data=inputs.pop('mrad'),
+            dims=[X_DIM, Y_DIM],
+            units="",
+        )
+        zm = quantity_factory.from_array(
+            data=inputs.pop('zm'),
+            dims=[X_DIM, Y_DIM, Z_DIM],
+            units="",
+        )
 
         compute_func = StratocumulusMassFlux(
             self.stencil_factory,
@@ -90,6 +105,6 @@ class TranslateMFSCU(TranslatePhysicsFortranData2Py):
             ntke=inputs.pop("ntke"),
         )
 
-        compute_func(**inputs, k_mask=k_mask)
+        compute_func(**inputs, k_mask=k_mask, cnvflg=cnvflg, mrad=mrad, zm=zm)
 
         return self.slice_output(inputs)
