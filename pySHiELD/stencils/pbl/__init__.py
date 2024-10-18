@@ -1,4 +1,4 @@
-from .satmedmfvdif import ScaleAwareTKEMoistEDMF
+from .satmedmfvdiff import ScaleAwareTKEMoistEDMF
 
 
 """
