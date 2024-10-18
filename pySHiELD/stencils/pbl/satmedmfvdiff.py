@@ -1878,7 +1878,6 @@ class ScaleAwareTKEMoistEDMF:
             self._ntcw,
             self._ntrac1,
             self._kmpbl,
-            self._ntke,
         )
 
         self._mfscu = StratocumulusMassFlux(
