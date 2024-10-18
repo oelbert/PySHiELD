@@ -1,4 +1,4 @@
-from ndsl.constants import Z_DIM
+from ndsl.constants import X_DIM, Y_DIM, Z_DIM
 from ndsl.dsl.typing import Int
 from ndsl.initialization.allocator import QuantityFactory
 from ndsl.initialization.sizer import SubtileGridSizer
@@ -78,6 +78,12 @@ class TranslateMFPBLT(TranslatePhysicsFortranData2Py):
         self.make_storage_data_input_vars(inputs)
         inputs.pop("t1")
 
+        cnvflg = quantity_factory.from_array(
+            data=inputs.pop('cnvflg'),
+            dims=[X_DIM, Y_DIM],
+            units="",
+        )
+
         compute_func = PBLMassFlux(
             self.stencil_factory,
             quantity_factory,
@@ -87,6 +93,6 @@ class TranslateMFPBLT(TranslatePhysicsFortranData2Py):
             kmpbl=int(inputs.pop("kmpbl")),
         )
 
-        compute_func(**inputs, k_mask=k_mask)
+        compute_func(**inputs, k_mask=k_mask, cnvflg=cnvflg)
 
         return self.slice_output(inputs)
