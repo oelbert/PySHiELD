@@ -23,7 +23,7 @@ class TranslateMFPBLT(TranslatePhysicsFortranData2Py):
             "thvx": {"shield": True},
             "gdx": {"shield": True},
             "hpbl": {"shield": True},
-            "kpbl": {"shield": True},
+            "kpbl": {"shield": True, "index_variable": True},
             "vpert": {"shield": True},
             "buo": {"serialname": "buou", "shield": True},
             "xmf": {"shield": True},
@@ -42,7 +42,7 @@ class TranslateMFPBLT(TranslatePhysicsFortranData2Py):
 
         self.out_vars = {
             "hpbl": {"shield": True},
-            "kpbl": {"shield": True},
+            "kpbl": {"shield": True, "index_variable": True},
             "buo": {"shield": True},
             "xmf": {"shield": True},
             "tcko": {"shield": True},
@@ -73,7 +73,7 @@ class TranslateMFPBLT(TranslatePhysicsFortranData2Py):
             units="unknown",
             dtype=Int,
         )
-        for k in range(1, self.stencil_factory.grid_indexing.domain[2] + 1):
+        for k in range(self.stencil_factory.grid_indexing.domain[2]):
             k_mask.data[k] = k
         self.make_storage_data_input_vars(inputs)
         inputs.pop("t1")

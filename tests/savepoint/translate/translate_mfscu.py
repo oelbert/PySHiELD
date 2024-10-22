@@ -36,7 +36,8 @@ class TranslateMFSCU(TranslatePhysicsFortranData2Py):
             "xlamde": {"shield": True},
         }
         self.in_vars["parameters"] = [
-            "kmscu" "ntcw",
+            "kmscu",
+            "ntcw",
             "dt2",
             "ntrac1",
         ]
