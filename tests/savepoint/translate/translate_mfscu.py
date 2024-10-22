@@ -102,8 +102,8 @@ class TranslateMFSCU(TranslatePhysicsFortranData2Py):
             dt2=inputs.pop("dt2"),
             ntcw=inputs.pop("ntcw"),
             ntrac1=inputs.pop("ntrac1"),
-            kmpbl=inputs.pop("kmpbl"),
-            ntke=inputs.pop("ntke"),
+            kmscu=inputs.pop("kmscu"),
+            ntke=8,
         )
 
         compute_func(**inputs, k_mask=k_mask, cnvflg=cnvflg, mrad=mrad, zm=zm)
