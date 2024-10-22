@@ -24,7 +24,7 @@ class TranslateMFSCU(TranslatePhysicsFortranData2Py):
             "gdx": {"shield": True},
             "thetae": {"shield": True},
             "radj": {"shield": True},
-            "krad": {"shield": True},
+            "krad": {"shield": True, "index_variable": True},
             "mrad": {"shield": True},
             "radmin": {"shield": True},
             "buo": {"shield": True},
@@ -33,7 +33,7 @@ class TranslateMFSCU(TranslatePhysicsFortranData2Py):
             "qcdo": {"shield": True},
             "ucdo": {"shield": True},
             "vcdo": {"shield": True},
-            "xlamde": {"shield": True},
+            "xlamde": {"shield": True, "kend": namelist.npz - 1},
         }
         self.in_vars["parameters"] = [
             "kmscu",
@@ -44,7 +44,7 @@ class TranslateMFSCU(TranslatePhysicsFortranData2Py):
 
         self.out_vars = {
             "radj": {"shield": True},
-            "krad": {"shield": True},
+            "krad": {"shield": True, "index_variable": True},
             "mrad": {"shield": True},
             "buo": {"shield": True},
             "xmfd": {"shield": True},
@@ -52,7 +52,7 @@ class TranslateMFSCU(TranslatePhysicsFortranData2Py):
             "qcdo": {"shield": True},
             "ucdo": {"shield": True},
             "vcdo": {"shield": True},
-            "xlamde": {"shield": True},
+            "xlamde": {"shield": True, "kend": namelist.npz - 1},
         }
         self.stencil_factory = stencil_factory
         self.grid_indexing = self.stencil_factory.grid_indexing
