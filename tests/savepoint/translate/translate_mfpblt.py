@@ -31,7 +31,7 @@ class TranslateMFPBLT(TranslatePhysicsFortranData2Py):
             "qcko": {"shield": True},
             "ucko": {"shield": True},
             "vcko": {"shield": True},
-            "xlamue": {"shield": True},
+            "xlamue": {"shield": True, "kend": namelist.npz - 1},
         }
         self.in_vars["parameters"] = [
             "kmpbl",
@@ -49,7 +49,7 @@ class TranslateMFPBLT(TranslatePhysicsFortranData2Py):
             "qcko": {"shield": True},
             "ucko": {"shield": True},
             "vcko": {"shield": True},
-            "xlamue": {"shield": True},
+            "xlamue": {"shield": True, "kend": namelist.npz - 1},
         }
         self.stencil_factory = stencil_factory
         self.grid_indexing = self.stencil_factory.grid_indexing
