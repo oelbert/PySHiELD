@@ -21,7 +21,6 @@ class TranslateMFPBLT(TranslatePhysicsFortranData2Py):
             "pix": {"shield": True},
             "thlx": {"shield": True},
             "thvx": {"shield": True},
-            "thlvx": {"shield": True},
             "gdx": {"shield": True},
             "hpbl": {"shield": True},
             "kpbl": {"shield": True, "index_variable": True},

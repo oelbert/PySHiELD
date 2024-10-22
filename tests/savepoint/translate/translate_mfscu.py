@@ -21,6 +21,7 @@ class TranslateMFSCU(TranslatePhysicsFortranData2Py):
             "pix": {"shield": True},
             "thlx": {"shield": True},
             "thvx": {"shield": True},
+            "thlvx": {"shield": True},
             "gdx": {"shield": True},
             "thetae": {"shield": True},
             "radj": {"shield": True},
