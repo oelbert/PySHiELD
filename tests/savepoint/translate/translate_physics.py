@@ -185,7 +185,6 @@ class TranslatePhysicsFortranData2Py(TranslateFortranData2Py):
             if not manual:
                 data_result = as_numpy(out_data[var])
                 if index_variable:
-                    breakpoint()
                     data_result += 1
                 n_dim = len(data_result.shape)
                 cn2 = int(data_result.shape[0] - self.grid.halo * 2 - 1) ** 2
