@@ -1086,6 +1086,12 @@ class NoahLSM:
         grid_indexing = stencil_factory.grid_indexing
 
         domain = grid_indexing.domain
+        domain_2d = (
+            grid_indexing.domain_compute[0],
+            grid_indexing.domain_compute[1],
+            1
+        )
+
         kmask = zeros(domain[2], dtype=Int)
         for k in range(domain[2]):
             kmask[k] = k

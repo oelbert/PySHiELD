@@ -23,6 +23,7 @@ from ndsl.initialization.allocator import QuantityFactory
 from ndsl.quantity import Quantity
 from pySHiELD._config import LSMConfig, FloatFieldTracer
 from pySHiELD.stencils.surface.noah_lsm.sfc_params import set_soil_veg
+from pySHiELD.functions.physics_functions import fpvs
 
 
 @gtscript.function
@@ -3209,8 +3210,6 @@ def sfc_drv(
     land: BoolFieldIJ,
     wind: FloatFieldIJ,
     slopetyp: IntFieldIJ,
-    shdmin: FloatFieldIJ,
-    shdmax: FloatFieldIJ,
     snoalb: FloatFieldIJ,
     sfalb: FloatFieldIJ,
     flag_iter: BoolFieldIJ,
@@ -3218,7 +3217,6 @@ def sfc_drv(
     bexppert: FloatFieldIJ,
     xlaipert: FloatFieldIJ,
     vegfpert: FloatFieldIJ,
-    fpvs: FloatFieldIJ,
     weasd: FloatFieldIJ,
     snwdph: FloatFieldIJ,
     tskin: FloatFieldIJ,
@@ -3338,7 +3336,7 @@ def sfc_drv(
             q0 = max(q1, 1.0e-8)
             theta1 = t1 * prslki
             rho = prsl1 / (rd * t1 * (1.0 + rvrdm1 * q0))
-            qs1 = fpvs
+            qs1 = fpvs(t1)
             qs1 = max(eps * qs1 / (prsl1 + epsm1 * qs1), 1.0e-8)
 
             q0 = min(qs1, q0)
@@ -3655,6 +3653,10 @@ class NoahLSM_2D:
         ), f"pertvegf[0] > 0 not implemented, got {config.pertvegf[0]}"
         assert config.ivegsrc == 1, f"ivegsrc !=1 not implemented, got {config.ivegsrc}"
         assert config.isot == 1, f"isot != 1 not implemented, got {config.isot}"
+        self._delt = dt
+        self._ivegsrc = config.ivegsrc
+        self._isot = config.isot
+        self._lheatstrg = config.lheatstrg
 
         def make_quantity() -> Quantity:
             return quantity_factory.zeros(
@@ -3850,6 +3852,7 @@ class NoahLSM_2D:
         smcwlt2: FloatFieldIJ,
         smcref2: FloatFieldIJ,
         wet1: FloatFieldIJ,
+        vegfpert: FloatFieldIJ,
     ):
         """
         !  ====================  defination of variables  ====================  !
@@ -3937,9 +3940,9 @@ class NoahLSM_2D:
             ps,
             t1,
             q1,
-            soiltyp,
-            vegtype,
-            sigmaf,
+            self._soiltype,
+            self._vegtype,
+            self._shdfac,
             sfcemis,
             dlwflx,
             dswsfc,
@@ -3950,11 +3953,9 @@ class NoahLSM_2D:
             prsl1,
             prslki,
             zf,
-            land,
+            self._land,
             wind,
-            slopetyp,
-            shdmin,
-            shdmax,
+            self._slopetype,
             snoalb,
             sfalb,
             flag_iter,
@@ -3962,7 +3963,6 @@ class NoahLSM_2D:
             bexppert,
             xlaipert,
             vegfpert,
-            fpvs,
             weasd,
             snwdph,
             tskin,
@@ -4003,26 +4003,26 @@ class NoahLSM_2D:
             smcwlt2,
             smcref2,
             wet1,
-            delt,
-            lheatstrg,
-            ivegsrc,
-            bexp,
-            dksat,
-            dwsat,
-            f1,
-            psisat,
-            quartz,
-            smcdry,
-            smcmax,
-            smcref,
-            smcwlt,
-            nroot,
-            snup,
-            rsmin,
-            rgl,
-            hs,
-            xlai,
-            slope,
+            self._delt,
+            self._lheatstrg,
+            self._ivegsrc,
+            self._bexp,
+            self._dksat,
+            self._dwsat,
+            self._f1,
+            self._psisat,
+            self._quartz,
+            self._smcdry,
+            self._smcmax,
+            self._smcref,
+            self._smcwlt,
+            self._nroot,
+            self._snup,
+            self._rsmin,
+            self._rgl,
+            self._hs,
+            self._xlai,
+            self._slope,
         )
 
         self._set_3d_fields(
