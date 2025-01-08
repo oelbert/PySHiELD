@@ -621,7 +621,7 @@ def set_soil_veg(
 ):
     """
     Handles initialization of LSM fields. Includes redprm Fortran subroutine
-    idl_mask: mask for surface types. 0 is sea, 1, is land, 2 is ice
+    isl_mask: mask for surface types. 0 is sea, 1, is land, 2 is ice
     ! ===================================================================== !
     !  description:                                                         !
     !                                                                       !
