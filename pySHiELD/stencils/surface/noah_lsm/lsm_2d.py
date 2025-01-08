@@ -1,6 +1,6 @@
 from gt4py.cartesian import gtscript
-from gt4py.cartesian.gtscript import FORWARD, PARALLEL, computation, exp, interval
-from numpy import ndarray, zeros
+from gt4py.cartesian.gtscript import FORWARD, computation, exp, interval, log
+from numpy import ndarray
 
 import ndsl.constants as constants
 import pySHiELD.constants as physcons
@@ -9,20 +9,16 @@ from ndsl.constants import X_DIM, Y_DIM, Z_DIM, Z_INTERFACE_DIM
 # from pace.dsl.dace.orchestration import orchestrate
 from ndsl.dsl.stencil import StencilFactory
 from ndsl.dsl.typing import (
-    Bool,
     BoolFieldIJ,
     Float,
     FloatField,
     FloatFieldIJ,
-    FloatFieldK,
-    Int,
     IntFieldIJ,
-    IntFieldK,
 )
 from ndsl.initialization.allocator import QuantityFactory
 from ndsl.quantity import Quantity
 from pySHiELD._config import LSMConfig, FloatFieldTracer
-from pySHiELD.stencils.surface.noah_lsm.sfc_params import set_soil_veg
+from pySHiELD.stencils.surface.noah_lsm.sfc_params import set_soil_veg, BARE
 from pySHiELD.functions.physics_functions import fpvs
 
 
@@ -30,7 +26,8 @@ from pySHiELD.functions.physics_functions import fpvs
 def tdfcnd_fn(smc, qz, smcmax, sh2o):
     # --- ... subprograms called: none
 
-    # calculates thermal diffusivity and conductivity of the soil for a given point and time
+    # calculates thermal diffusivity and conductivity of the soil
+    # for a given point and time
 
     # saturation ratio
     satratio = smc / smcmax
@@ -166,8 +163,10 @@ def canres_fn(
     # determine canopy resistance due to all factors
 
     rc = rsmin / (xlai * rcs * rct * rcq * rcsoil)
-    rr = (4.0 * sfcems * sigma1 * rd1 / cpx1) * (sfctmp ** 4.0) / (sfcprs * ch) + 1.0
-    delta = (lsubc / cpx1) * dqsdt2
+    rr = (
+        4.0 * sfcems * physcons.SIGMA1 * physcons.RD1 / cpx1
+    ) * (sfctmp ** 4.0) / (sfcprs * ch) + 1.0
+    delta = (physcons.LSUBC / cpx1) * dqsdt2
 
     pc = (rr + delta) / (rr * (1.0 + rc * ch) + delta)
 
@@ -210,37 +209,37 @@ def penman_fn(
 
     flx2 = 0.0
     # # prepare partial quantities for penman equation.
-    delta = elcp * cpfac * dqsdt2
+    delta = physcons.ELCP * cpfac * dqsdt2
     t24 = sfctmp * sfctmp * sfctmp * sfctmp
     rr = t24 * 6.48e-8 / (sfcprs * ch) + 1.0
-    rho = sfcprs / (rd1 * t2v)
+    rho = sfcprs / (physcons.RD1 * t2v)
     rch = rho * cpx * ch
 
     # adjust the partial sums / products with the latent heat
     # effects caused by falling precipitation.
     if not snowng:
         if prcp > 0.0:
-            rr += cph2o1 * prcp / rch
+            rr += physcons.CPH2O1 * prcp / rch
     else:
         # fractional snowfall/rainfall
-        rr += (cpice * ffrozp + cph2o1 * (1.0 - ffrozp)) * prcp / rch
+        rr += (physcons.CPICE * ffrozp + physcons.CPH2O1 * (1.0 - ffrozp)) * prcp / rch
 
     # ssoil = 13.753581783277639
-    fnet = fdown - sfcems * sigma1 * t24 - ssoil
+    fnet = fdown - sfcems * physcons.SIGMA1 * t24 - ssoil
 
     # include the latent heat effects of frzng rain converting to ice
     # on impact in the calculation of flx2 and fnet.
     if frzgra:
-        flx2 = -lsubf * prcp
+        flx2 = -physcons.LSUBF * prcp
         fnet = fnet - flx2
 
     # finish penman equation calculations.
 
     rad = fnet / rch + th2 - sfctmp
-    a = elcp * cpfac * (q2sat - q2)
+    a = physcons.ELCP * cpfac * (q2sat - q2)
 
     epsca = (a * rr + rad * delta) / (delta + rr)
-    etp = epsca * rch / lsubc
+    etp = epsca * rch / physcons.LSUBC
 
     return t24, etp, rch, epsca, rr, flx2
 
@@ -264,14 +263,14 @@ def redprm_fn(
 ):
     # --- ... subprograms called: none
 
-    kdt = refkdt * dksat / refdk
+    kdt = physcons.REFKDT * dksat / physcons.REFDK
 
     frzfact = (smcmax / smcref) * (0.412 / 0.468)
 
     # to adjust frzk parameter to actual soil type: frzk * frzfact
-    frzx = frzk * frzfact
+    frzx = physcons.FRZK * frzfact
 
-    if vegtyp + 1 == bare:
+    if vegtyp + 1 == BARE:
         shdfac = 0.0
 
     # calculate root distribution.  present version assumes uniform
@@ -325,7 +324,7 @@ def snow_new_fn(sfctmp, sn_new, snowh, sndens):
     # conversion into simulation units
     snowhc = snowh * 100.0
     newsnc = sn_new * 100.0
-    tempc = sfctmp - tfreez
+    tempc = sfctmp - constants.TICE0
 
     # calculating new snowfall density
     if tempc <= -15.0:
@@ -518,38 +517,42 @@ def tmpavg_fn(tup, tm, tdn, dz):
 
     dzh = dz * 0.5
 
-    if tup < tfreez:
-        if tm < tfreez:
-            if tdn < tfreez:
+    if tup < constants.TICE0:
+        if tm < constants.TICE0:
+            if tdn < constants.TICE0:
                 tavg = (tup + 2.0 * tm + tdn) / 4.0
             else:
-                x0 = (tfreez - tm) * dzh / (tdn - tm)
+                x0 = (constants.TICE0 - tm) * dzh / (tdn - tm)
                 tavg = (
-                    0.5 * (tup * dzh + tm * (dzh + x0) + tfreez * (2.0 * dzh - x0)) / dz
+                    0.5 * (
+                        tup * dzh + tm * (dzh + x0) + constants.TICE0 * (2.0 * dzh - x0)
+                    ) / dz
                 )
         else:
-            if tdn < tfreez:
-                xup = (tfreez - tup) * dzh / (tm - tup)
-                xdn = dzh - (tfreez - tm) * dzh / (tdn - tm)
+            if tdn < constants.TICE0:
+                xup = (constants.TICE0 - tup) * dzh / (tm - tup)
+                xdn = dzh - (constants.TICE0 - tm) * dzh / (tdn - tm)
                 tavg = (
-                    0.5 * (tup * xup + tfreez * (2.0 * dz - xup - xdn) + tdn * xdn) / dz
+                    0.5 * (
+                        tup * xup + constants.TICE0 * (2.0 * dz - xup - xdn) + tdn * xdn
+                    ) / dz
                 )
             else:
-                xup = (tfreez - tup) * dzh / (tm - tup)
-                tavg = 0.5 * (tup * xup + tfreez * (2.0 * dz - xup)) / dz
+                xup = (constants.TICE0 - tup) * dzh / (tm - tup)
+                tavg = 0.5 * (tup * xup + constants.TICE0 * (2.0 * dz - xup)) / dz
     else:
-        if tm < tfreez:
-            if tdn < tfreez:
-                xup = dzh - (tfreez - tup) * dzh / (tm - tup)
-                tavg = 0.5 * (tfreez * (dz - xup) + tm * (dzh + xup) + tdn * dzh) / dz
+        if tm < constants.TICE0:
+            if tdn < constants.TICE0:
+                xup = dzh - (constants.TICE0 - tup) * dzh / (tm - tup)
+                tavg = 0.5 * (constants.TICE0 * (dz - xup) + tm * (dzh + xup) + tdn * dzh) / dz
             else:
-                xup = dzh - (tfreez - tup) * dzh / (tm - tup)
-                xdn = (tfreez - tm) * dzh / (tdn - tm)
-                tavg = 0.5 * (tfreez * (2.0 * dz - xup - xdn) + tm * (xup + xdn)) / dz
+                xup = dzh - (constants.TICE0 - tup) * dzh / (tm - tup)
+                xdn = (constants.TICE0 - tm) * dzh / (tdn - tm)
+                tavg = 0.5 * (constants.TICE0 * (2.0 * dz - xup - xdn) + tm * (xup + xdn)) / dz
         else:
-            if tdn < tfreez:
-                xdn = dzh - (tfreez - tm) * dzh / (tdn - tm)
-                tavg = (tfreez * (dz - xdn) + 0.5 * (tfreez + tdn) * xdn) / dz
+            if tdn < constants.TICE0:
+                xdn = dzh - (constants.TICE0 - tm) * dzh / (tdn - tm)
+                tavg = (constants.TICE0 * (dz - xdn) + 0.5 * (constants.TICE0 + tdn) * xdn) / dz
             else:
                 tavg = (tup + 2.0 * tm + tdn) / 4.0
     return tavg
@@ -561,7 +564,7 @@ def frh2o_loop_fn(psisat, ck, swl, smcmax, smc, bx, tavg, error):
         (psisat * gs2 / lsubf)
         * ((1.0 + ck * swl) ** 2.0)
         * (smcmax / (smc - swl)) ** bx
-    ) - log(-(tavg - tfreez) / tavg)
+    ) - log(-(tavg - constants.TICE0) / tavg)
 
     denom = 2.0 * ck / (1.0 + ck * swl) + bx / (smc - swl)
     swlk = swl - df / denom
@@ -592,7 +595,7 @@ def frh2o_fn(psis, bexp, tavg, smc, sh2o, smcmax):
 
     kcount = True
 
-    if tavg <= (tfreez - 1.0e-3):
+    if tavg <= (constants.TICE0 - 1.0e-3):
         swl = smc - sh2o
         swl = max(min(swl, smc - 0.02), 0.0)
 
@@ -646,7 +649,7 @@ def snksrc_fn(psisat, bexp, tavg, smc, sh2o, smcmax, qtot, dt, dz):
 
     # estimate the new amount of liquid water
     dh2o = 1.0000e3
-    xh2o = sh2o + qtot * dt / (dh2o * lsubf * dz)
+    xh2o = sh2o + qtot * dt / (dh2o * physcons.LSUBF * dz)
 
     if xh2o < sh2o and xh2o < free:
         if free > sh2o:
@@ -660,7 +663,7 @@ def snksrc_fn(psisat, bexp, tavg, smc, sh2o, smcmax, qtot, dt, dz):
             xh2o = free
 
     xh2o = max(min(xh2o, smc), 0.0)
-    tsnsr = -dh2o * lsubf * dz * (xh2o - sh2o) / dt
+    tsnsr = -dh2o * physcons.LSUBF * dz * (xh2o - sh2o) / dt
     sh2o = xh2o
 
     return tsnsr, sh2o
@@ -825,10 +828,10 @@ def hrt_fn(
 
     # calc the heat capacity of the top soil layer
     hcpct = (
-        sh2o0 * cph2o2
+        sh2o0 * physcons.CPH2O2
         + (1.0 - smcmax) * csoil_loc
-        + (smcmax - smc0) * cp2
-        + (smc0 - sh2o0) * cpice1
+        + (smcmax - smc0) * physcons.CP2
+        + (smc0 - sh2o0) * physcons.CPICE1
     )
 
     # calc the matrix coefficients ai, bi, and ci for the top layer
@@ -855,7 +858,7 @@ def hrt_fn(
 
     df1k = df1
 
-    if sice > 0 or tsurf < tfreez or stc0 < tfreez or tbk < tfreez:
+    if sice > 0 or tsurf < constants.TICE0 or stc0 < constants.TICE0 or tbk < constants.TICE0:
         ### ************ tmpavg *********** ###
         dz = -zsoil0
         tavg = tmpavg_fn(tsurf, stc0, tbk, dz)
@@ -867,10 +870,10 @@ def hrt_fn(
 
     # 2. Layer
     hcpct = (
-        sh2o1 * cph2o2
+        sh2o1 * physcons.CPH2O2
         + (1.0 - smcmax) * csoil_loc
-        + (smcmax - smc1) * cp2
-        + (smc1 - sh2o1) * cpice1
+        + (smcmax - smc1) * physcons.CP2
+        + (smc1 - sh2o1) * physcons.CPICE1
     )
 
     # calculate thermal diffusivity for each layer
@@ -894,7 +897,7 @@ def hrt_fn(
     qtot = -1.0 * denom * rhsts1
     sice = smc1 - sh2o1
 
-    if sice > 0 or tbk < tfreez or stc1 < tfreez or tbk1 < tfreez:
+    if sice > 0 or tbk < constants.TICE0 or stc1 < constants.TICE0 or tbk1 < constants.TICE0:
         ### ************ tmpavg *********** ###
         dz = zsoil0 - zsoil1
         tavg = tmpavg_fn(tbk, stc1, tbk1, dz)
@@ -914,10 +917,10 @@ def hrt_fn(
 
     # 3. Layer
     hcpct = (
-        sh2o2 * cph2o2
+        sh2o2 * physcons.CPH2O2
         + (1.0 - smcmax) * csoil_loc
-        + (smcmax - smc2) * cp2
-        + (smc2 - sh2o2) * cpice1
+        + (smcmax - smc2) * physcons.CP2
+        + (smc2 - sh2o2) * physcons.CPICE1
     )
 
     # calculate thermal diffusivity for each layer
@@ -941,7 +944,7 @@ def hrt_fn(
     qtot = -1.0 * denom * rhsts2
     sice = smc2 - sh2o2
 
-    if sice > 0 or tbk < tfreez or stc2 < tfreez or tbk1 < tfreez:
+    if sice > 0 or tbk < constants.TICE0 or stc2 < constants.TICE0 or tbk1 < constants.TICE0:
         ### ************ tmpavg *********** ###
         dz = zsoil1 - zsoil2
         tavg = tmpavg_fn(tbk, stc2, tbk1, dz)
@@ -961,10 +964,10 @@ def hrt_fn(
 
     # 4. Layer
     hcpct = (
-        sh2o3 * cph2o2
+        sh2o3 * physcons.CPH2O2
         + (1.0 - smcmax) * csoil_loc
-        + (smcmax - smc3) * cp2
-        + (smc3 - sh2o3) * cpice1
+        + (smcmax - smc3) * physcons.CP2
+        + (smc3 - sh2o3) * physcons.CPICE1
     )
 
     # calculate thermal diffusivity for each layer
@@ -986,7 +989,7 @@ def hrt_fn(
     qtot = -1.0 * denom * rhsts3
     sice = smc3 - sh2o3
 
-    if sice > 0 or tbk < tfreez or stc3 < tfreez or tbk1 < tfreez:
+    if sice > 0 or tbk < constants.TICE0 or stc3 < constants.TICE0 or tbk1 < constants.TICE0:
         ### ************ tmpavg *********** ###
         dz = zsoil2 - zsoil3
         tavg = tmpavg_fn(tbk, stc3, tbk1, dz)
@@ -1761,8 +1764,8 @@ def snowpack_fn(esd, dtsec, tsnow, tsoil, snowh, sndens):
     snowhc = snowh * 100.0
     esdc = esd * 100.0
     dthr = dtsec / 3600.0
-    tsnowc = tsnow - tfreez
-    tsoilc = tsoil - tfreez
+    tsnowc = tsnow - constants.TICE0
+    tsoilc = tsoil - constants.TICE0
 
     # calculating of average temperature of snow pack
     tavgc = 0.5 * (tsnowc + tsoilc)
@@ -1775,7 +1778,8 @@ def snowpack_fn(esd, dtsec, tsnow, tsoil, snowh, sndens):
 
     bfac = dthr * c1 * exp(0.08 * tavgc - c2 * sndens)
 
-    # number of terms of polynomial expansion and its accuracy is governed by iteration limit "ipol".
+    # number of terms of polynomial expansion and its accuracy
+    # is governed by iteration limit "ipol".
     ipol = 4
     # hardcode loop for ipol = 4
     pexp = 0.0
@@ -2044,7 +2048,7 @@ def nopac_fn(
         df1 *= exp(sbeta * shdfac)
 
     # compute intermediate terms passed to routine hrt
-    yynum = fdown - sfcems * sigma1 * t24
+    yynum = fdown - sfcems * physcons.SIGMA1 * t24
     yy = sfctmp + (yynum / rch + th2 - sfctmp - beta * epsca) / rr
     zz1 = df1 / (-0.5 * zsoil0 * rch * rr) + 1.0
 
@@ -2240,7 +2244,7 @@ def snopac_fn(
         # dewfall (=frostfall in this case).
         dew = -etp1
         esnow2 = etp1 * dt
-        etanrg = etp * ((1.0 - sncovr) * lsubc + sncovr * lsubs)
+        etanrg = etp * ((1.0 - sncovr) * physcons.LSUBC + sncovr * physcons.LSUBS)
 
     else:
         # upward moisture flux
@@ -2249,7 +2253,7 @@ def snopac_fn(
             esnow = etp
             esnow1 = esnow * 0.001
             esnow2 = esnow1 * dt
-            etanrg = esnow * lsubs
+            etanrg = esnow * physcons.LSUBS
 
         else:
             # for non-glacial land case
@@ -2299,16 +2303,19 @@ def snopac_fn(
             esnow = etp * sncovr
             esnow1 = esnow * 0.001
             esnow2 = esnow1 * dt
-            etanrg = esnow * lsubs + etns * lsubc
+            etanrg = esnow * physcons.LSUBS + etns * physcons.LSUBC
 
-    # if precip is falling, calculate heat flux from snow sfc to newly accumulating precip
+    # if precip is falling, calculate heat flux from snow sfc
+    # to newly accumulating precip
     flx1 = 0.0
     if snowng:
         # fractional snowfall/rainfall
-        flx1 = (cpice * ffrozp + cph2o1 * (1.0 - ffrozp)) * prcp * (t1 - sfctmp)
+        flx1 = (physcons.CPICE * ffrozp + physcons.CPH2O1 * (
+            1.0 - ffrozp
+        )) * prcp * (t1 - sfctmp)
 
     elif prcp > 0.0:
-        flx1 = cph2o1 * prcp * (t1 - sfctmp)
+        flx1 = physcons.CPH2O1 * prcp * (t1 - sfctmp)
 
     # calculate an 'effective snow-grnd sfc temp' based on heat fluxes between
     # the snow pack and the soil and on net radiation.
@@ -2316,7 +2323,7 @@ def snopac_fn(
     dtot = snowh + dsoil
     denom = 1.0 + df1 / (dtot * rr * rch)
     t12a = (
-        (fdown - flx1 - flx2 - sfcems * sigma1 * t24) / rch
+        (fdown - flx1 - flx2 - sfcems * physcons.SIGMA1 * t24) / rch
         + th2
         - sfctmp
         - etanrg / rch
@@ -2324,7 +2331,7 @@ def snopac_fn(
     t12b = df1 * stc0 / (dtot * rr * rch)
     t12 = (sfctmp + t12a + t12b) / denom
 
-    if t12 <= tfreez:  # no snow melt will occur.
+    if t12 <= constants.TICE0:  # no snow melt will occur.
 
         # set the skin temp to this effective temp
         t1 = t12
@@ -2337,7 +2344,7 @@ def snopac_fn(
         snomlt = 0.0
 
     else:  # snow melt will occur.
-        t1 = tfreez * max(0.01, sncovr ** snoexp) + t12 * (
+        t1 = constants.TICE0 * max(0.01, sncovr ** snoexp) + t12 * (
             1.0 - max(0.01, sncovr ** snoexp)
         )
         ssoil = df1 * (t1 - stc0) / dtot
@@ -2357,11 +2364,11 @@ def snopac_fn(
             t14 = t1 * t1
             t14 = t14 * t14
 
-            flx3 = fdown - flx1 - flx2 - sfcems * sigma1 * t14 - ssoil - seh - etanrg
+            flx3 = fdown - flx1 - flx2 - sfcems * physcons.SIGMA1 * t14 - ssoil - seh - etanrg
             if flx3 <= 0.0:
                 flx3 = 0.0
 
-            ex = flx3 * 0.001 / lsubf
+            ex = flx3 * 0.001 / physcons.LSUBF
 
             # snowmelt reduction
             snomlt = ex * dt
@@ -2372,7 +2379,7 @@ def snopac_fn(
             else:
                 # snowmelt exceeds snow depth
                 ex = sneqv / dt
-                flx3 = ex * 1000.0 * lsubf
+                flx3 = ex * 1000.0 * physcons.LSUBF
                 snomlt = sneqv
                 sneqv = 0.0
 
@@ -2603,7 +2610,8 @@ def sflx(
     shdfac,
     snowh,
 ):
-    # --- ... subprograms called: redprm, snow_new, csnow, snfrac, alcalc, tdfcnd, snowz0, sfcdif, penman, canres, nopac, snopac.
+    # --- ... subprograms called: redprm, snow_new, csnow, snfrac,
+    # alcalc, tdfcnd, snowz0, sfcdif, penman, canres, nopac, snopac.
     # initialization
 
     shdfac0 = shdfac
@@ -2690,7 +2698,7 @@ def sflx(
     # if it's prcping and the air temp is warmer than 0 c, but the grnd
     # temp is colder than 0 c, freezing rain is presumed to be falling.
     snowng = (prcp > 0.0) and (ffrozp > 0.0)
-    frzgra = (prcp > 0.0) and (ffrozp <= 0.0) and (t1 <= tfreez)
+    frzgra = (prcp > 0.0) and (ffrozp <= 0.0) and (t1 <= constants.TICE0)
 
     # if either prcp flag is set, determine new snowfall (converting
     # prcp rate from kg m-2 s-1 to a liquid equiv snow depth in meters)
@@ -2736,7 +2744,7 @@ def sflx(
         else:
             # determine snow fraction cover.
             # determine surface albedo modification due to snowdepth state.
-            sncovr = snfrac_fn(sneqv, snup, salp)
+            sncovr = snfrac_fn(sneqv, snup, physcons.SALP)
             albedo = alcalc_fn(alb, snoalb, sncovr)
 
     # thermal conductivity for sea-ice case, glacial-ice case
@@ -2748,9 +2756,9 @@ def sflx(
         # of the thermal diffusivity.
         df1 = tdfcnd_fn(smc0, quartz, smcmax, sh2o0)
         if ivegsrc == 1 and vegtyp == 12:
-            df1 = 3.24 * (1.0 - shdfac) + shdfac * df1 * exp(sbeta * shdfac)
+            df1 = 3.24 * (1.0 - shdfac) + shdfac * df1 * exp(physcons.SBETA * shdfac)
         else:
-            df1 = df1 * exp(sbeta * shdfac)
+            df1 = df1 * exp(physcons.SBETA * shdfac)
 
     dsoil = -0.5 * zsoil0
 
@@ -2780,8 +2788,8 @@ def sflx(
     fdown = swnet + lwdn
 
     # enhance cp as a function of z0 to mimic heat storage
-    cpx = cp
-    cpx1 = cp1
+    cpx = constants.CP_AIR
+    cpx1 = physcons.CP1
     cpfac = 1.0
 
     # call penman subroutine to calculate potential evaporation (etp),
@@ -2850,8 +2858,8 @@ def sflx(
             zsoil2,
             zsoil3,
             rsmin,
-            rsmax,
-            topt,
+            physcons.RSMAX,
+            physcons.TOPT,
             rgl,
             hs,
             xlai,
@@ -2903,10 +2911,10 @@ def sflx(
             smcwlt,
             smcref,
             smcdry,
-            cmcmax,
+            physcons.CMCMAX,
             dt,
             shdfac,
-            sbeta,
+            physcons.SBETA,
             sfctmp,
             sfcems,
             t24,
@@ -2917,7 +2925,7 @@ def sflx(
             pc,
             rch,
             rr,
-            cfactr,
+            physcons.CFACTR,
             slope,
             kdt,
             frzx,
@@ -2928,15 +2936,15 @@ def sflx(
             zsoil3,
             dksat,
             dwsat,
-            zbot,
+            physcons.ZBOT,
             ice,
             rtdis0,
             rtdis1,
             rtdis2,
             rtdis3,
             quartz,
-            fxexp,
-            csoil,
+            physcons.FXEXP,
+            physcons.CSOIL,
             ivegsrc,
             vegtyp,
             cmc,
@@ -3003,7 +3011,7 @@ def sflx(
             smcwlt,
             smcref,
             smcdry,
-            cmcmax,
+            physcons.CMCMAX,
             dt,
             df1,
             sfcems,
@@ -3016,7 +3024,7 @@ def sflx(
             pc,
             rch,
             rr,
-            cfactr,
+            physcons.CFACTR,
             slope,
             kdt,
             frzx,
@@ -3027,7 +3035,7 @@ def sflx(
             zsoil3,
             dwsat,
             dksat,
-            zbot,
+            physcons.ZBOT,
             shdfac,
             ice,
             rtdis0,
@@ -3035,8 +3043,8 @@ def sflx(
             rtdis2,
             rtdis3,
             quartz,
-            fxexp,
-            csoil,
+            physcons.FXEXP,
+            physcons.CSOIL,
             flx2,
             snowng,
             ffrozp,
@@ -3065,21 +3073,21 @@ def sflx(
         )
 
     # prepare sensible heat (h) for return to parent model
-    sheat = -(ch * cp1 * sfcprs) / (rd1 * t2v) * (th2 - t1)
+    sheat = -(ch * physcons.CP1 * sfcprs) / (physcons.RD1 * t2v) * (th2 - t1)
 
     # convert units and/or sign of total evap (eta), potential evap (etp),
     # subsurface heat flux (s), and runoffs for what parent model expects
     # convert eta from kg m-2 s-1 to w m-2
-    edir = edir * lsubc
-    ec = ec * lsubc
-    et_0 = et_0 * lsubc
-    et_1 = et_1 * lsubc
-    et_2 = et_2 * lsubc
-    et_3 = et_3 * lsubc
+    edir = edir * physcons.LSUBC
+    ec = ec * physcons.LSUBC
+    et_0 = et_0 * physcons.LSUBC
+    et_1 = et_1 * physcons.LSUBC
+    et_2 = et_2 * physcons.LSUBC
+    et_3 = et_3 * physcons.LSUBC
 
-    ett = ett * lsubc
-    esnow = esnow * lsubs
-    etp = etp * ((1.0 - sncovr) * lsubc + sncovr * lsubs)
+    ett = ett * physcons.LSUBC
+    esnow = esnow * physcons.LSUBS
+    etp = etp * ((1.0 - sncovr) * physcons.LSUBC + sncovr * physcons.LSUBS)
 
     # esnow = 0.0
     if etp > 0.0:
@@ -3283,9 +3291,9 @@ def sfc_drv(
     with computation(PARALLEL), interval(...):
 
         # set constant parameters
-        cpinv = 1.0 / cp
-        hvapi = 1.0 / hvap
-        elocp = hvap / cp
+        cpinv = 1.0 / constants.CP_AIR
+        hvapi = 1.0 / constants.HLV
+        elocp = physcons.HOCP
         rhoh2o = 1000.0
         a2 = 17.2693882
         a3 = 273.16
@@ -3335,9 +3343,9 @@ def sfc_drv(
 
             q0 = max(q1, 1.0e-8)
             theta1 = t1 * prslki
-            rho = prsl1 / (rd * t1 * (1.0 + rvrdm1 * q0))
+            rho = prsl1 / (constants.RDGAS * t1 * (1.0 + constants.ZVIR * q0))
             qs1 = fpvs(t1)
-            qs1 = max(eps * qs1 / (prsl1 + epsm1 * qs1), 1.0e-8)
+            qs1 = max(constants.EPS * qs1 / (prsl1 + (constants.EPS - 1) * qs1), 1.0e-8)
 
             q0 = min(qs1, q0)
 
@@ -3527,7 +3535,7 @@ def sfc_drv(
             zorl = z0 * 100.0
 
             # compute qsurf
-            rch = rho * cp * ch * wind
+            rch = rho * constants.CP_AIR * ch * wind
             qsurf = q1 + evap / (elocp * rch)
             tem = 1.0 / rho
             hflx = hflx * tem * cpinv
