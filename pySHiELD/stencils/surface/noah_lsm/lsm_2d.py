@@ -561,7 +561,7 @@ def tmpavg_fn(tup, tm, tdn, dz):
 @gtscript.function
 def frh2o_loop_fn(psisat, ck, swl, smcmax, smc, bx, tavg, error):
     df = log(
-        (psisat * gs2 / lsubf)
+        (psisat * physcons.GS2 / physcons.LSUBF)
         * ((1.0 + ck * swl) ** 2.0)
         * (smcmax / (smc - swl)) ** bx
     ) - log(-(tavg - constants.TICE0) / tavg)
