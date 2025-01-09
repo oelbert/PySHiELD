@@ -3,6 +3,7 @@ from ndsl.dsl.stencil import GridIndexing
 from ndsl.initialization.sizer import SubtileGridSizer
 from pySHiELD._config import LSMConfig
 from pySHiELD.stencils.surface.noah_lsm.lsm_driver import NoahLSM
+from pySHiELD.stencils.surface.noah_lsm.lsm_2d import NoahLSM_2D
 from tests.savepoint.translate.translate_physics import TranslatePhysicsFortranData2Py
 
 
@@ -159,7 +160,7 @@ class TranslateNoahLSM_iter1(TranslatePhysicsFortranData2Py):
             lheatstrg=inputs.pop("lheatstrg"),
             pertvegf=inputs.pop("pertvegf"),
         )
-        self.compute_func = NoahLSM(
+        self.compute_func = NoahLSM_2D(
             self.stencil_factory,
             self.quantity_factory,
             config,
