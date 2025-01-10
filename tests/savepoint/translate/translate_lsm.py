@@ -95,7 +95,6 @@ class TranslateNoahLSM_iter1(TranslatePhysicsFortranData2Py):
         }
         self.in_vars["parameters"] = [
             "ivegsrc",
-            "km",
             "lheatstrg",
             "pertvegf",
             "isot",
@@ -154,7 +153,7 @@ class TranslateNoahLSM_iter1(TranslatePhysicsFortranData2Py):
         inputs.pop("shdmin")
         inputs.pop("shdmax")
         config = LSMConfig(
-            lsoil=inputs.pop("km"),
+            lsoil=4,
             isot=inputs.pop("isot"),
             ivegsrc=inputs.pop("ivegsrc"),
             lheatstrg=inputs.pop("lheatstrg"),
