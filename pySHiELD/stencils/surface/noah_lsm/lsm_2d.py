@@ -3338,7 +3338,7 @@ def sfc_drv(
             snowc = 0.0
             snohf = 0.0
 
-            q0 = max(q1, 1.0e-8)
+            q0 = max(q1[0, 0, 0][0], 1.0e-8)
             theta1 = t1 * prslki
             rho = prsl1 / (constants.RDGAS * t1 * (1.0 + constants.ZVIR * q0))
             qs1 = fpvs(t1)
@@ -3533,7 +3533,7 @@ def sfc_drv(
 
             # compute qsurf
             rch = rho * constants.CP_AIR * ch * wind
-            qsurf = q1 + evap / (elocp * rch)
+            qsurf = [0, 0, 0][0] + evap / (elocp * rch)
             tem = 1.0 / rho
             hflx = hflx * tem * cpinv
             evap = evap * tem * hvapi
