@@ -3224,7 +3224,6 @@ def sfc_drv(
     flag_guess: BoolFieldIJ,
     bexppert: FloatFieldIJ,
     xlaipert: FloatFieldIJ,
-    vegfpert: FloatFieldIJ,
     weasd: FloatFieldIJ,
     snwdph: FloatFieldIJ,
     tskin: FloatFieldIJ,
@@ -3858,7 +3857,6 @@ class NoahLSM_2D:
         smcwlt2: FloatFieldIJ,
         smcref2: FloatFieldIJ,
         wet1: FloatFieldIJ,
-        vegfpert: FloatFieldIJ,
     ):
         """
         !  ====================  defination of variables  ====================  !
@@ -3968,7 +3966,6 @@ class NoahLSM_2D:
             flag_guess,
             bexppert,
             xlaipert,
-            vegfpert,
             weasd,
             snwdph,
             tskin,
