@@ -157,8 +157,8 @@ class TranslateNoahLSM_iter1(TranslatePhysicsFortranData2Py):
         config = LSMConfig(
             lsoil=4,
             isot=inputs.pop("isot"),
-            ivegsrc=inputs["ivegsrc"],
-            lheatstrg=inputs["lheatstrg"],
+            ivegsrc=inputs.pop("ivegsrc"),
+            lheatstrg=inputs.pop("lheatstrg"),
             pertvegf=inputs.pop("pertvegf"),
         )
         self.compute_func = NoahLSM_2D(
@@ -170,7 +170,7 @@ class TranslateNoahLSM_iter1(TranslatePhysicsFortranData2Py):
             inputs.pop("soil_data"),
             inputs.pop("slope_data"),
             inputs.pop("vegfrac_data"),
-            inputs["delt"],
+            inputs.pop("delt"),
         )
         self.compute_func(**inputs)
         return self.slice_output(inputs)
