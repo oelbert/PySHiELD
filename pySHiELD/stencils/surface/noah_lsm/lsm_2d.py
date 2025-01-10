@@ -3286,9 +3286,7 @@ def sfc_drv(
     xlai: FloatFieldIJ,
     slope: FloatFieldIJ,
 ):
-    from __gtscript__ import PARALLEL, computation, interval
-
-    with computation(PARALLEL), interval(...):
+    with computation(FORWARD), interval(...):
 
         # set constant parameters
         cpinv = 1.0 / constants.CP_AIR
