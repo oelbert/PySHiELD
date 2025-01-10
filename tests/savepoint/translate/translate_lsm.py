@@ -42,7 +42,7 @@ class TranslateNoahLSM_iter1(TranslatePhysicsFortranData2Py):
             "vegfrac_data": {"serialname": "vegfpert", "shield": True},
             "sfcemis": {"shield": True},
             "dlwflx": {"shield": True},
-            "dswflx": {"serialname": "dswsfc", "shield": True},
+            "dswsfc": {"serialname": "dswsfc", "shield": True},
             "snet": {"shield": True},
             "tg3": {"shield": True},
             "cm": {"shield": True},
