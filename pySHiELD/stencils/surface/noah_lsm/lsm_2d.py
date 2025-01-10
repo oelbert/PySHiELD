@@ -3285,7 +3285,7 @@ def sfc_drv(
     xlai: FloatFieldIJ,
     slope: FloatFieldIJ,
 ):
-    with computation(FORWARD), interval(...):
+    with computation(FORWARD), interval(0, 1):
 
         # set constant parameters
         cpinv = 1.0 / constants.CP_AIR
