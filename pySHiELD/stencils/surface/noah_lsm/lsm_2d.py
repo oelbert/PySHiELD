@@ -2664,7 +2664,10 @@ def sflx(
     # lower bound (0.01 m for sea-ice, 0.10 m for glacial-ice), then
     # set at lower bound and store the source increment in subsurface
     # runoff/baseflow (runoff2).
-    if (ice == -1) and (sneqv < 0.10):
+    if (ice == 1) and (sneqv < 0.10):
+        sneqv = 0.10
+        snowh = 1.00
+    elif (ice == -1) and (sneqv < 0.10):
         # TODO: check if it is called
         sneqv = 0.10
         snowh = 1.00
