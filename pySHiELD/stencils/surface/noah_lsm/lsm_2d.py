@@ -3533,7 +3533,7 @@ def sfc_drv(
 
             # compute qsurf
             rch = rho * constants.CP_AIR * ch * wind
-            qsurf = [0, 0, 0][0] + evap / (elocp * rch)
+            qsurf = q1[0, 0, 0][0] + evap / (elocp * rch)
             tem = 1.0 / rho
             hflx = hflx * tem * cpinv
             evap = evap * tem * hvapi
