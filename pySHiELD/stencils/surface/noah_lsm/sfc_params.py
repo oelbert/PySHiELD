@@ -16,8 +16,40 @@ ZSOIL_DATA = np.array([-0.1, -0.4, -1.0, -2.0])
 
 # Vegetation tables, assuming ivet = 1 from Fortran
 
-SLOPE_DATA = np.zeros(30)
-SLOPE_DATA[:20] = 1.0
+SLOPE_DATA = np.array(
+    [
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+    ]
+)
 
 SNUPX = np.array(
     [
@@ -242,7 +274,7 @@ NROOT_DATA = np.array(
         3,
         2,
         3,
-        1,
+        0,
         3,
         3,
         2,

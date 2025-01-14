@@ -324,7 +324,7 @@ def snow_new_fn(sfctmp, sn_new, snowh, sndens):
     # conversion into simulation units
     snowhc = snowh * 100.0
     newsnc = sn_new * 100.0
-    tempc = sfctmp - constants.TICE0
+    tempc = sfctmp - constants.TFREEZE
 
     # calculating new snowfall density
     if tempc <= -15.0:
@@ -517,42 +517,42 @@ def tmpavg_fn(tup, tm, tdn, dz):
 
     dzh = dz * 0.5
 
-    if tup < constants.TICE0:
-        if tm < constants.TICE0:
-            if tdn < constants.TICE0:
+    if tup < constants.TFREEZE:
+        if tm < constants.TFREEZE:
+            if tdn < constants.TFREEZE:
                 tavg = (tup + 2.0 * tm + tdn) / 4.0
             else:
-                x0 = (constants.TICE0 - tm) * dzh / (tdn - tm)
+                x0 = (constants.TFREEZE - tm) * dzh / (tdn - tm)
                 tavg = (
                     0.5 * (
-                        tup * dzh + tm * (dzh + x0) + constants.TICE0 * (2.0 * dzh - x0)
+                        tup * dzh + tm * (dzh + x0) + constants.TFREEZE * (2.0 * dzh - x0)
                     ) / dz
                 )
         else:
-            if tdn < constants.TICE0:
-                xup = (constants.TICE0 - tup) * dzh / (tm - tup)
-                xdn = dzh - (constants.TICE0 - tm) * dzh / (tdn - tm)
+            if tdn < constants.TFREEZE:
+                xup = (constants.TFREEZE - tup) * dzh / (tm - tup)
+                xdn = dzh - (constants.TFREEZE - tm) * dzh / (tdn - tm)
                 tavg = (
                     0.5 * (
-                        tup * xup + constants.TICE0 * (2.0 * dz - xup - xdn) + tdn * xdn
+                        tup * xup + constants.TFREEZE * (2.0 * dz - xup - xdn) + tdn * xdn
                     ) / dz
                 )
             else:
-                xup = (constants.TICE0 - tup) * dzh / (tm - tup)
-                tavg = 0.5 * (tup * xup + constants.TICE0 * (2.0 * dz - xup)) / dz
+                xup = (constants.TFREEZE - tup) * dzh / (tm - tup)
+                tavg = 0.5 * (tup * xup + constants.TFREEZE * (2.0 * dz - xup)) / dz
     else:
-        if tm < constants.TICE0:
-            if tdn < constants.TICE0:
-                xup = dzh - (constants.TICE0 - tup) * dzh / (tm - tup)
-                tavg = 0.5 * (constants.TICE0 * (dz - xup) + tm * (dzh + xup) + tdn * dzh) / dz
+        if tm < constants.TFREEZE:
+            if tdn < constants.TFREEZE:
+                xup = dzh - (constants.TFREEZE - tup) * dzh / (tm - tup)
+                tavg = 0.5 * (constants.TFREEZE * (dz - xup) + tm * (dzh + xup) + tdn * dzh) / dz
             else:
-                xup = dzh - (constants.TICE0 - tup) * dzh / (tm - tup)
-                xdn = (constants.TICE0 - tm) * dzh / (tdn - tm)
-                tavg = 0.5 * (constants.TICE0 * (2.0 * dz - xup - xdn) + tm * (xup + xdn)) / dz
+                xup = dzh - (constants.TFREEZE - tup) * dzh / (tm - tup)
+                xdn = (constants.TFREEZE - tm) * dzh / (tdn - tm)
+                tavg = 0.5 * (constants.TFREEZE * (2.0 * dz - xup - xdn) + tm * (xup + xdn)) / dz
         else:
-            if tdn < constants.TICE0:
-                xdn = dzh - (constants.TICE0 - tm) * dzh / (tdn - tm)
-                tavg = (constants.TICE0 * (dz - xdn) + 0.5 * (constants.TICE0 + tdn) * xdn) / dz
+            if tdn < constants.TFREEZE:
+                xdn = dzh - (constants.TFREEZE - tm) * dzh / (tdn - tm)
+                tavg = (constants.TFREEZE * (dz - xdn) + 0.5 * (constants.TFREEZE + tdn) * xdn) / dz
             else:
                 tavg = (tup + 2.0 * tm + tdn) / 4.0
     return tavg
@@ -564,7 +564,7 @@ def frh2o_loop_fn(psisat, ck, swl, smcmax, smc, bx, tavg, error):
         (psisat * physcons.GS2 / physcons.LSUBF)
         * ((1.0 + ck * swl) ** 2.0)
         * (smcmax / (smc - swl)) ** bx
-    ) - log(-(tavg - constants.TICE0) / tavg)
+    ) - log(-(tavg - constants.TFREEZE) / tavg)
 
     denom = 2.0 * ck / (1.0 + ck * swl) + bx / (smc - swl)
     swlk = swl - df / denom
@@ -595,7 +595,7 @@ def frh2o_fn(psis, bexp, tavg, smc, sh2o, smcmax):
 
     kcount = True
 
-    if tavg <= (constants.TICE0 - 1.0e-3):
+    if tavg <= (constants.TFREEZE - 1.0e-3):
         swl = smc - sh2o
         swl = max(min(swl, smc - 0.02), 0.0)
 
@@ -858,7 +858,7 @@ def hrt_fn(
 
     df1k = df1
 
-    if sice > 0 or tsurf < constants.TICE0 or stc0 < constants.TICE0 or tbk < constants.TICE0:
+    if sice > 0 or tsurf < constants.TFREEZE or stc0 < constants.TFREEZE or tbk < constants.TFREEZE:
         ### ************ tmpavg *********** ###
         dz = -zsoil0
         tavg = tmpavg_fn(tsurf, stc0, tbk, dz)
@@ -897,7 +897,7 @@ def hrt_fn(
     qtot = -1.0 * denom * rhsts1
     sice = smc1 - sh2o1
 
-    if sice > 0 or tbk < constants.TICE0 or stc1 < constants.TICE0 or tbk1 < constants.TICE0:
+    if sice > 0 or tbk < constants.TFREEZE or stc1 < constants.TFREEZE or tbk1 < constants.TFREEZE:
         ### ************ tmpavg *********** ###
         dz = zsoil0 - zsoil1
         tavg = tmpavg_fn(tbk, stc1, tbk1, dz)
@@ -944,7 +944,7 @@ def hrt_fn(
     qtot = -1.0 * denom * rhsts2
     sice = smc2 - sh2o2
 
-    if sice > 0 or tbk < constants.TICE0 or stc2 < constants.TICE0 or tbk1 < constants.TICE0:
+    if sice > 0 or tbk < constants.TFREEZE or stc2 < constants.TFREEZE or tbk1 < constants.TFREEZE:
         ### ************ tmpavg *********** ###
         dz = zsoil1 - zsoil2
         tavg = tmpavg_fn(tbk, stc2, tbk1, dz)
@@ -989,7 +989,7 @@ def hrt_fn(
     qtot = -1.0 * denom * rhsts3
     sice = smc3 - sh2o3
 
-    if sice > 0 or tbk < constants.TICE0 or stc3 < constants.TICE0 or tbk1 < constants.TICE0:
+    if sice > 0 or tbk < constants.TFREEZE or stc3 < constants.TFREEZE or tbk1 < constants.TFREEZE:
         ### ************ tmpavg *********** ###
         dz = zsoil2 - zsoil3
         tavg = tmpavg_fn(tbk, stc3, tbk1, dz)
@@ -1764,8 +1764,8 @@ def snowpack_fn(esd, dtsec, tsnow, tsoil, snowh, sndens):
     snowhc = snowh * 100.0
     esdc = esd * 100.0
     dthr = dtsec / 3600.0
-    tsnowc = tsnow - constants.TICE0
-    tsoilc = tsoil - constants.TICE0
+    tsnowc = tsnow - constants.TFREEZE
+    tsoilc = tsoil - constants.TFREEZE
 
     # calculating of average temperature of snow pack
     tavgc = 0.5 * (tsnowc + tsoilc)
@@ -2331,7 +2331,7 @@ def snopac_fn(
     t12b = df1 * stc0 / (dtot * rr * rch)
     t12 = (sfctmp + t12a + t12b) / denom
 
-    if t12 <= constants.TICE0:  # no snow melt will occur.
+    if t12 <= constants.TFREEZE:  # no snow melt will occur.
 
         # set the skin temp to this effective temp
         t1 = t12
@@ -2344,7 +2344,7 @@ def snopac_fn(
         snomlt = 0.0
 
     else:  # snow melt will occur.
-        t1 = constants.TICE0 * max(0.01, sncovr ** snoexp) + t12 * (
+        t1 = constants.TFREEZE * max(0.01, sncovr ** snoexp) + t12 * (
             1.0 - max(0.01, sncovr ** snoexp)
         )
         ssoil = df1 * (t1 - stc0) / dtot
@@ -2701,7 +2701,7 @@ def sflx(
     # if it's prcping and the air temp is warmer than 0 c, but the grnd
     # temp is colder than 0 c, freezing rain is presumed to be falling.
     snowng = (prcp > 0.0) and (ffrozp > 0.0)
-    frzgra = (prcp > 0.0) and (ffrozp <= 0.0) and (t1 <= constants.TICE0)
+    frzgra = (prcp > 0.0) and (ffrozp <= 0.0) and (t1 <= constants.TFREEZE)
 
     # if either prcp flag is set, determine new snowfall (converting
     # prcp rate from kg m-2 s-1 to a liquid equiv snow depth in meters)
