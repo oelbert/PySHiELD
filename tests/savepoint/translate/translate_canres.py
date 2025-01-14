@@ -101,6 +101,45 @@ class TranslateCanres(TranslatePhysicsFortranData2Py):
         )
         super().__init__(grid, namelist, surface_factory)
         self.stencil_factory = surface_factory
+        self.in_vars["data_vars"] = {
+            "nroot": {"shield": True},
+            "swdn": {"shield": True},
+            "ch": {"shield": True},
+            "q2": {"shield": True},
+            "q2sat": {"shield": True},
+            "dqsdt2": {"shield": True},
+            "sfctmp": {"shield": True},
+            "sfcprs": {"shield": True},
+            "sfcems": {"shield": True},
+            "sh2o": {"shield": True},
+            "smcwlt": {"shield": True},
+            "smcref": {"shield": True},
+            "zsoil": {"shield": True},
+            "rsmin": {"shield": True},
+            "rsmax": {"shield": True},
+            "topt": {"shield": True},
+            "rgl": {"shield": True},
+            "hs": {"shield": True},
+            "xlai": {"shield": True},
+            "rc": {"shield": True},
+            "pc": {"shield": True},
+            "rcs": {"shield": True},
+            "rct": {"shield": True},
+            "rcq": {"shield": True},
+            "rcsoil": {"shield": True},
+            "lsm_mask": {"shield": True},
+        }
+        self.in_vars["parameters"] = [
+            "nsoil",
+        ]
+        self.out_vars = {
+            "rc": {"shield": True},
+            "pc": {"shield": True},
+            "rcs": {"shield": True},
+            "rct": {"shield": True},
+            "rcq": {"shield": True},
+            "rcsoil": {"shield": True},
+        }
 
     def compute(self, inputs):
         self.make_storage_data_input_vars(inputs)

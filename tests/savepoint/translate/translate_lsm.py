@@ -341,7 +341,7 @@ class TranslateNoahLSM_2D(TranslatePhysicsFortranData2Py):
         return self.slice_output(inputs)
 
 
-class TranslateNoahLSM_iter1(TranslateNoahLSM_2D):
+class TranslateNoahLSM_iter1(TranslateNoahLSM_3D):
     def __init__(
         self,
         grid,
