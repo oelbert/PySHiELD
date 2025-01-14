@@ -6,7 +6,7 @@ import pySHiELD.constants as physcons
 
 # Assuming isot = ivet = 1
 
-BARE = 16
+BARE = 15
 DEFINED_SLOPE = 9
 DEFINED_SOIL = 19
 DEFINED_VEG = 20

@@ -270,7 +270,7 @@ def redprm_fn(
     # to adjust frzk parameter to actual soil type: frzk * frzfact
     frzx = physcons.FRZK * frzfact
 
-    if vegtyp + 1 == BARE:
+    if vegtyp == BARE:
         shdfac = 0.0
 
     # calculate root distribution.  present version assumes uniform

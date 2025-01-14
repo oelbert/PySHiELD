@@ -140,7 +140,7 @@ def prep_for_flux_calc(
             # get soil thermal diffuxivity/conductivity for top soil lyr, calc.
             df1 = tdfcnd(smc, quartz, smcmax, sh2o)
 
-            if (not lheatstrg) and (ivegsrc == 1) and (vegtype == 13):
+            if (not lheatstrg) and (ivegsrc == 1) and (vegtype == 12):
                 df1 = 3.24 * (1.0 - shdfac) + shdfac * df1 * exp(
                     physcons.SBETA * shdfac
                 )

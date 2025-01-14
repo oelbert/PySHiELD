@@ -598,15 +598,15 @@ def sflx_1(
             # initialization
             shdfac0 = shdfac
 
-            if ivegsrc == 2 and vegtype == 13:
+            if ivegsrc == 2 and vegtype == 12:
                 ice = -1
                 shdfac = 0.0
 
-            if ivegsrc == 1 and vegtype == 15:
+            if ivegsrc == 1 and vegtype == 14:
                 ice = -1
                 shdfac = 0.0
 
-            if ivegsrc == 1 and vegtype == 13:
+            if ivegsrc == 1 and vegtype == 12:
                 rsmin = 400.0 * (1 - shdfac0) + 40.0 * shdfac0
                 shdfac = shdfac0
                 smcmax = 0.45 * (1 - shdfac0) + smcmax * shdfac0
@@ -732,7 +732,7 @@ def sflx_1(
                 # (1998,jas, vol 55, 1209-1224), which requires the specifying
                 # the quartz content of the given soil class (see routine redprm)
                 df1 = tdfcnd(smc, quartz, smcmax, sh2o)
-                if (not lheatstrg) and (ivegsrc == 1) and (vegtype == 13):
+                if (not lheatstrg) and (ivegsrc == 1) and (vegtype == 12):
                     df1 = 3.24 * (1.0 - shdfac) + shdfac * df1 * exp(
                         physcons.SBETA * shdfac
                     )

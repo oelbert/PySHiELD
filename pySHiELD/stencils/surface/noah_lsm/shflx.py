@@ -342,7 +342,7 @@ def hrt(
             if surface_mask:
                 csoil_loc = physcons.CSOIL
 
-                if (not lheatstrg) and (ivegsrc == 1) and (vegtype == 13):
+                if (not lheatstrg) and (ivegsrc == 1) and (vegtype == 12):
                     csoil_loc = 3.0e6 * (1.0 - shdfac) + physcons.CSOIL * shdfac
 
                 # calc the heat capacity of the top soil layer
@@ -404,7 +404,7 @@ def hrt(
                 # calculate thermal diffusivity for each layer
                 df1k = tdfcnd(smc, quartz, smcmax, sh2o)
 
-                if (not lheatstrg) and (ivegsrc == 1) and (vegtype == 13):
+                if (not lheatstrg) and (ivegsrc == 1) and (vegtype == 12):
                     df1k = 3.24 * (1.0 - shdfac) + shdfac * df1k
 
                 tbk = stc + (stc[0, 0, 1] - stc) * (zsoil[-1] - zsoil) / (
@@ -454,7 +454,7 @@ def hrt(
                 # calculate thermal diffusivity for each layer
                 df1k = tdfcnd(smc, quartz, smcmax, sh2o)
 
-                if (not lheatstrg) and (ivegsrc == 1) and (vegtype == 13):
+                if (not lheatstrg) and (ivegsrc == 1) and (vegtype == 12):
                     df1k = 3.24 * (1.0 - shdfac) + shdfac * df1k
 
                 tbk = stc + (tbot - stc) * (zsoil[-1] - zsoil) / (
