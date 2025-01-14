@@ -37,9 +37,9 @@ class TranslateNoahLSM_3D(TranslatePhysicsFortranData2Py):
             "ps": {"shield": True},
             "t1": {"shield": True},
             "q1": {"shield": True},
-            "soil_data": {"serialname": "soiltyp", "shield": True},
-            "veg_data": {"serialname": "vegtype", "shield": True},
-            "vegfrac_data": {"serialname": "vegfpert", "shield": True},
+            "soil_data": {"serialname": "soiltyp", "shield": True, "index_variable": True},
+            "veg_data": {"serialname": "vegtype", "shield": True, "index_variable": True},
+            "vegfrac_data": {"serialname": "vegfpert", "shield": True, "index_variable": True},
             "sfcemis": {"shield": True},
             "dlwflx": {"shield": True},
             "dswflx": {"serialname": "dswsfc", "shield": True},
@@ -52,7 +52,7 @@ class TranslateNoahLSM_3D(TranslatePhysicsFortranData2Py):
             "zf": {"shield": True},
             "land_data": {"serialname": "land", "shield": True},
             "wind": {"shield": True},
-            "slope_data": {"serialname": "slopetyp", "shield": True},
+            "slope_data": {"serialname": "slopetyp", "shield": True, "index_variable": True},
             "shdmin": {"shield": True},
             "shdmax": {"shield": True},
             "snoalb": {"shield": True},
@@ -158,6 +158,7 @@ class TranslateNoahLSM_3D(TranslatePhysicsFortranData2Py):
             lheatstrg=inputs.pop("lheatstrg"),
             pertvegf=inputs.pop("pertvegf"),
         )
+        breakpoint()
         self.compute_func = NoahLSM(
             self.stencil_factory,
             self.quantity_factory,
@@ -202,9 +203,9 @@ class TranslateNoahLSM_2D(TranslatePhysicsFortranData2Py):
             "ps": {"shield": True},
             "t1": {"shield": True},
             "q1": {"shield": True},
-            "soil_data": {"serialname": "soiltyp", "shield": True},
-            "veg_data": {"serialname": "vegtype", "shield": True},
-            "vegfrac_data": {"serialname": "vegfpert", "shield": True},
+            "soil_data": {"serialname": "soiltyp", "shield": True, "index_variable": True},
+            "veg_data": {"serialname": "vegtype", "shield": True, "index_variable": True},
+            "vegfrac_data": {"serialname": "vegfpert", "shield": True, "index_variable": True},
             "sfcemis": {"shield": True},
             "dlwflx": {"shield": True},
             "dswsfc": {"serialname": "dswsfc", "shield": True},
@@ -217,7 +218,7 @@ class TranslateNoahLSM_2D(TranslatePhysicsFortranData2Py):
             "zf": {"shield": True},
             "land_data": {"serialname": "land", "shield": True},
             "wind": {"shield": True},
-            "slope_data": {"serialname": "slopetyp", "shield": True},
+            "slope_data": {"serialname": "slopetyp", "shield": True, "index_variable": True},
             "shdmin": {"shield": True},
             "shdmax": {"shield": True},
             "snoalb": {"shield": True},
@@ -326,6 +327,7 @@ class TranslateNoahLSM_2D(TranslatePhysicsFortranData2Py):
             lheatstrg=inputs.pop("lheatstrg"),
             pertvegf=inputs.pop("pertvegf"),
         )
+        breakpoint()
         self.compute_func = NoahLSM_2D(
             self.stencil_factory,
             self.quantity_factory,
@@ -341,7 +343,7 @@ class TranslateNoahLSM_2D(TranslatePhysicsFortranData2Py):
         return self.slice_output(inputs)
 
 
-class TranslateNoahLSM_iter1(TranslateNoahLSM_2D):
+class TranslateNoahLSM_iter1(TranslateNoahLSM_3D):
     def __init__(
         self,
         grid,
