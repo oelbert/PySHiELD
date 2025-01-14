@@ -1069,6 +1069,11 @@ class NoahLSM:
         assert config.ivegsrc == 1, f"ivegsrc !=1 not implemented, got {config.ivegsrc}"
         assert config.isot == 1, f"isot != 1 not implemented, got {config.isot}"
 
+        py_veg_data = veg_data - 1
+        py_soil_data = soil_data - 1
+        py_slope_data = slope_data - 1
+        py_vegfrac_data = vegfrac_data - 1
+
         def make_quantity() -> Quantity:
             return quantity_factory.zeros(
                 [X_DIM, Y_DIM, Z_DIM],
@@ -1122,16 +1127,16 @@ class NoahLSM:
             rtdis,
             land,
             ice,
-        ) = set_soil_veg(land_data, veg_data, soil_data, vegfrac_data, slope_data)
+        ) = set_soil_veg(land_data, py_veg_data, py_soil_data, py_vegfrac_data, py_slope_data)
 
         self._vegtype = quantity_factory.from_array(
-            veg_data, dims=[X_DIM, Y_DIM], units="",
+            py_veg_data, dims=[X_DIM, Y_DIM], units="",
         )
         self._soiltype = quantity_factory.from_array(
-            soil_data, dims=[X_DIM, Y_DIM], units="",
+            py_soil_data, dims=[X_DIM, Y_DIM], units="",
         )
         self._slopetype = quantity_factory.from_array(
-            slope_data, dims=[X_DIM, Y_DIM], units="",
+            py_slope_data, dims=[X_DIM, Y_DIM], units="",
         )
         self._land = quantity_factory.from_array(
             land, dims=[X_DIM, Y_DIM], units="",
