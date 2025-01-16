@@ -73,7 +73,10 @@ def start_smflx(
             # pcpdrp is the combined prcp1 and drip (from cmc) that goes into the soil
             pcpdrp = (1.0 - shdfac) * prcp1 + drip / dt
 
-            frozen_ground = (pcpdrp * dt) > (0.001 * 1000.0 * (-zsoil) * smcmax)
+            if (pcpdrp * dt) > (0.001 * 1000.0 * (-zsoil) * smcmax):
+                frozen_ground = True
+            else:
+                frozen_ground = False
 
     with computation(PARALLEL), interval(...):
         if surface_mask:
@@ -100,6 +103,8 @@ def srt(
     rhstt: FloatField,
     runoff1: FloatFieldIJ,
     runoff2: FloatFieldIJ,
+    sicemax: FloatFieldIJ,
+    dd: FloatFieldIJ,
     ai: FloatField,
     bi: FloatField,
     ci: FloatField,
@@ -168,13 +173,13 @@ def srt(
                     # frozen ground version
                     dt1 = dt / 86400.0
                     smcav = smcmax - smcwlt
-                    dd = -zsoil * (smcav - (sh2o + sice - smcwlt))
+                    dd = -zsoil * smcav
+                    dd = dd * (1.0 - (sh2o + sice - smcwlt) / smcav)
                     dice = -zsoil * sice
         with interval(1, None):
             if surface_mask:
                 if pcpdrp != 0:
-                    dd += (zsoil[-1] - zsoil) * (smcav - (sh2o + sice - smcwlt))
-
+                    dd += (zsoil[-1] - zsoil) * smcav * (1.0 - (sh2o + sice - smcwlt) / smcav)
                     dice += (zsoil[-1] - zsoil) * sice
 
     with computation(FORWARD):
@@ -315,6 +320,8 @@ class SoilMoistureFlux:
         self._pcpdrp = make_quantity_2d()
         self._rhsct = make_quantity_2d()
         self._trhsct = make_quantity_2d()
+        self._sicemax = make_quantity_2d()
+        self._dd = make_quantity_2d()
 
         self._start_smflx = stencil_factory.from_origin_domain(
             func=start_smflx,
@@ -485,6 +492,8 @@ class SoilMoistureFlux:
             self._rhstt,
             runoff1,
             runoff2,
+            self._sicemax,
+            self._dd,
             self._ai,
             self._bi,
             self._ci,
