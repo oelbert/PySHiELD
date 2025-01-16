@@ -3277,7 +3277,7 @@ def sfc_drv(
     smcref2: FloatFieldIJ,
     wet1: FloatFieldIJ,
     delt: float,
-    lheatstrg: int,
+    lheatstrg: bool,
     ivegsrc: int,
     bexp: FloatFieldIJ,
     dksat: FloatFieldIJ,
