@@ -285,8 +285,8 @@ class NOPAC:
         dew: FloatFieldIJ,
         flx1: FloatFieldIJ,
         flx3: FloatFieldIJ,
-        k_mask: IntFieldK,
         nopac_mask: BoolFieldIJ,
+        k_mask: IntFieldK,
     ):
         """
         ! ===================================================================== !

@@ -1716,8 +1716,8 @@ class NoahLSM:
             self._dew,
             self._flx1,
             self._flx3,
-            self._k_mask,
             self._nopac_mask,
+            self._k_mask,
         )
 
         self._sflx_2(
