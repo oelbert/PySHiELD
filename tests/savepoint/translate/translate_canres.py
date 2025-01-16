@@ -74,7 +74,7 @@ class Canres:
         )
 
 
-class TranslateCanres(TranslatePhysicsFortranData2Py):
+class TranslateCanres1(TranslatePhysicsFortranData2Py):
     def __init__(
         self,
         grid,
@@ -149,3 +149,12 @@ class TranslateCanres(TranslatePhysicsFortranData2Py):
         )
         self.compute_func(**inputs)
         return self.slice_output(inputs)
+
+class TranslateCanres2(TranslateCanres1):
+    def __init__(
+        self,
+        grid,
+        namelist: Namelist,
+        stencil_factory: StencilFactory,
+    ):
+        super().__init__(grid, namelist, stencil_factory)
