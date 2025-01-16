@@ -4,7 +4,7 @@ from .translate_fillgfs import TranslateFillGFS
 from .translate_fpvs import TranslateFPVS
 from .translate_fv_update_phys import DycoreState, TranslateFVUpdatePhys
 from .translate_lsm import TranslateNoahLSM_iter1, TranslateNoahLSM_iter2
-from .translate_canres import TranslateCanres
+from .translate_canres import TranslateCanres1, TranslateCanres2
 from .translate_microphysics import TranslateMicroph
 from .translate_phifv3 import TranslatePhiFV3
 from .translate_physics import ParallelPhysicsTranslate2Py, TranslateFortranData2Py
