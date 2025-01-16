@@ -179,7 +179,9 @@ def srt(
         with interval(1, None):
             if surface_mask:
                 if pcpdrp != 0:
-                    dd += (zsoil[-1] - zsoil) * smcav * (1.0 - (sh2o + sice - smcwlt) / smcav)
+                    dd += (zsoil[-1] - zsoil) * smcav * (
+                        1.0 - (sh2o + sice - smcwlt) / smcav
+                    )
                     dice += (zsoil[-1] - zsoil) * sice
 
     with computation(FORWARD):
