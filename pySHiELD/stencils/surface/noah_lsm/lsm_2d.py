@@ -209,7 +209,7 @@ def penman_fn(
 
     flx2 = 0.0
     # # prepare partial quantities for penman equation.
-    delta = physcons.ELCP * cpfac * dqsdt2
+    delta = physcons.ELCP * dqsdt2
     t24 = sfctmp * sfctmp * sfctmp * sfctmp
     rr = t24 * 6.48e-8 / (sfcprs * ch) + 1.0
     rho = sfcprs / (physcons.RD1 * t2v)
@@ -236,7 +236,7 @@ def penman_fn(
     # finish penman equation calculations.
 
     rad = fnet / rch + th2 - sfctmp
-    a = physcons.ELCP * cpfac * (q2sat - q2)
+    a = physcons.ELCP * (q2sat - q2)
 
     epsca = (a * rr + rad * delta) / (delta + rr)
     etp = epsca * rch / physcons.LSUBC
@@ -819,11 +819,12 @@ def hrt_fn(
     sh2o1,
     sh2o2,
     sh2o3,
+    lheatstrg,
 ):
 
     csoil_loc = csoil
 
-    if ivegsrc == 1 and vegtyp == 12:
+    if (not lheatstrg) and (ivegsrc == 1) and (vegtyp == 12):
         csoil_loc = 3.0e6 * (1.0 - shdfac) + csoil * shdfac
 
     # calc the heat capacity of the top soil layer
@@ -879,7 +880,7 @@ def hrt_fn(
     # calculate thermal diffusivity for each layer
     df1n = tdfcnd_fn(smc1, quartz, smcmax, sh2o1)
 
-    if ivegsrc == 1 and vegtyp == 12:
+    if (not lheatstrg) and (ivegsrc == 1) and (vegtyp == 12):
         df1n = 3.24 * (1.0 - shdfac) + shdfac * df1n
 
     tbk1 = stc1 + (stc2 - stc1) * (zsoil0 - zsoil1) / (zsoil0 - zsoil2)
@@ -926,7 +927,7 @@ def hrt_fn(
     # calculate thermal diffusivity for each layer
     df1n = tdfcnd_fn(smc2, quartz, smcmax, sh2o2)
 
-    if ivegsrc == 1 and vegtyp == 12:
+    if (not lheatstrg) and (ivegsrc == 1) and (vegtyp == 12):
         df1n = 3.24 * (1.0 - shdfac) + shdfac * df1n
 
     tbk1 = stc2 + (stc3 - stc2) * (zsoil1 - zsoil2) / (zsoil1 - zsoil3)
@@ -1109,6 +1110,7 @@ def shflx_fn(
     sh2o1,
     sh2o2,
     sh2o3,
+    lheatstrg,
 ):
     # --- ... subprograms called: hstep, hrtice, hrt
 
@@ -1236,6 +1238,7 @@ def shflx_fn(
             sh2o1,
             sh2o2,
             sh2o3,
+            lheatstrg,
         )
         stc0, stc1, stc2, stc3 = hstep_fn(
             stc0,
@@ -1866,6 +1869,7 @@ def nopac_fn(
     smc1,
     smc2,
     smc3,
+    lheatstrg,
 ):
     # convert etp from kg m-2 s-1 to ms-1 and initialize dew.
     prcp1 = prcp * 0.001
@@ -2042,7 +2046,7 @@ def nopac_fn(
     # get soil thermal diffuxivity/conductivity for top soil lyr, calc.
     df1 = tdfcnd_fn(smc0, quartz, smcmax, sh2o0)
 
-    if (ivegsrc == 1) and (vegtyp == 12):
+    if (not lheatstrg) and (ivegsrc == 1) and (vegtyp == 12):
         df1 = 3.24 * (1.0 - shdfac) + shdfac * df1 * exp(sbeta * shdfac)
     else:
         df1 *= exp(sbeta * shdfac)
@@ -2085,6 +2089,7 @@ def nopac_fn(
         sh2o1,
         sh2o2,
         sh2o3,
+        lheatstrg,
     )
 
     flx1 = 0.0
@@ -2195,6 +2200,7 @@ def snopac_fn(
     smc1,
     smc2,
     smc3,
+    lheatstrg,
 ):
     # calculates soil moisture and heat flux values and
     # update soil moisture content and soil heat content values for the
@@ -2473,6 +2479,7 @@ def snopac_fn(
         sh2o1,
         sh2o2,
         sh2o3,
+        lheatstrg,
     )
 
     # snow depth and density adjustment based on snow compaction.
@@ -2758,7 +2765,7 @@ def sflx(
         # calculate the subsurface heat flux, which first requires calculation
         # of the thermal diffusivity.
         df1 = tdfcnd_fn(smc0, quartz, smcmax, sh2o0)
-        if ivegsrc == 1 and vegtyp == 12:
+        if (not lheatstrg) and (ivegsrc == 1) and (vegtyp == 12):
             df1 = 3.24 * (1.0 - shdfac) + shdfac * df1 * exp(physcons.SBETA * shdfac)
         else:
             df1 = df1 * exp(physcons.SBETA * shdfac)
@@ -2965,6 +2972,7 @@ def sflx(
             smc1,
             smc2,
             smc3,
+            lheatstrg,
         )
 
     else:
@@ -3073,6 +3081,7 @@ def sflx(
             smc1,
             smc2,
             smc3,
+            lheatstrg,
         )
 
     # prepare sensible heat (h) for return to parent model
