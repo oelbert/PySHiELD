@@ -158,7 +158,6 @@ class TranslateNoahLSM_3D(TranslatePhysicsFortranData2Py):
             lheatstrg=inputs.pop("lheatstrg"),
             pertvegf=inputs.pop("pertvegf"),
         )
-        breakpoint()
         self.compute_func = NoahLSM(
             self.stencil_factory,
             self.quantity_factory,
@@ -319,7 +318,7 @@ class TranslateNoahLSM_2D(TranslatePhysicsFortranData2Py):
         inputs.pop("shdmin")
         inputs.pop("shdmax")
         inputs["ivegsrc"] = int(inputs["ivegsrc"])
-        inputs["lheatstrg"] = int(inputs["lheatstrg"])
+        inputs["lheatstrg"] = bool(inputs["lheatstrg"])
         config = LSMConfig(
             lsoil=4,
             isot=inputs.pop("isot"),
@@ -327,7 +326,6 @@ class TranslateNoahLSM_2D(TranslatePhysicsFortranData2Py):
             lheatstrg=inputs.pop("lheatstrg"),
             pertvegf=inputs.pop("pertvegf"),
         )
-        breakpoint()
         self.compute_func = NoahLSM_2D(
             self.stencil_factory,
             self.quantity_factory,
