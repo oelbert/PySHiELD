@@ -864,6 +864,7 @@ def set_soil_veg(
 
     nroot[isl_mask == 1] = NROOT_DATA[veg_data[isl_mask == 1]]
     zroot[isl_mask == 1] = ZSOIL_DATA[nroot[isl_mask == 1] - 1]
+    zroot[nroot == 0] = 0.
 
     snup[land_mask] = SNUPX[veg_data[land_mask]]
     rsmin[land_mask] = RSMTBL[veg_data[land_mask]]
@@ -882,15 +883,18 @@ def set_soil_veg(
 
     rtdis = np.zeros((nroot.shape[0], nroot.shape[1], ZSOIL_DATA.shape[0] + 1))
     sldpth = np.zeros(
-        (nroot.shape[0], nroot.shape[1], ZSOIL_DATA.shape[0] + 1), dtype=Float
+        (nroot.shape[0], nroot.shape[1], ZSOIL_DATA.shape[0]), dtype=Float
     )
-    zsoil = np.zeros((ZSOIL_DATA.shape[0] + 1), dtype=Float)
+    zsoil = np.zeros((ZSOIL_DATA.shape[0]), dtype=Float)
 
     for i in range(nroot.shape[0]):
         for j in range(nroot.shape[1]):
             for k in range(len(ZSOIL_DATA)):
                 if isl_mask[i, j] == 1:
-                    sldpth[i, j, k + 1] = ZSOIL_DATA[k] - ZSOIL_DATA[k - 1]
+                    if k == 0:
+                        sldpth[i, j, k] = - ZSOIL_DATA[0]
+                    else:
+                        sldpth[i, j, k] = ZSOIL_DATA[k - 1] - ZSOIL_DATA[k]
                     zsoil[k] = ZSOIL_DATA[k]
                     if k < nroot[i, j]:
                         rtdis[i, j, k] = -sldpth[i, j, k] * zroot[i, j]
