@@ -452,6 +452,8 @@ class SoilMoistureFlux:
             self._rhstt,
             runoff1,
             runoff2,
+            self._sicemax,
+            self._dd,
             self._ai,
             self._bi,
             self._ci,
