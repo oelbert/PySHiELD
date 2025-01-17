@@ -1193,8 +1193,8 @@ class NoahLSM:
         )
         self._zsoil = make_quantity()
         for k in range(domain):
-            self._zsoil.data[:,:,k] = zsoil[k]
-        
+            self._zsoil.data[:, :, k] = zsoil[k]
+
         self._slope = quantity_factory.from_array(slope, dims=[X_DIM, Y_DIM], units="")
 
         self._lsm_mask = quantity_factory.zeros(

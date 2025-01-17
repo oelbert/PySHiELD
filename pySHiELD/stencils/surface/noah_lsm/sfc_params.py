@@ -883,7 +883,7 @@ def set_soil_veg(
 
     rtdis = np.zeros((nroot.shape[0], nroot.shape[1], ZSOIL_DATA.shape[0] + 1))
     sldpth = np.zeros(
-        (nroot.shape[0], nroot.shape[1], ZSOIL_DATA.shape[0]), dtype=Float
+        (nroot.shape[0], nroot.shape[1], ZSOIL_DATA.shape[0] + 1), dtype=Float
     )
     zsoil = np.zeros((ZSOIL_DATA.shape[0]), dtype=Float)
 
