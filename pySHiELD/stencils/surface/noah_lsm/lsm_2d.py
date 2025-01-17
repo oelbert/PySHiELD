@@ -4021,11 +4021,14 @@ class NoahLSM_2D:
         self._rtdis = quantity_factory.from_array(
             rtdis, dims=[X_DIM, Y_DIM, Z_DIM], units=""
         )
-        self._zsoil = quantity_factory.from_array(
-            zsoil,
-            dims=[Z_DIM],
-            units="",
+        self._zsoil = quantity_factory.zeros(
+            [Z_DIM],
+            units="unknown",
+            dtype=Float,
         )
+        for k in range(config.lsoil):
+            self._zsoil.data[:, :, k] = zsoil[k]
+
         self._slope = quantity_factory.from_array(slope, dims=[X_DIM, Y_DIM], units="")
 
         self._smc0 = make_quantity_2d()
