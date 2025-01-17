@@ -66,7 +66,7 @@ def canres(
     sh2o: FloatField,
     smcwlt: FloatFieldIJ,
     smcref: FloatFieldIJ,
-    zsoil: FloatFieldK,
+    zsoil: FloatField,
     zroot: FloatFieldIJ,
     rsmin: FloatFieldIJ,
     rgl: FloatFieldIJ,
@@ -369,7 +369,7 @@ def init_lsm(
 def sflx_1(
     ice: IntFieldIJ,
     ffrozp: FloatFieldIJ,
-    zsoil: FloatFieldK,
+    zsoil: FloatField,
     swdn: FloatFieldIJ,
     swnet: FloatFieldIJ,
     lwdn: FloatFieldIJ,
@@ -446,6 +446,7 @@ def sflx_1(
     lsm_mask: BoolFieldIJ,
     snopac_mask: BoolFieldIJ,
     nopac_mask: BoolFieldIJ,
+    k_mask: IntFieldK,
 ):
     """
     Fortran docs:
@@ -590,7 +591,7 @@ def sflx_1(
     !                                                                       !
     !  ====================    end of description    =====================  !
     """
-    from __externals__ import dt, ivegsrc, lheatstrg
+    from __externals__ import dt, ivegsrc, lheatstrg, nsoil
 
     with computation(FORWARD), interval(0, 1):
         if lsm_mask:
@@ -614,10 +615,16 @@ def sflx_1(
                 smcwlt = 0.40 * (1 - shdfac0) + smcwlt * shdfac0
                 smcdry = 0.40 * (1 - shdfac0) + smcdry * shdfac0
 
-            bexp = bexp * min(1.0 + bexpp, 2.0)
+            if bexpp < 0.0:
+                bexp = bexp * max(1.0 + bexpp, 0.0)
+            if bexpp >= 0.0:
+                bexp = bexp * min(1.0 + bexpp, 2.0)
 
             xlai = xlai * (1.0 + xlaip)
             xlai = max(xlai, 0.75)
+
+            snowng = False
+            frzgra = False
 
             # over sea-ice or glacial-ice, if s.w.e. (sneqv) below threshold
             # lower bound (0.01 m for sea-ice, 0.10 m for glacial-ice), then
@@ -626,8 +633,7 @@ def sflx_1(
             if (ice == 1) and (sneqv < 0.01):
                 sneqv = 0.01
                 snowh = 0.10
-
-            if (ice == -1) and (sneqv < 0.10):
+            elif (ice == -1) and (sneqv < 0.10):
                 # TODO: check if it is called
                 sneqv = 0.10
                 snowh = 1.00
@@ -639,6 +645,8 @@ def sflx_1(
             if ice != 0:
                 smc = 1.0
                 sh2o = 1.0
+                if ice == 1:
+                    zsoil = -3.0 * (k_mask + 1.0) / nsoil
 
     with computation(FORWARD), interval(0, 1):
         if lsm_mask:
@@ -659,8 +667,12 @@ def sflx_1(
             # if it's prcping and the air temp is colder than 0 c, it's snowing!
             # if it's prcping and the air temp is warmer than 0 c, but the grnd
             # temp is colder than 0 c, freezing rain is presumed to be falling.
-            snowng = (prcp > 0.0) and (ffrozp > 0.0)
-            frzgra = (prcp > 0.0) and (ffrozp <= 0.0) and (t1 <= constants.TICE0)
+            if prcp > 0.0:
+                if ffrozp > 0.0:
+                    snowng = True
+                else:
+                    if t1 <= constants.TICE0:
+                        frzgra = True
 
             # if either prcp flag is set, determine new snowfall (converting
             # prcp rate from kg m-2 s-1 to a liquid equiv snow depth in meters)
@@ -832,7 +844,7 @@ def sflx_1(
 
 def sflx_2(
     nroot: IntFieldIJ,
-    zsoil: FloatFieldK,
+    zsoil: FloatField,
     ice: IntFieldIJ,
     t2v: FloatFieldIJ,
     th2: FloatFieldIJ,
@@ -1179,11 +1191,10 @@ class NoahLSM:
         self._rtdis = quantity_factory.from_array(
             rtdis, dims=[X_DIM, Y_DIM, Z_DIM], units=""
         )
-        self._zsoil = quantity_factory.from_array(
-            zsoil,
-            dims=[Z_DIM],
-            units="",
-        )
+        self._zsoil = make_quantity()
+        for k in range(domain):
+            self._zsoil.data[:,:,k] = zsoil[k]
+        
         self._slope = quantity_factory.from_array(slope, dims=[X_DIM, Y_DIM], units="")
 
         self._lsm_mask = quantity_factory.zeros(
@@ -1273,6 +1284,7 @@ class NoahLSM:
                 "dt": dt,
                 "ivegsrc": config.ivegsrc,
                 "lheatstrg": config.lheatstrg,
+                "nsoil": config.lsoil,
             },
             origin=grid_indexing.origin_compute(),
             domain=grid_indexing.domain_compute(),
@@ -1571,6 +1583,7 @@ class NoahLSM:
             self._lsm_mask,
             self._snopac_mask,
             self._nopac_mask,
+            self._k_mask,
         )
 
         self._canres(

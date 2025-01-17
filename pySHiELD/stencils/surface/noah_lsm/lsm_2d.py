@@ -13,6 +13,7 @@ from ndsl.dsl.typing import (
     Float,
     FloatField,
     FloatFieldIJ,
+    Int,
     IntFieldIJ,
 )
 from ndsl.initialization.allocator import QuantityFactory
@@ -2819,11 +2820,17 @@ def sflx(
     z0,
     shdfac,
     snowh,
+    nsoil,
 ):
     # --- ... subprograms called: redprm, snow_new, csnow, snfrac,
     # alcalc, tdfcnd, snowz0, sfcdif, penman, canres, nopac, snopac.
     # initialization
 
+    runoff1 = 0.0
+    runoff2 = 0.0
+    runoff3 = 0.0
+    snomlt = 0.0
+    rc = 0.0
     shdfac0 = shdfac
 
     # is not called
@@ -2835,10 +2842,17 @@ def sflx(
         ice = -1
         shdfac = 0.0
 
-    zsoil0 = -sldpth0
-    zsoil1 = zsoil0 - sldpth1
-    zsoil2 = zsoil1 - sldpth2
-    zsoil3 = zsoil2 - sldpth3
+    if ice == 1:
+        shdfac = 0.0
+        zsoil0 = -3.0 * 1.0 / nsoil
+        zsoil1 = -3.0 * 2.0 / nsoil
+        zsoil2 = -3.0 * 3.0 / nsoil
+        zsoil3 = -3.0 * 4.0 / nsoil
+    else:
+        zsoil0 = -sldpth0
+        zsoil1 = zsoil0 - sldpth1
+        zsoil2 = zsoil1 - sldpth2
+        zsoil3 = zsoil2 - sldpth3
 
     kdt, shdfac, frzx, rtdis0, rtdis1, rtdis2, rtdis3 = redprm_fn(
         vegtyp,
@@ -2865,10 +2879,16 @@ def sflx(
         smcwlt = 0.40 * (1 - shdfac0) + smcwlt * shdfac0
         smcdry = 0.40 * (1 - shdfac0) + smcdry * shdfac0
 
-    bexp = bexp * min(1.0 + bexpp, 2.0)
+    if bexpp < 0.0:
+        bexp = bexp * max(1.0 + bexpp, 0.0)
+    if bexpp >= 0.0:
+        bexp = bexp * min(1.0 + bexpp, 2.0)
 
     xlai = xlai * (1.0 + xlaip)
     xlai = max(xlai, 0.75)
+
+    snowng = False
+    frzgra = False
 
     # over sea-ice or glacial-ice, if s.w.e. (sneqv) below threshold
     # lower bound (0.01 m for sea-ice, 0.10 m for glacial-ice), then
@@ -2910,8 +2930,12 @@ def sflx(
     # if it's prcping and the air temp is colder than 0 c, it's snowing!
     # if it's prcping and the air temp is warmer than 0 c, but the grnd
     # temp is colder than 0 c, freezing rain is presumed to be falling.
-    snowng = (prcp > 0.0) and (ffrozp > 0.0)
-    frzgra = (prcp > 0.0) and (ffrozp <= 0.0) and (t1 <= constants.TFREEZE)
+    if prcp > 0.0:
+        if ffrozp > 0.0:
+            snowng = True
+        else:
+            if t1 <= constants.TICE0:
+                frzgra = True
 
     # if either prcp flag is set, determine new snowfall (converting
     # prcp rate from kg m-2 s-1 to a liquid equiv snow depth in meters)
@@ -3038,10 +3062,6 @@ def sflx(
     rct = 0.0
     rcq = 0.0
     rcsoil = 0.0
-    runoff1 = 0.0
-    runoff2 = 0.0
-    runoff3 = 0.0
-    snomlt = 0.0
 
     pc = 0.0
 
@@ -3340,7 +3360,12 @@ def sflx(
         + smc2 * (zsoil1 - zsoil2)
         + smc3 * (zsoil2 - zsoil3)
     )
-    soilwm = -(smcmax - smcwlt) * zsoil3
+    soilwm = (
+        -(smcmax - smcwlt) * zsoil0
+        + (smc1 - smcwlt) * (zsoil1 - zsoil0)
+        + (smc2 - smcwlt) * (zsoil2 - zsoil1)
+        + (smc3 - smcwlt) * (zsoil3 - zsoil2)
+    )
     soilww = (
         -(smc0 - smcwlt) * zsoil0
         + (smc1 - smcwlt) * (zsoil0 - zsoil1)
@@ -3499,6 +3524,7 @@ def sfc_drv(
     hs: FloatFieldIJ,
     xlai: FloatFieldIJ,
     slope: FloatFieldIJ,
+    nsoil: Int,
 ):
     with computation(FORWARD), interval(0, 1):
 
@@ -3716,6 +3742,7 @@ def sfc_drv(
                 z0,
                 sigmaf,
                 snowh,
+                nsoil,
             )
 
             # output
@@ -3754,27 +3781,28 @@ def sfc_drv(
             evap = evap * tem * hvapi
 
         # restore land-related prognostic fields for guess run
-        if land and flag_guess:
-            weasd = weasd_old
-            snwdph = snwdph_old
-            tskin = tskin_old
-            canopy = canopy_old
-            tprcp = tprcp_old
-            srflag = srflag_old
-            smc0 = smc_old0
-            smc1 = smc_old1
-            smc2 = smc_old2
-            smc3 = smc_old3
-            stc0 = stc_old0
-            stc1 = stc_old1
-            stc2 = stc_old2
-            stc3 = stc_old3
-            slc0 = slc_old0
-            slc1 = slc_old1
-            slc2 = slc_old2
-            slc3 = slc_old3
-        elif land:
-            tskin = tsurf
+        if land:
+            if flag_guess:
+                weasd = weasd_old
+                snwdph = snwdph_old
+                tskin = tskin_old
+                canopy = canopy_old
+                tprcp = tprcp_old
+                srflag = srflag_old
+                smc0 = smc_old0
+                smc1 = smc_old1
+                smc2 = smc_old2
+                smc3 = smc_old3
+                stc0 = stc_old0
+                stc1 = stc_old1
+                stc2 = stc_old2
+                stc3 = stc_old3
+                slc0 = slc_old0
+                slc1 = slc_old1
+                slc2 = slc_old2
+                slc3 = slc_old3
+            else:
+                tskin = tsurf
 
 def set_2d_fields(
     smc: FloatField,
@@ -3877,6 +3905,7 @@ class NoahLSM_2D:
         self._ivegsrc = config.ivegsrc
         self._isot = config.isot
         self._lheatstrg = config.lheatstrg
+        self._lsoil = config.lsoil
 
         def make_quantity() -> Quantity:
             return quantity_factory.zeros(
@@ -4241,6 +4270,7 @@ class NoahLSM_2D:
             self._hs,
             self._xlai,
             self._slope,
+            self._lsoil,
         )
 
         self._set_3d_fields(

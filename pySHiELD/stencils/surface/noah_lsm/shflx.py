@@ -242,7 +242,7 @@ def start_shflx(
 
 def hrtice(
     stc: FloatField,
-    zsoil: FloatFieldK,
+    zsoil: FloatField,
     yy: FloatFieldIJ,
     zz1: FloatFieldIJ,
     df1: FloatFieldIJ,
@@ -318,7 +318,7 @@ def hrt(
     stc: FloatField,
     smc: FloatField,
     smcmax: FloatFieldIJ,
-    zsoil: FloatFieldK,
+    zsoil: FloatField,
     yy: FloatFieldIJ,
     zz1: FloatFieldIJ,
     tbot: FloatFieldIJ,
@@ -520,7 +520,7 @@ def finish_hstep(
 
 def finish_shflux(
     stc: FloatField,
-    zsoil: FloatFieldK,
+    zsoil: FloatField,
     yy: FloatFieldIJ,
     zz1: FloatFieldIJ,
     df1: FloatFieldIJ,
@@ -654,7 +654,7 @@ class SoilHeatFlux:
         smcmax: FloatFieldIJ,
         yy: FloatFieldIJ,
         zz1: FloatFieldIJ,
-        zsoil: FloatFieldK,
+        zsoil: FloatField,
         psisat: FloatFieldIJ,
         bexp: FloatFieldIJ,
         df1: FloatFieldIJ,
