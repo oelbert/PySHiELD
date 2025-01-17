@@ -1,5 +1,5 @@
 from gt4py.cartesian import gtscript
-from gt4py.cartesian.gtscript import FORWARD, computation, exp, interval, log
+from gt4py.cartesian.gtscript import FORWARD, computation, exp, interval, log, log10
 from numpy import ndarray
 
 import ndsl.constants as constants
@@ -21,6 +21,13 @@ from ndsl.quantity import Quantity
 from pySHiELD._config import LSMConfig, FloatFieldTracer
 from pySHiELD.stencils.surface.noah_lsm.sfc_params import set_soil_veg, BARE
 from pySHiELD.functions.physics_functions import fpvs
+
+
+@gtscript.function
+def snowz0_fn(sncovr, z0):
+    z0s = z0
+    z0_out = (1.0 - sncovr) * z0 + sncovr * z0s
+    return z0_out
 
 
 @gtscript.function
@@ -60,7 +67,7 @@ def tdfcnd_fn(smc, qz, smcmax, sh2o):
         ake = satratio
     elif satratio > 0.1:
         # kersten number
-        ake = log(satratio) / log(10) + 1.0  # log10 from ln
+        ake = log10(satratio) + 1.0
     else:
         ake = 0.0
 
@@ -2832,6 +2839,13 @@ def sflx(
     snomlt = 0.0
     rc = 0.0
     shdfac0 = shdfac
+    rc = 0.0
+    rcs = 0.0
+    rct = 0.0
+    rcq = 0.0
+    rcsoil = 0.0
+
+    pc = 0.0
 
     # is not called
     if ivegsrc == 2 and vegtyp == 12:
@@ -3016,6 +3030,11 @@ def sflx(
         # calculate subsurface heat flux
         ssoil = df1 * (t1 - stc0) / dtot
 
+    # determine surface roughness over snowpack using snow condition
+    # from the previous timestep.
+    if sncovr > 0.0:
+        z0 = snowz0_fn(sncovr, z0)
+
     # calc virtual temps and virtual potential temps needed by
     # subroutines sfcdif and penman.
     t2v = sfctmp * (1.0 + 0.61 * q2)
@@ -3056,14 +3075,6 @@ def sflx(
     # etp = 1.712958945801106e-06
     # call canres to calculate the canopy resistance and convert it
     # into pc if nonzero greenness fraction
-
-    rc = 0.0
-    rcs = 0.0
-    rct = 0.0
-    rcq = 0.0
-    rcsoil = 0.0
-
-    pc = 0.0
 
     if shdfac > 0.0:
 
