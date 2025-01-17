@@ -4,7 +4,7 @@ from numpy import ndarray, zeros
 
 import ndsl.constants as constants
 import pySHiELD.constants as physcons
-from ndsl.constants import X_DIM, Y_DIM, Z_DIM, Z_INTERFACE_DIM
+from ndsl.constants import X_DIM, Y_DIM, Z_DIM
 
 # from pace.dsl.dace.orchestration import orchestrate
 from ndsl.dsl.stencil import StencilFactory
@@ -1154,7 +1154,7 @@ class NoahLSM:
         self._nroot = quantity_factory.from_array(nroot, dims=[X_DIM, Y_DIM], units="")
         self._zroot = quantity_factory.from_array(zroot, dims=[X_DIM, Y_DIM], units="")
         self._sldpth = quantity_factory.from_array(
-            sldpth, dims=[X_DIM, Y_DIM, Z_INTERFACE_DIM], units="m"
+            sldpth, dims=[X_DIM, Y_DIM, Z_DIM], units="m"
         )
         self._snup = quantity_factory.from_array(snup, dims=[X_DIM, Y_DIM], units="")
         self._rsmin = quantity_factory.from_array(rsmin, dims=[X_DIM, Y_DIM], units="")
