@@ -2,7 +2,6 @@ from gt4py.cartesian.gtscript import FORWARD, computation, interval
 
 import pySHiELD.constants as physcons
 from ndsl.constants import X_DIM, Y_DIM, Z_DIM
-from ndsl.dsl.stencil import StencilFactory
 from ndsl.dsl.typing import (
     Bool,
     BoolFieldIJ,
@@ -17,6 +16,7 @@ from ndsl.initialization.sizer import SubtileGridSizer
 from ndsl import Namelist, StencilFactory
 from ndsl.dsl.stencil import GridIndexing
 from pySHiELD.stencils.surface.noah_lsm.snopac import SNOPAC
+from pySHiELD.stencils.surface.noah_lsm.lsm_2d import snopac_fn
 from tests.savepoint.translate.translate_physics import TranslatePhysicsFortranData2Py
 
 def invert_bool(
@@ -28,6 +28,18 @@ def invert_bool(
             bool_out = False
         else:
             bool_out = True
+
+
+def snopac_stencil(
+    nopac_mask: BoolFieldIJ
+):
+    with computation(FORWARD), interval(0, 1):
+
+    if nopac_mask:
+        snopac_mask = False
+    else:
+        snopac_mask = True
+
 
 class SnopacTest:
     def __init__(

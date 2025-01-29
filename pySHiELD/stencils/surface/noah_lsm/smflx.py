@@ -52,6 +52,7 @@ def start_smflx(
     sh2o: FloatField,
     smc: FloatField,
     sh2o_in: FloatField,
+    sh2oa: FloatField,
     sice: FloatField,
     surface_mask: BoolFieldIJ,
     frozen_ground: BoolFieldIJ,
@@ -83,12 +84,14 @@ def start_smflx(
             # store ice content at each soil layer before calling srt and sstep
             sice = smc - sh2o
             sh2o_in = sh2o
+            sh2oa = sh2o
 
 
 def srt(
     edir: FloatFieldIJ,
     et: FloatField,
     sh2o: FloatField,
+    sh2oa: FloatField,
     pcpdrp: FloatFieldIJ,
     zsoil: FloatField,
     dwsat: FloatFieldIJ,
@@ -174,13 +177,13 @@ def srt(
                     dt1 = dt / 86400.0
                     smcav = smcmax - smcwlt
                     dd = -zsoil * smcav
-                    dd = dd * (1.0 - (sh2o + sice - smcwlt) / smcav)
+                    dd = dd * (1.0 - (sh2oa + sice - smcwlt) / smcav)
                     dice = -zsoil * sice
         with interval(1, None):
             if surface_mask:
                 if pcpdrp != 0:
                     dd += (zsoil[0, 0, -1] - zsoil) * smcav * (
-                        1.0 - (sh2o + sice - smcwlt) / smcav
+                        1.0 - (sh2oa + sice - smcwlt) / smcav
                     )
                     dice += (zsoil[0, 0, -1] - zsoil) * sice
 
@@ -206,13 +209,15 @@ def srt(
                         ialp1 = cvfrz - 1  # = 2
 
                         # Hardcode for ialp1 = 2
-                        sum = 1.0 + acrt ** 2.0 / 2.0 + acrt
+                        sum = 1.0 + (
+                            acrt ** (cvfrz - 1) / 2.0
+                        ) + (acrt ** (cvfrz - 2) / 1.0)
 
                         fcr = 1.0 - exp(-acrt) * sum
 
                     infmax *= fcr
 
-                    wdf0, wcnd0 = wdfcnd_fn(sh2o, smcmax, bexp, dksat, dwsat, sicemax)
+                    wdf0, wcnd0 = wdfcnd_fn(sh2oa, smcmax, bexp, dksat, dwsat, sicemax)
 
                     infmax = max(infmax, wcnd0)
                     infmax = min(infmax, px)
@@ -221,7 +226,7 @@ def srt(
                         runoff1 = pcpdrp - infmax
                         pddum = infmax
 
-                wdf, wcnd = wdfcnd_fn(sh2o, smcmax, bexp, dksat, dwsat, sicemax)
+                wdf, wcnd = wdfcnd_fn(sh2oa, smcmax, bexp, dksat, dwsat, sicemax)
 
                 # calc the matrix coefficients ai, bi, and ci for the top layer
                 ddz = 1.0 / (-0.5 * zsoil[0, 0, 1])
@@ -236,7 +241,7 @@ def srt(
     with computation(FORWARD), interval(1, -1):
         if surface_mask:
             # 2. Interior Layers
-            wdf, wcnd = wdfcnd_fn(sh2o, smcmax, bexp, dksat, dwsat, sicemax)
+            wdf, wcnd = wdfcnd_fn(sh2oa, smcmax, bexp, dksat, dwsat, sicemax)
             denom2 = zsoil[0, 0, -1] - zsoil
             denom = zsoil[0, 0, -1] - zsoil[0, 0, 1]
             dsmdz = (sh2o - sh2o[0, 0, 1]) / (denom * 0.5)
@@ -261,7 +266,7 @@ def srt(
             # 3. Bottom Layer
             denom2 = zsoil[0, 0, -1] - zsoil
             slopx = slope
-            wdf, wcnd = wdfcnd_fn(sh2o, smcmax, bexp, dksat, dwsat, sicemax)
+            wdf, wcnd = wdfcnd_fn(sh2oa, smcmax, bexp, dksat, dwsat, sicemax)
             dsmdz = 0.0
             ci = 0.0
             numer = (
@@ -314,6 +319,7 @@ class SoilMoistureFlux:
         )
 
         self._mid_sh20 = make_quantity()
+        self._sh2oa = make_quantity()
         self._ai = make_quantity()
         self._bi = make_quantity()
         self._ci = make_quantity()
@@ -429,6 +435,7 @@ class SoilMoistureFlux:
             sh2o,
             smc,
             self._mid_sh20,
+            self._sh2oa,
             self._sice,
             surface_mask,
             self._frozen_ground,
@@ -438,6 +445,7 @@ class SoilMoistureFlux:
             edir1,
             et1,
             sh2o,
+            self._sh2oa,
             self._pcpdrp,
             zsoil,
             dwsat,

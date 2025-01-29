@@ -118,6 +118,7 @@ def canres_fn(
     rgl,
     hs,
     xlai,
+    zroot,
 ):
     # --- ... subprograms called: none
 
@@ -137,36 +138,23 @@ def canres_fn(
     rcq = max(rcq, 0.01)
 
     # contribution due to soil moisture availability.
+    # use soil depth as weighting factor
+    rcsum = 0.0
     if nroot > 0:
         gx0 = max(0.0, min(1.0, (sh2o0 - smcwlt) / (smcref - smcwlt)))
-        zsoil = zsoil0
-    else:
-        gx0 = 0.0
+        rcsum += (zsoil0 / zroot) * gx0
+
     if nroot > 1:
         gx1 = max(0.0, min(1.0, (sh2o1 - smcwlt) / (smcref - smcwlt)))
-        zsoil = zsoil1
-    else:
-        gx1 = 0.0
+        rcsum += ((zsoil1 - zsoil0) / zroot) * gx1
     if nroot > 2:
         gx2 = max(0.0, min(1.0, (sh2o2 - smcwlt) / (smcref - smcwlt)))
-        zsoil = zsoil2
-    else:
-        gx2 = 0.0
+        rcsum += ((zsoil2 - zsoil1) / zroot) * gx2
     if nroot > 3:
         gx3 = max(0.0, min(1.0, (sh2o3 - smcwlt) / (smcref - smcwlt)))
-        zsoil = zsoil3
-    else:
-        gx3 = 0.0
+        rcsum += ((zsoil3 - zsoil2) / zroot) * gx3
 
-    # use soil depth as weighting factor
-    sum = (
-        zsoil0 / zsoil * gx0
-        + (zsoil1 - zsoil0) / zsoil * gx1
-        + (zsoil2 - zsoil1) / zsoil * gx2
-        + (zsoil3 - zsoil2) / zsoil * gx3
-    )
-
-    rcsoil = max(sum, 0.0001)
+    rcsoil = max(rcsum, 0.0001)
 
     # determine canopy resistance due to all factors
 
@@ -398,36 +386,48 @@ def transp_fn(
     else:
         etp1a = shdfac * pc * etp1
 
+    gx0 = 0.0
+    gx1 = 0.0
+    gx2 = 0.0
+    gx3 = 0.0
+    sgx = 0.0
+
     if nroot > 0:
-        gx0 = max(0.0, min(1.0, (smc0 - smcwlt) / (smcref - smcwlt)))
-    else:
-        gx0 = 0.0
+        gx0 = (smc0 - smcwlt) / (smcref - smcwlt)
+        gx0 = max(0.0, min(1.0, gx0))
+        sgx = sgx + gx0
     if nroot > 1:
-        gx1 = max(0.0, min(1.0, (smc1 - smcwlt) / (smcref - smcwlt)))
-    else:
-        gx1 = 0.0
+        gx1 = (smc1 - smcwlt) / (smcref - smcwlt)
+        gx1 = max(0.0, min(1.0, gx1))
+        sgx = sgx + gx1
     if nroot > 2:
-        gx2 = max(0.0, min(1.0, (smc2 - smcwlt) / (smcref - smcwlt)))
-    else:
-        gx2 = 0.0
+        gx2 = (smc2 - smcwlt) / (smcref - smcwlt)
+        gx2 = max(0.0, min(1.0, gx2))
+        sgx = sgx + gx2
     if nroot > 3:
-        gx3 = max(0.0, min(1.0, (smc3 - smcwlt) / (smcref - smcwlt)))
-    else:
-        gx3 = 0.0
+        gx3 = (smc3 - smcwlt) / (smcref - smcwlt)
+        gx3 = max(0.0, min(1.0, gx3))
+        sgx = sgx + gx3
 
-    sgx = (gx0 + gx1 + gx2 + gx3) / nroot
+    sgx = sgx / nroot
+    denom = 0.0
 
-    rtx0 = rtdis0 + gx0 - sgx
-    rtx1 = rtdis1 + gx1 - sgx
-    rtx2 = rtdis2 + gx2 - sgx
-    rtx3 = rtdis3 + gx3 - sgx
-
-    gx0 *= max(rtx0, 0.0)
-    gx1 *= max(rtx1, 0.0)
-    gx2 *= max(rtx2, 0.0)
-    gx3 *= max(rtx3, 0.0)
-
-    denom = gx0 + gx1 + gx2 + gx3
+    if nroot > 0:
+        rtx0 = rtdis0 + gx0 - sgx
+        gx0 *= max(rtx0, 0.0)
+        denom = denom + gx0
+    if nroot > 1:
+        rtx1 = rtdis1 + gx1 - sgx
+        gx1 *= max(rtx1, 0.0)
+        denom = denom + gx1
+    if nroot > 2:
+        rtx2 = rtdis2 + gx2 - sgx
+        gx2 *= max(rtx2, 0.0)
+        denom = denom + gx2
+    if nroot > 3:
+        rtx3 = rtdis3 + gx3 - sgx
+        gx3 *= max(rtx3, 0.0)
+        denom = denom + gx3
 
     if denom <= 0.0:
         denom = 1.0
@@ -503,7 +503,7 @@ def evapo_fn(
                 rtdis3,
             )
 
-            ett1 = et1_0 + et1_1 + et1_2 + et1_3
+            ett1 = ett1 + et1_0 + et1_1 + et1_2 + et1_3
 
             # calculate canopy evaporation.
             if cmc > 0.0:
@@ -688,12 +688,12 @@ def rosr12_fn(ai1, ai2, ai3, bi0, bi1, bi2, bi3, ci0, ci1, ci2, ci3, d0, d1, d2,
     p0 = -ci0 / bi0
     delta0 = d0 / bi0
 
-    p1 = -ci1 / (bi1 + ai1 * p0)
-    delta1 = (d1 - ai1 * delta0) / (bi1 + ai1 * p0)
-    p2 = -ci2 / (bi2 + ai2 * p1)
-    delta2 = (d2 - ai2 * delta1) / (bi2 + ai2 * p1)
-    p3 = -ci3 / (bi3 + ai3 * p2)
-    delta3 = (d3 - ai3 * delta2) / (bi3 + ai3 * p2)
+    p1 = -ci1 * (1.0 / (bi1 + ai1 * p0))
+    delta1 = (d1 - ai1 * delta0) * (1.0 / (bi1 + ai1 * p0))
+    p2 = -ci2 * (1.0 / (bi2 + ai2 * p1))
+    delta2 = (d2 - ai2 * delta1) * (1.0 / (bi2 + ai2 * p1))
+    p3 = -ci3 * (1.0 / (bi3 + ai3 * p2))
+    delta3 = (d3 - ai3 * delta2) * (1.0 / (bi3 + ai3 * p2))
 
     p3 = delta3
     p2 = p2 * p3 + delta2
@@ -1344,29 +1344,45 @@ def srt_fn(
 ):
     # determine rainfall infiltration rate and runoff
     cvfrz = 3
+    iohinf = 1
 
-    sicemax = max(max(max(max(sice0, sice1), sice2), sice3), 0.0)
+    sicemax = 0.0
+    if sice0 > sicemax:
+        sicemax = sice0
+    if sice1 > sicemax:
+        sicemax = sice1
+    if sice2 > sicemax:
+        sicemax = sice2
+    if sice3 > sicemax:
+        sicemax = sice3
 
+    # determine rainfall infiltration rate and runoff
     pddum = pcpdrp
     runoff1 = 0.0
 
     if pcpdrp != 0:
-        # frozen ground version
         dt1 = dt / 86400.0
         smcav = smcmax - smcwlt
-        dd = (
-            -zsoil0 * (smcav - (sh2oa0 + sice0 - smcwlt))
-            + (zsoil0 - zsoil1) * (smcav - (sh2oa1 + sice1 - smcwlt))
-            + (zsoil1 - zsoil2) * (smcav - (sh2oa2 + sice2 - smcwlt))
-            + (zsoil2 - zsoil3) * (smcav - (sh2oa3 + sice3 - smcwlt))
-        )
+        dmax0 = -zsoil0 * smcav
+        # frozen ground version
+        dice = -zsoil0 * sice0
+        dmax0 = dmax0 * (1.0 - (sh2oa0 + sice0 - smcwlt) / smcav)
+        dd = dmax0
 
-        dice = (
-            -zsoil0 * sice0
-            + (zsoil0 - zsoil1) * sice1
-            + (zsoil1 - zsoil2) * sice2
-            + (zsoil2 - zsoil3) * sice3
-        )
+        dice = dice + (zsoil0 - zsoil1) * smcav
+        dmax1 = (zsoil0 - zsoil1) * smcav
+        dmax1 = dmax1 * (1.0 - (sh2oa1 + sice1 - smcwlt) / smcav)
+        dd += dmax1
+
+        dice = dice + (zsoil1 - zsoil2) * smcav
+        dmax2 = (zsoil1 - zsoil2) * smcav
+        dmax2 = dmax2 * (1.0 - (sh2oa2 + sice2 - smcwlt) / smcav)
+        dd += dmax2
+
+        dice = dice + (zsoil2 - zsoil3) * smcav
+        dmax3 = (zsoil2 - zsoil3) * smcav
+        dmax3 = dmax3 * (1.0 - (sh2oa3 + sice3 - smcwlt) / smcav)
+        dd += dmax3
 
         val = 1.0 - exp(-kdt * dt1)
         ddt = dd * val
@@ -1386,7 +1402,9 @@ def srt_fn(
             ialp1 = cvfrz - 1  # = 2
 
             # Hardcode for ialp1 = 2
-            sum = 1.0 + acrt ** 2.0 / 2.0 + acrt
+            sum = 1.0 + (
+                acrt ** (cvfrz - 1) / 2.0
+            ) + (acrt ** (cvfrz - 2) / 1.0)
 
             fcr = 1.0 - exp(-acrt) * sum
 
@@ -1424,7 +1442,7 @@ def srt_fn(
     ci1 = -wdf1 * ddz2 / denom2
     slopx = 1.0
     numer = wdf1 * dsmdz2 + slopx * wcnd1 - wdf0 * dsmdz - wcnd0 + et_1
-    rhstt1 = -numer / denom2
+    rhstt1 = numer / (-denom2)
 
     # calc matrix coefs
     ai1 = -wdf0 * ddz / denom2
@@ -1441,7 +1459,7 @@ def srt_fn(
     ci2 = -wdf2 * ddz2 / denom2
     slopx = 1.0
     numer = wdf2 * dsmdz2 + slopx * wcnd2 - wdf1 * dsmdz - wcnd1 + et_2
-    rhstt2 = -numer / denom2
+    rhstt2 = numer / (-denom2)
 
     # calc matrix coefs
     ai2 = -wdf1 * ddz / denom2
@@ -1456,7 +1474,7 @@ def srt_fn(
     ci3 = 0.0
     slopx = slope
     numer = wdf3 * dsmdz2 + slopx * wcnd3 - wdf2 * dsmdz - wcnd2 + et_3
-    rhstt3 = -numer / denom2
+    rhstt3 = numer / (-denom2)
 
     # calc matrix coefs
     ai3 = -wdf2 * ddz / denom2
@@ -1525,22 +1543,39 @@ def sstep_fn(
     # calculates/updates soil moisture content values and
     # canopy moisture content values.
 
+    ai0 = ai0 * dt
+    ai1 = ai1 * dt
+    ai2 = ai2 * dt
+    ai3 = ai3 * dt
+    bi0 = 1.0 + dt * bi0
+    bi1 = 1.0 + dt * bi1
+    bi2 = 1.0 + dt * bi2
+    bi3 = 1.0 + dt * bi3
+    ci0 = ci0 * dt
+    ci1 = ci1 * dt
+    ci2 = ci2 * dt
+    ci3 = ci3 * dt
+    rhstt0 = rhstt0 * dt
+    rhstt1 = rhstt1 * dt
+    rhstt2 = rhstt2 * dt
+    rhstt3 = rhstt3 * dt
+
     ci0, ci1, ci2, ci3, rhstt0, rhstt1, rhstt2, rhstt3 = rosr12_fn(
-        ai1 * dt,
-        ai2 * dt,
-        ai3 * dt,
-        1.0 + dt * bi0,
-        1.0 + dt * bi1,
-        1.0 + dt * bi2,
-        1.0 + dt * bi3,
-        ci0 * dt,
-        ci1 * dt,
-        ci2 * dt,
-        ci3 * dt,
-        rhstt0 * dt,
-        rhstt1 * dt,
-        rhstt2 * dt,
-        rhstt3 * dt,
+        ai1,
+        ai2,
+        ai3,
+        bi0,
+        bi1,
+        bi2,
+        bi3,
+        ci0,
+        ci1,
+        ci2,
+        ci3,
+        rhstt0,
+        rhstt1,
+        rhstt2,
+        rhstt3,
     )
 
     # sum the previous smc value and the matrix solution
@@ -1607,7 +1642,34 @@ def sstep_fn(
         cmc = 0.0
     cmc = min(cmc, cmcmax)
 
-    return sh2o0, sh2o1, sh2o2, sh2o3, runoff3, smc0, smc1, smc2, smc3, cmc
+    return (
+        sh2o0,
+        sh2o1,
+        sh2o2,
+        sh2o3,
+        runoff3,
+        smc0,
+        smc1,
+        smc2,
+        smc3,
+        cmc,
+        rhstt0,
+        rhstt1,
+        rhstt2,
+        rhstt3,
+        ai0,
+        ai1,
+        ai2,
+        ai3,
+        bi0,
+        bi1,
+        bi2,
+        bi3,
+        ci0,
+        ci1,
+        ci2,
+        ci3,
+    )
 
 
 @gtscript.function
@@ -1647,6 +1709,9 @@ def smflx_fn(
     # compute the right hand side of the canopy eqn term
     rhsct = shdfac * prcp1 - ec1
 
+    # convert rhsct (a rate) to trhsct (an amount) and add it to
+    # existing cmc.  if resulting amt exceeds max capacity, it becomes
+    # drip and will fall to the grnd.
     drip = 0.0
     trhsct = dt * rhsct
     excess = cmc + trhsct
@@ -1662,6 +1727,11 @@ def smflx_fn(
     sice1 = smc1 - sh2o1
     sice2 = smc2 - sh2o2
     sice3 = smc3 - sh2o3
+
+    sh2oa0 = sh2o0
+    sh2oa1 = sh2o1
+    sh2oa2 = sh2o2
+    sh2oa3 = sh2o3
 
     if (pcpdrp * dt) > (0.001 * 1000.0 * (-zsoil0) * smcmax):
         (
@@ -1693,10 +1763,10 @@ def smflx_fn(
             sh2o1,
             sh2o2,
             sh2o3,
-            sh2o0,
-            sh2o1,
-            sh2o2,
-            sh2o3,
+            sh2oa0,
+            sh2oa1,
+            sh2oa2,
+            sh2oa3,
             pcpdrp,
             zsoil0,
             zsoil1,
@@ -1728,6 +1798,22 @@ def smflx_fn(
             smc2,
             smc3,
             cmc,
+            rhstt0,
+            rhstt1,
+            rhstt2,
+            rhstt3,
+            ai0,
+            ai1,
+            ai2,
+            ai3,
+            bi0,
+            bi1,
+            bi2,
+            bi3,
+            ci0,
+            ci1,
+            ci2,
+            ci3,
         ) = sstep_fn(
             sh2o0,
             sh2o1,
@@ -1821,7 +1907,34 @@ def smflx_fn(
             sice3,
         )
 
-        sh2o0, sh2o1, sh2o2, sh2o3, runoff3, smc0, smc1, smc2, smc3, cmc = sstep_fn(
+        (
+            sh2o0,
+            sh2o1,
+            sh2o2,
+            sh2o3,
+            runoff3,
+            smc0,
+            smc1,
+            smc2,
+            smc3,
+            cmc,
+            rhstt0,
+            rhstt1,
+            rhstt2,
+            rhstt3,
+            ai0,
+            ai1,
+            ai2,
+            ai3,
+            bi0,
+            bi1,
+            bi2,
+            bi3,
+            ci0,
+            ci1,
+            ci2,
+            ci3,
+        ) = sstep_fn(
             sh2o0,
             sh2o1,
             sh2o2,
@@ -1911,7 +2024,34 @@ def smflx_fn(
             sice3,
         )
 
-        sh2o0, sh2o1, sh2o2, sh2o3, runoff3, smc0, smc1, smc2, smc3, cmc = sstep_fn(
+        (
+            sh2o0,
+            sh2o1,
+            sh2o2,
+            sh2o3,
+            runoff3,
+            smc0,
+            smc1,
+            smc2,
+            smc3,
+            cmc,
+            rhstt0,
+            rhstt1,
+            rhstt2,
+            rhstt3,
+            ai0,
+            ai1,
+            ai2,
+            ai3,
+            bi0,
+            bi1,
+            bi2,
+            bi3,
+            ci0,
+            ci1,
+            ci2,
+            ci3,
+        ) = sstep_fn(
             sh2o0,
             sh2o1,
             sh2o2,
@@ -2260,7 +2400,7 @@ def nopac_fn(
     if (not lheatstrg) and (ivegsrc == 1) and (vegtyp == 12):
         df1 = 3.24 * (1.0 - shdfac) + shdfac * df1 * exp(sbeta * shdfac)
     else:
-        df1 *= exp(sbeta * shdfac)
+        df1 = df1 * exp(sbeta * shdfac)
 
     # compute intermediate terms passed to routine hrt
     yynum = fdown - sfcems * physcons.SIGMA1 * t24
@@ -2827,6 +2967,7 @@ def sflx(
     z0,
     shdfac,
     snowh,
+    zroot,
     nsoil,
 ):
     # --- ... subprograms called: redprm, snow_new, csnow, snfrac,
@@ -3107,6 +3248,7 @@ def sflx(
             rgl,
             hs,
             xlai,
+            zroot,
         )
 
     # now decide major pathway branch to take depending on whether
@@ -3535,6 +3677,7 @@ def sfc_drv(
     hs: FloatFieldIJ,
     xlai: FloatFieldIJ,
     slope: FloatFieldIJ,
+    zroot: FloatFieldIJ,
     nsoil: Int,
 ):
     with computation(FORWARD), interval(0, 1):
@@ -3753,6 +3896,7 @@ def sfc_drv(
                 z0,
                 sigmaf,
                 snowh,
+                zroot,
                 nsoil,
             )
 
@@ -4284,6 +4428,7 @@ class NoahLSM_2D:
             self._hs,
             self._xlai,
             self._slope,
+            self._zroot,
             self._lsoil,
         )
 

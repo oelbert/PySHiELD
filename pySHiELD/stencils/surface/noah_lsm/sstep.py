@@ -46,7 +46,6 @@ def finish_sstep(
         with interval(0, 1):
             if surface_mask:
                 runoff3 = 0.0
-                runoff3 = 0.0
                 ddz = -zsoil
         with interval(1, None):
             if surface_mask:
@@ -65,6 +64,8 @@ def finish_sstep(
             sh2o = max(smc - sice, 0.0)
             runoff3 = 0.0
 
+    with computation(FORWARD), interval(0, 1):
+        if surface_mask:
             # update canopy water content/interception
             cmc += dt * rhsct
             if cmc < 1.0e-20:

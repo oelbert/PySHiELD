@@ -2,7 +2,6 @@ from gt4py.cartesian.gtscript import FORWARD, computation, interval
 
 import pySHiELD.constants as physcons
 from ndsl.constants import X_DIM, Y_DIM, Z_DIM
-from ndsl.dsl.stencil import StencilFactory
 from ndsl.dsl.typing import (
     Bool,
     BoolFieldIJ,
@@ -17,7 +16,230 @@ from ndsl.initialization.sizer import SubtileGridSizer
 from ndsl import Namelist, StencilFactory
 from ndsl.dsl.stencil import GridIndexing
 from pySHiELD.stencils.surface.noah_lsm.nopac import NOPAC
+from pySHiELD.stencils.surface.noah_lsm.lsm_2d import nopac_fn
 from tests.savepoint.translate.translate_physics import TranslatePhysicsFortranData2Py
+
+def nopac_stencil(
+    zsoil: FloatField,
+    rtdis: FloatField,
+    stc: FloatField,
+    sh2o: FloatField,
+    smc: FloatField,
+    et: FloatField,
+    etp: FloatFieldIJ,
+    prcp: FloatFieldIJ,
+    smcmax: FloatFieldIJ,
+    smcwlt: FloatFieldIJ,
+    smcref: FloatFieldIJ,
+    smcdry: FloatFieldIJ,
+    cmcmax: FloatFieldIJ,
+    shdfac: FloatFieldIJ,
+    sbeta: FloatFieldIJ,
+    sfctmp: FloatFieldIJ,
+    sfcems: FloatFieldIJ,
+    t24: FloatFieldIJ,
+    th2: FloatFieldIJ,
+    fdown: FloatFieldIJ,
+    epsca: FloatFieldIJ,
+    bexp: FloatFieldIJ,
+    pc: FloatFieldIJ,
+    rch: FloatFieldIJ,
+    rr: FloatFieldIJ,
+    cfactr: FloatFieldIJ,
+    slope: FloatFieldIJ,
+    kdt: FloatFieldIJ,
+    frzx: FloatFieldIJ,
+    psisat: FloatFieldIJ,
+    dksat: FloatFieldIJ,
+    dwsat: FloatFieldIJ,
+    zbot: FloatFieldIJ,
+    quartz: FloatFieldIJ,
+    fxexp: FloatFieldIJ,
+    csoil: FloatFieldIJ,
+    cmc: FloatFieldIJ,
+    t1: FloatFieldIJ,
+    tbot: FloatFieldIJ,
+    beta: FloatFieldIJ,
+    ssoil: FloatFieldIJ,
+    runoff1: FloatFieldIJ,
+    runoff2: FloatFieldIJ,
+    runoff3: FloatFieldIJ,
+    edir: FloatFieldIJ,
+    ec: FloatFieldIJ,
+    ett: FloatFieldIJ,
+    drip: FloatFieldIJ,
+    dew: FloatFieldIJ,
+    flx1: FloatFieldIJ,
+    flx3: FloatFieldIJ,
+    eta: FloatFieldIJ,
+    ice: IntFieldIJ,
+    vegtype: IntFieldIJ,
+    nroot: IntFieldIJ,
+    nopac_mask: BoolFieldIJ,
+):
+    from __externals__ import dt, lheatstrg, ivegsrc
+    with computation(FORWARD), interval(0, 1):
+        smc0 = smc[0, 0, 0]
+        smc1 = smc[0, 0, 1]
+        smc2 = smc[0, 0, 2]
+        smc3 = smc[0, 0, 3]
+        stc0 = stc[0, 0, 0]
+        stc1 = stc[0, 0, 1]
+        stc2 = stc[0, 0, 2]
+        stc3 = stc[0, 0, 3]
+        sh2o0 = sh2o[0, 0, 0]
+        sh2o1 = sh2o[0, 0, 1]
+        sh2o2 = sh2o[0, 0, 2]
+        sh2o3 = sh2o[0, 0, 3]
+        rtdis0 = rtdis[0, 0, 0]
+        rtdis1 = rtdis[0, 0, 1]
+        rtdis2 = rtdis[0, 0, 2]
+        rtdis3 = rtdis[0, 0, 3]
+        et0 = et[0, 0, 0]
+        et1 = et[0, 0, 1]
+        et2 = et[0, 0, 2]
+        et3 = et[0, 0, 3]
+        zsoil0 = zsoil[0, 0, 0]
+        zsoil1 = zsoil[0, 0, 1]
+        zsoil2 = zsoil[0, 0, 2]
+        zsoil3 = zsoil[0, 0, 3]
+
+        if nopac_mask:
+            (
+                cmc,
+                t1,
+                stc0,
+                stc1,
+                stc2,
+                stc3,
+                sh2o0,
+                sh2o1,
+                sh2o2,
+                sh2o3,
+                tbot,
+                eta,
+                smc0,
+                smc1,
+                smc2,
+                smc3,
+                ssoil,
+                runoff1,
+                runoff2,
+                runoff3,
+                edir,
+                ec,
+                et0,
+                et1,
+                et2,
+                et3,
+                ett,
+                beta,
+                drip,
+                dew,
+                flx1,
+                flx3,
+            ) = nopac_fn(
+                nroot,
+                etp,
+                prcp,
+                smcmax,
+                smcwlt,
+                smcref,
+                smcdry,
+                physcons.CMCMAX,
+                dt,
+                shdfac,
+                physcons.SBETA,
+                sfctmp,
+                sfcems,
+                t24,
+                th2,
+                fdown,
+                epsca,
+                bexp,
+                pc,
+                rch,
+                rr,
+                physcons.CFACTR,
+                slope,
+                kdt,
+                frzx,
+                psisat,
+                zsoil0,
+                zsoil1,
+                zsoil2,
+                zsoil3,
+                dksat,
+                dwsat,
+                physcons.ZBOT,
+                ice,
+                rtdis0,
+                rtdis1,
+                rtdis2,
+                rtdis3,
+                quartz,
+                physcons.FXEXP,
+                physcons.CSOIL,
+                ivegsrc,
+                vegtype,
+                cmc,
+                t1,
+                stc0,
+                stc1,
+                stc2,
+                stc3,
+                sh2o0,
+                sh2o1,
+                sh2o2,
+                sh2o3,
+                tbot,
+                smc0,
+                smc1,
+                smc2,
+                smc3,
+                lheatstrg,
+            )
+    with computation(FORWARD), interval(0, 1):
+        smc[0, 0, 0] = smc0
+        stc[0, 0, 0] = stc0
+        sh2o[0, 0, 0] = sh2o0
+        et[0, 0, 0] = et0
+    with computation(FORWARD), interval(1, 2):
+        smc[0, 0, 0] = smc1
+        stc[0, 0, 0] = stc1
+        sh2o[0, 0, 0] = sh2o1
+        et[0, 0, 0] = et1
+    with computation(FORWARD), interval(2, 3):
+        smc[0, 0, 0] = smc2
+        stc[0, 0, 0] = stc2
+        sh2o[0, 0, 0] = sh2o2
+        et[0, 0, 0] = et2
+    with computation(FORWARD), interval(3, 4):
+        smc[0, 0, 0] = smc3
+        stc[0, 0, 0] = stc3
+        sh2o[0, 0, 0] = sh2o3
+        et[0, 0, 0] = et3
+
+
+class Nopac2d:
+    def __init__(
+        self,
+        stencil_factory: StencilFactory,
+        quantity_factory: QuantityFactory,
+        ivegsrc: Int,
+        lheatstrg: Bool,
+        dt: Float,
+    ):
+        grid_indexing = stencil_factory.grid_indexing
+
+        domain = grid_indexing.domain
+        domain_2d = (domain[0], domain[1], 1)
+        pass
+
+    def __call__(
+        self,
+    ):
+        pass
 
 class NopacTest:
     def __init__(

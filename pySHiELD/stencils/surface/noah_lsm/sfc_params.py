@@ -864,7 +864,7 @@ def set_soil_veg(
 
     nroot[isl_mask == 1] = NROOT_DATA[veg_data[isl_mask == 1]]
     zroot[isl_mask == 1] = ZSOIL_DATA[nroot[isl_mask == 1] - 1]
-    zroot[nroot == 0] = 0.
+    zroot[isl_mask == 1][nroot[isl_mask == 1] == 0] = 0.
 
     snup[land_mask] = SNUPX[veg_data[land_mask]]
     rsmin[land_mask] = RSMTBL[veg_data[land_mask]]
