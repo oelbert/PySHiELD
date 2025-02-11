@@ -212,7 +212,7 @@ class SnopacTest:
             self._k_mask,
         )
 
-class TranslateSnopack1(TranslatePhysicsFortranData2Py):
+class TranslateSnopack3D(TranslatePhysicsFortranData2Py):
     def __init__(
         self,
         grid,
@@ -369,6 +369,17 @@ class TranslateSnopack1(TranslatePhysicsFortranData2Py):
         inputs.pop("beta")
         self.compute_func(**inputs)
         return self.slice_output(inputs)
+
+
+class TranslateSnopack1(TranslateSnopack3D):
+    def __init__(
+        self,
+        grid,
+        namelist: Namelist,
+        stencil_factory: StencilFactory,
+    ):
+        super().__init__(grid, namelist, stencil_factory)
+
 
 class TranslateSnopack2(TranslateSnopack1):
     def __init__(
