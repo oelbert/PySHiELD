@@ -6,6 +6,8 @@ from .translate_fv_update_phys import DycoreState, TranslateFVUpdatePhys
 from .translate_lsm import TranslateNoahLSM_iter1, TranslateNoahLSM_iter2
 from .translate_canres import TranslateCanres1, TranslateCanres2
 from .translate_microphysics import TranslateMicroph
+from .translate_nopac import TranslateNopack1, TranslateNopack2
+from .translate_snopac import TranslateSnopack1, TranslateSnopack2
 from .translate_phifv3 import TranslatePhiFV3
 from .translate_physics import ParallelPhysicsTranslate2Py, TranslateFortranData2Py
 from .translate_prsfv3 import TranslatePrsFV3

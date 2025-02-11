@@ -31,14 +31,15 @@ def invert_bool(
 
 
 def snopac_stencil(
-    nopac_mask: BoolFieldIJ
+    nopac_mask: BoolFieldIJ,
+    snopac_mask: BoolFieldIJ,
 ):
     with computation(FORWARD), interval(0, 1):
 
-    if nopac_mask:
-        snopac_mask = False
-    else:
-        snopac_mask = True
+        if nopac_mask:
+            snopac_mask = False
+        else:
+            snopac_mask = True
 
 
 class SnopacTest:
