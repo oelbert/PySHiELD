@@ -273,7 +273,26 @@ class Canres2D:
         )
 
 class Canres:
-    def __init__(self, stencil_factory: StencilFactory):
+    def __init__(
+        self,
+        stencil_factory: StencilFactory,
+        quantity_factory: QuantityFactory,
+        nsoil,
+    ):
+        self._k_mask = quantity_factory.zeros(
+            [X_DIM, Y_DIM, Z_DIM],
+            units="unknown",
+            dtype=Int,
+        )
+        self._zroot = quantity_factory.zeros(
+            [X_DIM, Y_DIM, Z_DIM],
+            units="unknown",
+            dtype=Int,
+        )
+
+        for k in range(nsoil):
+            self._k_mask.data[:, :, k] = k
+
         grid_indexing = stencil_factory.grid_indexing
         self._canres = stencil_factory.from_origin_domain(
             func=canres,
@@ -296,12 +315,10 @@ class Canres:
         smcwlt,
         smcref,
         zsoil,
-        zroot,
         rsmin,
         rgl,
         hs,
         xlai,
-        k_mask,
         shdfac,
         rc,
         pc,
@@ -311,6 +328,10 @@ class Canres:
         rcsoil,
         lsm_mask,
     ):
+        for i in range():
+            for j in range():
+                self._zroot.view[i, j] = zsoil[i, j, nroot[i, j]]
+
         self._canres(
             nroot,
             swdn,
@@ -325,12 +346,12 @@ class Canres:
             smcwlt,
             smcref,
             zsoil,
-            zroot,
+            self._zroot,
             rsmin,
             rgl,
             hs,
             xlai,
-            k_mask,
+            self._k_mask,
             shdfac,
             rc,
             pc,
@@ -382,6 +403,7 @@ class TranslateCanres3D(TranslatePhysicsFortranData2Py):
             "sh2o": {"shield": True},
             "smcwlt": {"shield": True},
             "smcref": {"shield": True},
+            "shdfac": {"shield": True},
             "zsoil": {"shield": True},
             "rsmin": {"shield": True},
             "rsmax": {"shield": True},
@@ -460,6 +482,7 @@ class Translate2dCanres(TranslatePhysicsFortranData2Py):
             "sh2o": {"shield": True},
             "smcwlt": {"shield": True},
             "smcref": {"shield": True},
+            "shdfac": {"shield": True},
             "zsoil": {"shield": True},
             "rsmin": {"shield": True},
             "rsmax": {"shield": True},
