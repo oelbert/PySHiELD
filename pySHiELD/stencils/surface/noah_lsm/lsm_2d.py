@@ -4233,6 +4233,10 @@ class NoahLSM_2D:
         self._slc1 = make_quantity_2d()
         self._slc2 = make_quantity_2d()
         self._slc3 = make_quantity_2d()
+        self._gx0 = make_quantity_2d()
+        self._gx2 = make_quantity_2d()
+        self._gx3 = make_quantity_2d()
+        self._gx4 = make_quantity_2d()
 
         self._sfc_drv = stencil_factory.from_origin_domain(
             func=sfc_drv,
@@ -4475,6 +4479,10 @@ class NoahLSM_2D:
             self._xlai,
             self._slope,
             self._zroot,
+            self._gx0,
+            self._gx2,
+            self._gx3,
+            self._gx4,
             self._lsoil,
         )
 
