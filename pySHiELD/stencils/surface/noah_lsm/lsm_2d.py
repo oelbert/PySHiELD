@@ -374,6 +374,10 @@ def transp_fn(
     rtdis1,
     rtdis2,
     rtdis3,
+    gx0,
+    gx1,
+    gx2,
+    gx3,
 ):
     # initialize plant transp to zero for all soil layers.
     et1_0 = 0.0
@@ -458,6 +462,10 @@ def evapo_fn(
     rtdis2,
     rtdis3,
     fxexp,
+    gx0,
+    gx2,
+    gx3,
+    gx4
 ):
     # --- ... subprograms called: devap, transp
 
@@ -465,7 +473,10 @@ def evapo_fn(
     ett1 = 0.0
     edir1 = 0.0
 
-    et1_0, et1_1, et1_2, et1_3 = 0.0, 0.0, 0.0, 0.0
+    et1_0 = 0.0
+    et1_1 = 0.0
+    et1_2 = 0.0
+    et1_3 = 0.0
 
     if etp1 > 0.0:
         # retrieve direct evaporation from soil surface.
@@ -496,6 +507,10 @@ def evapo_fn(
                 rtdis1,
                 rtdis2,
                 rtdis3,
+                gx0,
+                gx2,
+                gx3,
+                gx4
             )
 
             ett1 = ett1 + et1_0 + et1_1 + et1_2 + et1_3
@@ -2216,6 +2231,10 @@ def nopac_fn(
     smc2,
     smc3,
     lheatstrg,
+    gx0,
+    gx2,
+    gx3,
+    gx4
 ):
     # convert etp from kg m-2 s-1 to ms-1 and initialize dew.
     prcp1 = prcp * 0.001
@@ -2267,6 +2286,10 @@ def nopac_fn(
             rtdis2,
             rtdis3,
             fxexp,
+            gx0,
+            gx2,
+            gx3,
+            gx4
         )
 
         (
@@ -2547,6 +2570,10 @@ def snopac_fn(
     smc2,
     smc3,
     lheatstrg,
+    gx0,
+    gx2,
+    gx3,
+    gx4
 ):
     # calculates soil moisture and heat flux values and
     # update soil moisture content and soil heat content values for the
@@ -2632,6 +2659,10 @@ def snopac_fn(
                     rtdis2,
                     rtdis3,
                     fxexp,
+                    gx0,
+                    gx2,
+                    gx3,
+                    gx4
                 )
 
                 edir1 *= 1.0 - sncovr
@@ -2964,6 +2995,10 @@ def sflx(
     snowh,
     zroot,
     nsoil,
+    gx0,
+    gx2,
+    gx3,
+    gx4
 ):
     # --- ... subprograms called: redprm, snow_new, csnow, snfrac,
     # alcalc, tdfcnd, snowz0, sfcdif, penman, canres, nopac, snopac.
@@ -3344,6 +3379,10 @@ def sflx(
             smc2,
             smc3,
             lheatstrg,
+            gx0,
+            gx2,
+            gx3,
+            gx4
         )
 
     else:
@@ -3453,6 +3492,10 @@ def sflx(
             smc2,
             smc3,
             lheatstrg,
+            gx0,
+            gx2,
+            gx3,
+            gx4
         )
 
     # prepare sensible heat (h) for return to parent model
@@ -3673,6 +3716,10 @@ def sfc_drv(
     xlai: FloatFieldIJ,
     slope: FloatFieldIJ,
     zroot: FloatFieldIJ,
+    gx0: FloatFieldIJ,
+    gx2: FloatFieldIJ,
+    gx3: FloatFieldIJ,
+    gx4: FloatFieldIJ,
     nsoil: Int,
 ):
     with computation(FORWARD), interval(0, 1):
@@ -3893,6 +3940,10 @@ def sfc_drv(
                 snowh,
                 zroot,
                 nsoil,
+                gx0,
+                gx2,
+                gx3,
+                gx4
             )
 
             # output
