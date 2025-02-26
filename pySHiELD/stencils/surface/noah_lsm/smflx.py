@@ -16,7 +16,6 @@ from ndsl.dsl.typing import (
 )
 from ndsl.initialization.allocator import QuantityFactory
 from ndsl.quantity import Quantity
-from ndsl.stencils.basic_operations import average_in
 from pySHiELD.stencils.surface.noah_lsm.sstep import SoilCanopyMoisture
 
 
@@ -41,6 +40,14 @@ def wdfcnd_fn(smc, smcmax, bexp, dksat, dwsat, sicemax):
 
     return wdf, wcnd
 
+
+def average_out(
+    sh2o_out: FloatField,
+    sh2o1: FloatField,
+    sh2o2: FloatField,
+):
+    with computation(PARALLEL), interval(...):
+        sh2o_out = (sh2o1 + sh2o2) * 0.5
 
 def start_smflx(
     smcmax: FloatFieldIJ,
@@ -318,7 +325,7 @@ class SoilMoistureFlux:
             dtype=Bool,
         )
 
-        self._mid_sh20 = make_quantity()
+        self._sh2o0 = make_quantity()
         self._sh2oa = make_quantity()
         self._ai = make_quantity()
         self._bi = make_quantity()
@@ -338,8 +345,8 @@ class SoilMoistureFlux:
             domain=grid_indexing.domain_compute(),
         )
 
-        self._average_in = stencil_factory.from_origin_domain(
-            func=average_in,
+        self._average_out = stencil_factory.from_origin_domain(
+            func=average_out,
             origin=grid_indexing.origin_compute(),
             domain=grid_indexing.domain_compute(),
         )
@@ -434,7 +441,7 @@ class SoilMoistureFlux:
             cmc,
             sh2o,
             smc,
-            self._mid_sh20,
+            self._sh2o0,
             self._sh2oa,
             self._sice,
             surface_mask,
@@ -484,12 +491,13 @@ class SoilMoistureFlux:
             self._frozen_ground,
         )
 
-        self._average_in(sh2o, self._mid_sh20)
+        self._average_out(self._sh2oa, sh2o, self._sh2o0)
 
         self._srt(
             edir1,
             et1,
             sh2o,
+            self._sh2oa,
             self._pcpdrp,
             zsoil,
             dwsat,

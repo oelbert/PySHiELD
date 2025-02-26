@@ -31,14 +31,15 @@ def invert_bool(
 
 
 def snopac_stencil(
-    nopac_mask: BoolFieldIJ
+    nopac_mask: BoolFieldIJ,
+    snopac_mask: BoolFieldIJ,
 ):
     with computation(FORWARD), interval(0, 1):
 
-    if nopac_mask:
-        snopac_mask = False
-    else:
-        snopac_mask = True
+        if nopac_mask:
+            snopac_mask = False
+        else:
+            snopac_mask = True
 
 
 class SnopacTest:
@@ -212,7 +213,7 @@ class SnopacTest:
             self._k_mask,
         )
 
-class TranslateSnopack1(TranslatePhysicsFortranData2Py):
+class TranslateSnopack3D(TranslatePhysicsFortranData2Py):
     def __init__(
         self,
         grid,
@@ -369,6 +370,17 @@ class TranslateSnopack1(TranslatePhysicsFortranData2Py):
         inputs.pop("beta")
         self.compute_func(**inputs)
         return self.slice_output(inputs)
+
+
+class TranslateSnopack1(TranslateSnopack3D):
+    def __init__(
+        self,
+        grid,
+        namelist: Namelist,
+        stencil_factory: StencilFactory,
+    ):
+        super().__init__(grid, namelist, stencil_factory)
+
 
 class TranslateSnopack2(TranslateSnopack1):
     def __init__(

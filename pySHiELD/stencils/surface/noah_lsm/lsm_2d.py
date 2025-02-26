@@ -374,6 +374,10 @@ def transp_fn(
     rtdis1,
     rtdis2,
     rtdis3,
+    gx0,
+    gx1,
+    gx2,
+    gx3,
 ):
     # initialize plant transp to zero for all soil layers.
     et1_0 = 0.0
@@ -381,53 +385,48 @@ def transp_fn(
     et1_2 = 0.0
     et1_3 = 0.0
 
+    # calculate an 'adjusted' potential transpiration
+    # if statement below to avoid tangent linear problems near zero
+    # note: gx and other terms below redistribute transpiration by layer,
+    # et(k), as a function of soil moisture availability, while preserving
+    # total etp1a.
+
     if cmc != 0.0:
         etp1a = shdfac * pc * etp1 * (1.0 - (cmc / cmcmax) ** cfactr)
     else:
         etp1a = shdfac * pc * etp1
 
-    gx0 = 0.0
-    gx1 = 0.0
-    gx2 = 0.0
-    gx3 = 0.0
     sgx = 0.0
 
     if nroot > 0:
         gx0 = (smc0 - smcwlt) / (smcref - smcwlt)
         gx0 = max(0.0, min(1.0, gx0))
-        sgx = sgx + gx0
+    else: gx0 = 0.0
     if nroot > 1:
         gx1 = (smc1 - smcwlt) / (smcref - smcwlt)
         gx1 = max(0.0, min(1.0, gx1))
-        sgx = sgx + gx1
+    else: gx1 = 0.0
     if nroot > 2:
         gx2 = (smc2 - smcwlt) / (smcref - smcwlt)
         gx2 = max(0.0, min(1.0, gx2))
-        sgx = sgx + gx2
+    else: gx2 = 0.0
     if nroot > 3:
         gx3 = (smc3 - smcwlt) / (smcref - smcwlt)
         gx3 = max(0.0, min(1.0, gx3))
-        sgx = sgx + gx3
+    else: gx3 = 0.0
+    sgx = (gx0 + gx1 + gx2 + gx3) / nroot
 
-    sgx = sgx / nroot
+
     denom = 0.0
-
-    if nroot > 0:
-        rtx0 = rtdis0 + gx0 - sgx
-        gx0 *= max(rtx0, 0.0)
-        denom = denom + gx0
-    if nroot > 1:
-        rtx1 = rtdis1 + gx1 - sgx
-        gx1 *= max(rtx1, 0.0)
-        denom = denom + gx1
-    if nroot > 2:
-        rtx2 = rtdis2 + gx2 - sgx
-        gx2 *= max(rtx2, 0.0)
-        denom = denom + gx2
-    if nroot > 3:
-        rtx3 = rtdis3 + gx3 - sgx
-        gx3 *= max(rtx3, 0.0)
-        denom = denom + gx3
+    rtx0 = rtdis0 + gx0 - sgx
+    gx0 *= max(rtx0, 0.0)
+    rtx1 = rtdis1 + gx1 - sgx
+    gx1 *= max(rtx1, 0.0)
+    rtx2 = rtdis2 + gx2 - sgx
+    gx2 *= max(rtx2, 0.0)
+    rtx3 = rtdis3 + gx3 - sgx
+    gx3 *= max(rtx3, 0.0)
+    denom = gx0 + gx1 + gx2 + gx3
 
     if denom <= 0.0:
         denom = 1.0
@@ -463,6 +462,10 @@ def evapo_fn(
     rtdis2,
     rtdis3,
     fxexp,
+    gx0,
+    gx2,
+    gx3,
+    gx4
 ):
     # --- ... subprograms called: devap, transp
 
@@ -470,7 +473,10 @@ def evapo_fn(
     ett1 = 0.0
     edir1 = 0.0
 
-    et1_0, et1_1, et1_2, et1_3 = 0.0, 0.0, 0.0, 0.0
+    et1_0 = 0.0
+    et1_1 = 0.0
+    et1_2 = 0.0
+    et1_3 = 0.0
 
     if etp1 > 0.0:
         # retrieve direct evaporation from soil surface.
@@ -501,6 +507,10 @@ def evapo_fn(
                 rtdis1,
                 rtdis2,
                 rtdis3,
+                gx0,
+                gx2,
+                gx3,
+                gx4
             )
 
             ett1 = ett1 + et1_0 + et1_1 + et1_2 + et1_3
@@ -2239,6 +2249,10 @@ def nopac_fn(
     smc2,
     smc3,
     lheatstrg,
+    gx0,
+    gx2,
+    gx3,
+    gx4
 ):
     # convert etp from kg m-2 s-1 to ms-1 and initialize dew.
     prcp1 = prcp * 0.001
@@ -2290,6 +2304,10 @@ def nopac_fn(
             rtdis2,
             rtdis3,
             fxexp,
+            gx0,
+            gx2,
+            gx3,
+            gx4
         )
 
         (
@@ -2570,6 +2588,10 @@ def snopac_fn(
     smc2,
     smc3,
     lheatstrg,
+    gx0,
+    gx2,
+    gx3,
+    gx4
 ):
     # calculates soil moisture and heat flux values and
     # update soil moisture content and soil heat content values for the
@@ -2655,6 +2677,10 @@ def snopac_fn(
                     rtdis2,
                     rtdis3,
                     fxexp,
+                    gx0,
+                    gx2,
+                    gx3,
+                    gx4
                 )
 
                 edir1 *= 1.0 - sncovr
@@ -2987,6 +3013,10 @@ def sflx(
     snowh,
     zroot,
     nsoil,
+    gx0,
+    gx2,
+    gx3,
+    gx4
 ):
     # --- ... subprograms called: redprm, snow_new, csnow, snfrac,
     # alcalc, tdfcnd, snowz0, sfcdif, penman, canres, nopac, snopac.
@@ -3367,6 +3397,10 @@ def sflx(
             smc2,
             smc3,
             lheatstrg,
+            gx0,
+            gx2,
+            gx3,
+            gx4
         )
 
     else:
@@ -3476,6 +3510,10 @@ def sflx(
             smc2,
             smc3,
             lheatstrg,
+            gx0,
+            gx2,
+            gx3,
+            gx4
         )
 
     # prepare sensible heat (h) for return to parent model
@@ -3696,6 +3734,10 @@ def sfc_drv(
     xlai: FloatFieldIJ,
     slope: FloatFieldIJ,
     zroot: FloatFieldIJ,
+    gx0: FloatFieldIJ,
+    gx2: FloatFieldIJ,
+    gx3: FloatFieldIJ,
+    gx4: FloatFieldIJ,
     nsoil: Int,
 ):
     with computation(FORWARD), interval(0, 1):
@@ -3916,6 +3958,10 @@ def sfc_drv(
                 snowh,
                 zroot,
                 nsoil,
+                gx0,
+                gx2,
+                gx3,
+                gx4
             )
 
             # output
@@ -4205,6 +4251,10 @@ class NoahLSM_2D:
         self._slc1 = make_quantity_2d()
         self._slc2 = make_quantity_2d()
         self._slc3 = make_quantity_2d()
+        self._gx0 = make_quantity_2d()
+        self._gx2 = make_quantity_2d()
+        self._gx3 = make_quantity_2d()
+        self._gx4 = make_quantity_2d()
 
         self._sfc_drv = stencil_factory.from_origin_domain(
             func=sfc_drv,
@@ -4447,6 +4497,10 @@ class NoahLSM_2D:
             self._xlai,
             self._slope,
             self._zroot,
+            self._gx0,
+            self._gx2,
+            self._gx3,
+            self._gx4,
             self._lsoil,
         )
 
