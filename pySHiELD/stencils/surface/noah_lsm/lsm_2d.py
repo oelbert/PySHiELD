@@ -729,7 +729,9 @@ def hrtice_fn(
     ci0 = (df1 * ddz) / (zsoil0 * hcpct)
     bi0 = -ci0 + df1 / (0.5 * zsoil0 * zsoil0 * hcpct * zz1)
 
-    # calc the vertical soil temp gradient btwn the top and 2nd soil
+    # calc the vertical soil temp gradient btwn the top and 2nd soil layers
+    # recalc/adjust the soil heat flux.  use the gradient and
+    # flux to calc rhsts for the top soil layer.
     dtsdz = (stc0 - stc1) / (-0.5 * zsoil1)
     ssoil = df1 * (stc0 - yy) / (0.5 * zsoil0 * zz1)
     rhsts0 = (df1 * dtsdz - ssoil) / (zsoil0 * hcpct)
@@ -1057,23 +1059,39 @@ def hstep_fn(
     ci2,
     ci3,
 ):
+    ai0 = ai0 * dt
+    ai1 = ai1 * dt
+    ai2 = ai2 * dt
+    ai3 = ai3 * dt
+    bi0 = 1.0 + dt * bi0
+    bi1 = 1.0 + dt * bi1
+    bi2 = 1.0 + dt * bi2
+    bi3 = 1.0 + dt * bi3
+    ci0 = ci0 * dt
+    ci1 = ci1 * dt
+    ci2 = ci2 * dt
+    ci3 = ci3 * dt
+    rhsts0 = rhsts0 * dt
+    rhsts1 = rhsts1 * dt
+    rhsts2 = rhsts2 * dt
+    rhsts3 = rhsts3 * dt
 
     ci0, ci1, ci2, ci3, rhsts0, rhsts1, rhsts2, rhsts3 = rosr12_fn(
-        ai1 * dt,
-        ai2 * dt,
-        ai3 * dt,
-        1.0 + dt * bi0,
-        1.0 + dt * bi1,
-        1.0 + dt * bi2,
-        1.0 + dt * bi3,
-        ci0 * dt,
-        ci1 * dt,
-        ci2 * dt,
-        ci3 * dt,
-        rhsts0 * dt,
-        rhsts1 * dt,
-        rhsts2 * dt,
-        rhsts3 * dt,
+        ai1,
+        ai2,
+        ai3,
+        bi0,
+        bi1,
+        bi2,
+        bi3,
+        ci0,
+        ci1,
+        ci2,
+        ci3,
+        rhsts0,
+        rhsts1,
+        rhsts2,
+        rhsts3,
     )
 
     stc0 += ci0
