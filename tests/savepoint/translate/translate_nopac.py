@@ -32,9 +32,7 @@ def nopac_stencil(
     smcwlt: FloatFieldIJ,
     smcref: FloatFieldIJ,
     smcdry: FloatFieldIJ,
-    cmcmax: FloatFieldIJ,
     shdfac: FloatFieldIJ,
-    sbeta: FloatFieldIJ,
     sfctmp: FloatFieldIJ,
     sfcems: FloatFieldIJ,
     t24: FloatFieldIJ,
@@ -72,6 +70,10 @@ def nopac_stencil(
     flx1: FloatFieldIJ,
     flx3: FloatFieldIJ,
     eta: FloatFieldIJ,
+    gx0: FloatFieldIJ,
+    gx2: FloatFieldIJ,
+    gx3: FloatFieldIJ,
+    gx4: FloatFieldIJ,
     ice: IntFieldIJ,
     vegtype: IntFieldIJ,
     nroot: IntFieldIJ,
@@ -198,6 +200,10 @@ def nopac_stencil(
                 smc2,
                 smc3,
                 lheatstrg,
+                gx0,
+                gx2,
+                gx3,
+                gx4,
             )
     with computation(FORWARD), interval(0, 1):
         smc[0, 0, 0] = smc0
@@ -234,6 +240,26 @@ class Nopac2d:
 
         domain = grid_indexing.domain
         domain_2d = (domain[0], domain[1], 1)
+        self._gx0 = quantity_factory.zeros(
+            [X_DIM, Y_DIM],
+            units="unknown",
+            dtype=Float,
+        )
+        self._gx2 = quantity_factory.zeros(
+            [X_DIM, Y_DIM],
+            units="unknown",
+            dtype=Float,
+        )
+        self._gx3 = quantity_factory.zeros(
+            [X_DIM, Y_DIM],
+            units="unknown",
+            dtype=Float,
+        )
+        self._gx4 = quantity_factory.zeros(
+            [X_DIM, Y_DIM],
+            units="unknown",
+            dtype=Float,
+        )
 
         self._nopac = stencil_factory.from_origin_domain(
             func=nopac_stencil,
@@ -243,7 +269,7 @@ class Nopac2d:
                 "dt": dt,
             },
             origin=grid_indexing.origin_compute(),
-            domain=domain_2d,
+            domain=domain,
         )
 
     def __call__(
@@ -257,9 +283,7 @@ class Nopac2d:
         smcwlt,
         smcref,
         smcdry,
-        cmcmax,
         shdfac,
-        sbeta,
         sfctmp,
         sfcems,
         t24,
@@ -318,9 +342,7 @@ class Nopac2d:
             smcwlt,
             smcref,
             smcdry,
-            cmcmax,
             shdfac,
-            sbeta,
             sfctmp,
             sfcems,
             t24,
@@ -358,6 +380,10 @@ class Nopac2d:
             flx1,
             flx3,
             eta,
+            self._gx0,
+            self._gx2,
+            self._gx3,
+            self._gx4,
             ice,
             vegtype,
             nroot,
@@ -537,13 +563,13 @@ class TranslateNopack3D(TranslatePhysicsFortranData2Py):
             "nroot": {"shield": True},
             "ice": {"shield": True},
             "etp": {"shield": True},
-            "prcp": {"shield": True},
+            "prcp": {"shield": True, "serialname": "nop_prcp"},
             "smcmax": {"shield": True},
             "smcwlt": {"shield": True},
             "smcref": {"shield": True},
             "smcdry": {"shield": True},
             "cmcmax": {"shield": True},
-            "shdfac": {"shield": True},
+            "shdfac": {"shield": True, "serialname": "nop_shdfac"},
             "sbeta": {"shield": True},
             "sfctmp": {"shield": True},
             "sfcems": {"shield": True},
@@ -567,7 +593,7 @@ class TranslateNopack3D(TranslatePhysicsFortranData2Py):
             "fxexp": {"shield": True},
             "csoil": {"shield": True},
             "cmc": {"shield": True},
-            "t1": {"shield": True},
+            "t1": {"shield": True, "serialname": "nop_t1"},
             "tbot": {"shield": True},
             "beta": {"shield": True},
             "ssoil": {"shield": True},
@@ -597,7 +623,7 @@ class TranslateNopack3D(TranslatePhysicsFortranData2Py):
         ]
         self.out_vars = {
             "cmc": {"shield": True},
-            "t1": {"shield": True},
+            "t1": {"shield": True, "serialname": "nop_t1"},
             "tbot": {"shield": True},
             "beta": {"shield": True},
             "et": {"shield": True},
@@ -681,13 +707,13 @@ class TranslateNopack2D(TranslatePhysicsFortranData2Py):
             "nroot": {"shield": True},
             "ice": {"shield": True},
             "etp": {"shield": True},
-            "prcp": {"shield": True},
+            "prcp": {"shield": True, "serialname": "nop_prcp"},
             "smcmax": {"shield": True},
             "smcwlt": {"shield": True},
             "smcref": {"shield": True},
             "smcdry": {"shield": True},
             "cmcmax": {"shield": True},
-            "shdfac": {"shield": True},
+            "shdfac": {"shield": True, "serialname": "nop_shdfac"},
             "sbeta": {"shield": True},
             "sfctmp": {"shield": True},
             "sfcems": {"shield": True},
@@ -711,7 +737,7 @@ class TranslateNopack2D(TranslatePhysicsFortranData2Py):
             "fxexp": {"shield": True},
             "csoil": {"shield": True},
             "cmc": {"shield": True},
-            "t1": {"shield": True},
+            "t1": {"shield": True, "serialname": "nop_t1"},
             "tbot": {"shield": True},
             "beta": {"shield": True},
             "ssoil": {"shield": True},
@@ -741,7 +767,7 @@ class TranslateNopack2D(TranslatePhysicsFortranData2Py):
         ]
         self.out_vars = {
             "cmc": {"shield": True},
-            "t1": {"shield": True},
+            "t1": {"shield": True, "serialname": "nop_t1"},
             "tbot": {"shield": True},
             "beta": {"shield": True},
             "et": {"shield": True},
@@ -779,10 +805,10 @@ class TranslateNopack2D(TranslatePhysicsFortranData2Py):
 
     def compute(self, inputs):
         self.make_storage_data_input_vars(inputs)
+        inputs.pop("nsoil")
         self.compute_func = Nopac2d(
             self.stencil_factory,
             self.quantity_factory,
-            inputs.pop("nsoil"),
             self.namelist.ivegsrc,
             inputs.pop("lheatstrg"),
             inputs.pop("dt"),
@@ -792,7 +818,7 @@ class TranslateNopack2D(TranslatePhysicsFortranData2Py):
         self.compute_func(**inputs)
         return self.slice_output(inputs)
 
-class TranslateNopack1(TranslateNopack3D):
+class TranslateNopack1(TranslateNopack2D):
     def __init__(
         self,
         grid,
