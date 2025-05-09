@@ -513,15 +513,24 @@ def evapo_fn(
                 gx4
             )
 
-            ett1 = ett1 + et1_0 + et1_1 + et1_2 + et1_3
+            if nroot > 0:
+                ett1 = ett1 + et1_0
+            if nroot > 1:
+                ett1 = ett1 + et1_1
+            if nroot > 2:
+                ett1 = ett1 + et1_2
+            if nroot > 3:
+                ett1 = ett1 + et1_3
 
             # calculate canopy evaporation.
+            # if statements to avoid tangent linear problems near cmc=0.0.
             if cmc > 0.0:
                 ec1 = shdfac * ((cmc / cmcmax) ** cfactr) * etp1
             else:
                 ec1 = 0.0
 
             # ec should be limited by the total amount of available water on the canopy
+            # -f.chen, 18-oct-1994
             cmc2ms = cmc / dt
             ec1 = min(cmc2ms, ec1)
 
