@@ -18,9 +18,9 @@ from ndsl.dsl.typing import (
 )
 from ndsl.initialization.allocator import QuantityFactory
 from ndsl.quantity import Quantity
-from pySHiELD._config import LSMConfig, FloatFieldTracer
-from pySHiELD.stencils.surface.noah_lsm.sfc_params import set_soil_veg, BARE
+from pySHiELD._config import FloatFieldTracer, LSMConfig
 from pySHiELD.functions.physics_functions import fpvs
+from pySHiELD.stencils.surface.noah_lsm.sfc_params import BARE, set_soil_veg
 
 
 @gtscript.function
@@ -159,9 +159,9 @@ def canres_fn(
     # determine canopy resistance due to all factors
 
     rc = rsmin / (xlai * rcs * rct * rcq * rcsoil)
-    rr = (
-        4.0 * sfcems * physcons.SIGMA1 * physcons.RD1 / cpx1
-    ) * (sfctmp ** 4.0) / (sfcprs * ch) + 1.0
+    rr = (4.0 * sfcems * physcons.SIGMA1 * physcons.RD1 / cpx1) * (sfctmp ** 4.0) / (
+        sfcprs * ch
+    ) + 1.0
     delta = (physcons.LSUBC / cpx1) * dqsdt2
 
     pc = (rr + delta) / (rr * (1.0 + rc * ch) + delta)
@@ -401,21 +401,24 @@ def transp_fn(
     if nroot > 0:
         gx0 = (smc0 - smcwlt) / (smcref - smcwlt)
         gx0 = max(0.0, min(1.0, gx0))
-    else: gx0 = 0.0
+    else:
+        gx0 = 0.0
     if nroot > 1:
         gx1 = (smc1 - smcwlt) / (smcref - smcwlt)
         gx1 = max(0.0, min(1.0, gx1))
-    else: gx1 = 0.0
+    else:
+        gx1 = 0.0
     if nroot > 2:
         gx2 = (smc2 - smcwlt) / (smcref - smcwlt)
         gx2 = max(0.0, min(1.0, gx2))
-    else: gx2 = 0.0
+    else:
+        gx2 = 0.0
     if nroot > 3:
         gx3 = (smc3 - smcwlt) / (smcref - smcwlt)
         gx3 = max(0.0, min(1.0, gx3))
-    else: gx3 = 0.0
+    else:
+        gx3 = 0.0
     sgx = (gx0 + gx1 + gx2 + gx3) / nroot
-
 
     denom = 0.0
     rtx0 = rtdis0 + gx0 - sgx
@@ -465,7 +468,7 @@ def evapo_fn(
     gx0,
     gx2,
     gx3,
-    gx4
+    gx4,
 ):
     # --- ... subprograms called: devap, transp
 
@@ -510,7 +513,7 @@ def evapo_fn(
                 gx0,
                 gx2,
                 gx3,
-                gx4
+                gx4,
             )
 
             if nroot > 0:
@@ -551,18 +554,26 @@ def tmpavg_fn(tup, tm, tdn, dz):
             else:
                 x0 = (constants.TFREEZE - tm) * dzh / (tdn - tm)
                 tavg = (
-                    0.5 * (
-                        tup * dzh + tm * (dzh + x0) + constants.TFREEZE * (2.0 * dzh - x0)
-                    ) / dz
+                    0.5
+                    * (
+                        tup * dzh
+                        + tm * (dzh + x0)
+                        + constants.TFREEZE * (2.0 * dzh - x0)
+                    )
+                    / dz
                 )
         else:
             if tdn < constants.TFREEZE:
                 xup = (constants.TFREEZE - tup) * dzh / (tm - tup)
                 xdn = dzh - (constants.TFREEZE - tm) * dzh / (tdn - tm)
                 tavg = (
-                    0.5 * (
-                        tup * xup + constants.TFREEZE * (2.0 * dz - xup - xdn) + tdn * xdn
-                    ) / dz
+                    0.5
+                    * (
+                        tup * xup
+                        + constants.TFREEZE * (2.0 * dz - xup - xdn)
+                        + tdn * xdn
+                    )
+                    / dz
                 )
             else:
                 xup = (constants.TFREEZE - tup) * dzh / (tm - tup)
@@ -571,15 +582,26 @@ def tmpavg_fn(tup, tm, tdn, dz):
         if tm < constants.TFREEZE:
             if tdn < constants.TFREEZE:
                 xup = dzh - (constants.TFREEZE - tup) * dzh / (tm - tup)
-                tavg = 0.5 * (constants.TFREEZE * (dz - xup) + tm * (dzh + xup) + tdn * dzh) / dz
+                tavg = (
+                    0.5
+                    * (constants.TFREEZE * (dz - xup) + tm * (dzh + xup) + tdn * dzh)
+                    / dz
+                )
             else:
                 xup = dzh - (constants.TFREEZE - tup) * dzh / (tm - tup)
                 xdn = (constants.TFREEZE - tm) * dzh / (tdn - tm)
-                tavg = 0.5 * (constants.TFREEZE * (2.0 * dz - xup - xdn) + tm * (xup + xdn)) / dz
+                tavg = (
+                    0.5
+                    * (constants.TFREEZE * (2.0 * dz - xup - xdn) + tm * (xup + xdn))
+                    / dz
+                )
         else:
             if tdn < constants.TFREEZE:
                 xdn = dzh - (constants.TFREEZE - tm) * dzh / (tdn - tm)
-                tavg = (constants.TFREEZE * (dz - xdn) + 0.5 * (constants.TFREEZE + tdn) * xdn) / dz
+                tavg = (
+                    constants.TFREEZE * (dz - xdn)
+                    + 0.5 * (constants.TFREEZE + tdn) * xdn
+                ) / dz
             else:
                 tavg = (tup + 2.0 * tm + tdn) / 4.0
     return tavg
@@ -888,7 +910,12 @@ def hrt_fn(
 
     df1k = df1
 
-    if sice > 0 or tsurf < constants.TFREEZE or stc0 < constants.TFREEZE or tbk < constants.TFREEZE:
+    if (
+        sice > 0
+        or tsurf < constants.TFREEZE
+        or stc0 < constants.TFREEZE
+        or tbk < constants.TFREEZE
+    ):
         ### ************ tmpavg *********** ###
         dz = -zsoil0
         tavg = tmpavg_fn(tsurf, stc0, tbk, dz)
@@ -927,7 +954,12 @@ def hrt_fn(
     qtot = -1.0 * denom * rhsts1
     sice = smc1 - sh2o1
 
-    if sice > 0 or tbk < constants.TFREEZE or stc1 < constants.TFREEZE or tbk1 < constants.TFREEZE:
+    if (
+        sice > 0
+        or tbk < constants.TFREEZE
+        or stc1 < constants.TFREEZE
+        or tbk1 < constants.TFREEZE
+    ):
         ### ************ tmpavg *********** ###
         dz = zsoil0 - zsoil1
         tavg = tmpavg_fn(tbk, stc1, tbk1, dz)
@@ -974,7 +1006,12 @@ def hrt_fn(
     qtot = -1.0 * denom * rhsts2
     sice = smc2 - sh2o2
 
-    if sice > 0 or tbk < constants.TFREEZE or stc2 < constants.TFREEZE or tbk1 < constants.TFREEZE:
+    if (
+        sice > 0
+        or tbk < constants.TFREEZE
+        or stc2 < constants.TFREEZE
+        or tbk1 < constants.TFREEZE
+    ):
         ### ************ tmpavg *********** ###
         dz = zsoil1 - zsoil2
         tavg = tmpavg_fn(tbk, stc2, tbk1, dz)
@@ -1019,7 +1056,12 @@ def hrt_fn(
     qtot = -1.0 * denom * rhsts3
     sice = smc3 - sh2o3
 
-    if sice > 0 or tbk < constants.TFREEZE or stc3 < constants.TFREEZE or tbk1 < constants.TFREEZE:
+    if (
+        sice > 0
+        or tbk < constants.TFREEZE
+        or stc3 < constants.TFREEZE
+        or tbk1 < constants.TFREEZE
+    ):
         ### ************ tmpavg *********** ###
         dz = zsoil2 - zsoil3
         tavg = tmpavg_fn(tbk, stc3, tbk1, dz)
@@ -1439,9 +1481,7 @@ def srt_fn(
             ialp1 = cvfrz - 1  # = 2
 
             # Hardcode for ialp1 = 2
-            sum = 1.0 + (
-                acrt ** (cvfrz - 1) / 2.0
-            ) + (acrt ** (cvfrz - 2) / 1.0)
+            sum = 1.0 + (acrt ** (cvfrz - 1) / 2.0) + (acrt ** (cvfrz - 2) / 1.0)
 
             fcr = 1.0 - exp(-acrt) * sum
 
@@ -2261,7 +2301,7 @@ def nopac_fn(
     gx0,
     gx2,
     gx3,
-    gx4
+    gx4,
 ):
     # convert etp from kg m-2 s-1 to ms-1 and initialize dew.
     prcp1 = prcp * 0.001
@@ -2316,7 +2356,7 @@ def nopac_fn(
             gx0,
             gx2,
             gx3,
-            gx4
+            gx4,
         )
 
         (
@@ -2600,7 +2640,7 @@ def snopac_fn(
     gx0,
     gx2,
     gx3,
-    gx4
+    gx4,
 ):
     # calculates soil moisture and heat flux values and
     # update soil moisture content and soil heat content values for the
@@ -2689,7 +2729,7 @@ def snopac_fn(
                     gx0,
                     gx2,
                     gx3,
-                    gx4
+                    gx4,
                 )
 
                 edir1 *= 1.0 - sncovr
@@ -2720,9 +2760,11 @@ def snopac_fn(
     flx1 = 0.0
     if snowng:
         # fractional snowfall/rainfall
-        flx1 = (physcons.CPICE * ffrozp + physcons.CPH2O1 * (
-            1.0 - ffrozp
-        )) * prcp * (t1 - sfctmp)
+        flx1 = (
+            (physcons.CPICE * ffrozp + physcons.CPH2O1 * (1.0 - ffrozp))
+            * prcp
+            * (t1 - sfctmp)
+        )
 
     elif prcp > 0.0:
         flx1 = physcons.CPH2O1 * prcp * (t1 - sfctmp)
@@ -2774,7 +2816,15 @@ def snopac_fn(
             t14 = t1 * t1
             t14 = t14 * t14
 
-            flx3 = fdown - flx1 - flx2 - sfcems * physcons.SIGMA1 * t14 - ssoil - seh - etanrg
+            flx3 = (
+                fdown
+                - flx1
+                - flx2
+                - sfcems * physcons.SIGMA1 * t14
+                - ssoil
+                - seh
+                - etanrg
+            )
             if flx3 <= 0.0:
                 flx3 = 0.0
 
@@ -3025,7 +3075,7 @@ def sflx(
     gx0,
     gx2,
     gx3,
-    gx4
+    gx4,
 ):
     # --- ... subprograms called: redprm, snow_new, csnow, snfrac,
     # alcalc, tdfcnd, snowz0, sfcdif, penman, canres, nopac, snopac.
@@ -3409,7 +3459,7 @@ def sflx(
             gx0,
             gx2,
             gx3,
-            gx4
+            gx4,
         )
 
     else:
@@ -3522,7 +3572,7 @@ def sflx(
             gx0,
             gx2,
             gx3,
-            gx4
+            gx4,
         )
 
     # prepare sensible heat (h) for return to parent model
@@ -3970,7 +4020,7 @@ def sfc_drv(
                 gx0,
                 gx2,
                 gx3,
-                gx4
+                gx4,
             )
 
             # output
@@ -4032,6 +4082,7 @@ def sfc_drv(
             else:
                 tskin = tsurf
 
+
 def set_2d_fields(
     smc: FloatField,
     stc: FloatField,
@@ -4062,6 +4113,7 @@ def set_2d_fields(
         slc1 = slc[0, 0, 1]
         slc2 = slc[0, 0, 2]
         slc3 = slc[0, 0, 3]
+
 
 def set_3d_fields(
     smc: FloatField,
@@ -4096,6 +4148,7 @@ def set_3d_fields(
         smc[0, 0, 0] = smc3
         stc[0, 0, 0] = stc3
         slc[0, 0, 0] = slc3
+
 
 class NoahLSM_2D:
     """
@@ -4184,19 +4237,29 @@ class NoahLSM_2D:
         ) = set_soil_veg(land_data, veg_data, soil_data, vegfrac_data, slope_data)
 
         self._vegtype = quantity_factory.from_array(
-            veg_data, dims=[X_DIM, Y_DIM], units="",
+            veg_data,
+            dims=[X_DIM, Y_DIM],
+            units="",
         )
         self._soiltype = quantity_factory.from_array(
-            soil_data, dims=[X_DIM, Y_DIM], units="",
+            soil_data,
+            dims=[X_DIM, Y_DIM],
+            units="",
         )
         self._slopetype = quantity_factory.from_array(
-            slope_data, dims=[X_DIM, Y_DIM], units="",
+            slope_data,
+            dims=[X_DIM, Y_DIM],
+            units="",
         )
         self._land = quantity_factory.from_array(
-            land, dims=[X_DIM, Y_DIM], units="",
+            land,
+            dims=[X_DIM, Y_DIM],
+            units="",
         )
         self._ice = quantity_factory.from_array(
-            ice, dims=[X_DIM, Y_DIM], units="",
+            ice,
+            dims=[X_DIM, Y_DIM],
+            units="",
         )
         self._nroot = quantity_factory.from_array(nroot, dims=[X_DIM, Y_DIM], units="")
         self._zroot = quantity_factory.from_array(zroot, dims=[X_DIM, Y_DIM], units="")

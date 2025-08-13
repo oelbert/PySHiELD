@@ -15,8 +15,8 @@ from ndsl.dsl.typing import (
     FloatFieldIJ,
     FloatFieldK,
     Int,
-    IntFieldK,
     IntFieldIJ,
+    IntFieldK,
 )
 from ndsl.initialization.allocator import QuantityFactory
 from ndsl.quantity import Quantity
@@ -455,15 +455,13 @@ class SNOPAC:
             dt,
         )
 
-        self._update_temp_and_melt_snow = (
-            stencil_factory.from_origin_domain(
-                func=update_temp_and_melt_snow,
-                externals={
-                    "dt": dt,
-                },
-                origin=grid_indexing.origin_compute(),
-                domain=grid_indexing.domain_compute(),
-            )
+        self._update_temp_and_melt_snow = stencil_factory.from_origin_domain(
+            func=update_temp_and_melt_snow,
+            externals={
+                "dt": dt,
+            },
+            origin=grid_indexing.origin_compute(),
+            domain=grid_indexing.domain_compute(),
         )
 
         self._smflx = SoilMoistureFlux(
@@ -480,15 +478,13 @@ class SNOPAC:
             dt,
         )
 
-        self._adjust_for_snow_compaction = (
-            stencil_factory.from_origin_domain(
-                func=adjust_for_snow_compaction,
-                externals={
-                    "dt": dt,
-                },
-                origin=grid_indexing.origin_compute(),
-                domain=grid_indexing.domain_compute(),
-            )
+        self._adjust_for_snow_compaction = stencil_factory.from_origin_domain(
+            func=adjust_for_snow_compaction,
+            externals={
+                "dt": dt,
+            },
+            origin=grid_indexing.origin_compute(),
+            domain=grid_indexing.domain_compute(),
         )
 
     def __call__(

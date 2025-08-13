@@ -21,7 +21,7 @@ from ndsl.dsl.typing import (
 )
 from ndsl.initialization.allocator import QuantityFactory
 from ndsl.quantity import Quantity
-from pySHiELD._config import LSMConfig, FloatFieldTracer
+from pySHiELD._config import FloatFieldTracer, LSMConfig
 from pySHiELD.functions.physics_functions import fpvs
 from pySHiELD.stencils.surface.noah_lsm.nopac import NOPAC
 from pySHiELD.stencils.surface.noah_lsm.sfc_params import set_soil_veg
@@ -1137,19 +1137,29 @@ class NoahLSM:
         ) = set_soil_veg(land_data, veg_data, soil_data, vegfrac_data, slope_data)
 
         self._vegtype = quantity_factory.from_array(
-            veg_data, dims=[X_DIM, Y_DIM], units="",
+            veg_data,
+            dims=[X_DIM, Y_DIM],
+            units="",
         )
         self._soiltype = quantity_factory.from_array(
-            soil_data, dims=[X_DIM, Y_DIM], units="",
+            soil_data,
+            dims=[X_DIM, Y_DIM],
+            units="",
         )
         self._slopetype = quantity_factory.from_array(
-            slope_data, dims=[X_DIM, Y_DIM], units="",
+            slope_data,
+            dims=[X_DIM, Y_DIM],
+            units="",
         )
         self._land = quantity_factory.from_array(
-            land, dims=[X_DIM, Y_DIM], units="",
+            land,
+            dims=[X_DIM, Y_DIM],
+            units="",
         )
         self._ice = quantity_factory.from_array(
-            ice, dims=[X_DIM, Y_DIM], units="",
+            ice,
+            dims=[X_DIM, Y_DIM],
+            units="",
         )
         self._nroot = quantity_factory.from_array(nroot, dims=[X_DIM, Y_DIM], units="")
         self._zroot = quantity_factory.from_array(zroot, dims=[X_DIM, Y_DIM], units="")

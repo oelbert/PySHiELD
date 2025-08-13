@@ -49,6 +49,7 @@ def average_out(
     with computation(PARALLEL), interval(...):
         sh2o_out = (sh2o1 + sh2o2) * 0.5
 
+
 def start_smflx(
     smcmax: FloatFieldIJ,
     prcp1: FloatFieldIJ,
@@ -189,8 +190,10 @@ def srt(
         with interval(1, None):
             if surface_mask:
                 if pcpdrp != 0:
-                    dd += (zsoil[0, 0, -1] - zsoil) * smcav * (
-                        1.0 - (sh2oa + sice - smcwlt) / smcav
+                    dd += (
+                        (zsoil[0, 0, -1] - zsoil)
+                        * smcav
+                        * (1.0 - (sh2oa + sice - smcwlt) / smcav)
                     )
                     dice += (zsoil[0, 0, -1] - zsoil) * sice
 
@@ -216,9 +219,11 @@ def srt(
                         ialp1 = cvfrz - 1  # = 2
 
                         # Hardcode for ialp1 = 2
-                        sum = 1.0 + (
-                            acrt ** (cvfrz - 1) / 2.0
-                        ) + (acrt ** (cvfrz - 2) / 1.0)
+                        sum = (
+                            1.0
+                            + (acrt ** (cvfrz - 1) / 2.0)
+                            + (acrt ** (cvfrz - 2) / 1.0)
+                        )
 
                         fcr = 1.0 - exp(-acrt) * sum
 

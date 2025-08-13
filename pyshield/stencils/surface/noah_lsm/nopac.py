@@ -13,8 +13,8 @@ from ndsl.dsl.typing import (
     FloatFieldIJ,
     FloatFieldK,
     Int,
-    IntFieldK,
     IntFieldIJ,
+    IntFieldK,
 )
 from ndsl.initialization.allocator import QuantityFactory
 from ndsl.quantity import Quantity

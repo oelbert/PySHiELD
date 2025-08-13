@@ -77,6 +77,7 @@ def frh2o_fn(psis, bexp, tavg, smc, sh2o, smcmax):
 
     return free
 
+
 @gtscript.function
 def snksrc_fn(psisat, bexp, tavg, smc, sh2o, smcmax, qtot, dz):
     from __externals__ import dt
@@ -206,6 +207,7 @@ def tdfcnd(smc, qz, smcmax, sh2o):
     df = ake * (thksat - thkdry) + thkdry
 
     return df
+
 
 def start_shflx(
     ice: IntFieldIJ,

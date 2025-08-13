@@ -1,7 +1,7 @@
 import numpy as np
-from ndsl.dsl.typing import Float, Int
 
 import pySHiELD.constants as physcons
+from ndsl.dsl.typing import Float, Int
 
 
 # Assuming isot = ivet = 1
@@ -864,7 +864,7 @@ def set_soil_veg(
 
     nroot[isl_mask == 1] = NROOT_DATA[veg_data[isl_mask == 1]]
     zroot[isl_mask == 1] = ZSOIL_DATA[nroot[isl_mask == 1] - 1]
-    zroot[isl_mask == 1][nroot[isl_mask == 1] == 0] = 0.
+    zroot[isl_mask == 1][nroot[isl_mask == 1] == 0] = 0.0
 
     snup[land_mask] = SNUPX[veg_data[land_mask]]
     rsmin[land_mask] = RSMTBL[veg_data[land_mask]]
@@ -892,7 +892,7 @@ def set_soil_veg(
             for k in range(len(ZSOIL_DATA)):
                 if isl_mask[i, j] == 1:
                     if k == 0:
-                        sldpth[i, j, k] = - ZSOIL_DATA[0]
+                        sldpth[i, j, k] = -ZSOIL_DATA[0]
                     else:
                         sldpth[i, j, k] = ZSOIL_DATA[k - 1] - ZSOIL_DATA[k]
                     zsoil[k] = ZSOIL_DATA[k]
