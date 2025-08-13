@@ -42,6 +42,7 @@ class SurfaceConfig:
     do_z0_moon: bool = DEFAULT_BOOL
     dt_atmos: Float = DEFAULT_FLOAT
     mom4ice: bool = DEFAULT_BOOL
+    ivegsrc: int = DEFAULT_INT
     lsm: Int = DEFAULT_INT
     redrag: bool = DEFAULT_BOOL
     wind_th_hwrf: Float = DEFAULT_FLOAT
@@ -52,6 +53,21 @@ class SurfaceConfig:
     pertvegf: List[Float] = dataclasses.field(
         default_factory=lambda: [-999.0, -999.0, -999.0, -999.0, -999.0]
     )
+    nstf_name: tuple[int, int, int, int, int] = (0, 0, 1, 0, 5)
+    """
+    nstf_name contains the NSSTM related parameters:
+    nstf_name(1) : 0 = NSSTM off, 1 = NSSTM on but uncoupled, 2 = NSSTM on and coupled
+    nstf_name(2) : 1 = NSSTM spin up on, 0 = NSSTM spin up off
+    nstf_name(3) : 1 = NSSTM analysis on, 0 = NSSTM analysis off
+    nstf_name(4) : zsea1 in mm
+    nstf_name(5) : zsea2 in mm
+    TODO: implement via namelist?
+    """
+    sfc_data: str = "~/INPUT/sfc_data.nc"
+    """
+    path to surface data files
+    TODO: implement per-tile
+    """
 
     @property
     def lsm_config(self) -> LSMConfig:
@@ -164,15 +180,35 @@ class PhysicsConfig:
     isot: int = 0  # Soil category type:
     # isot = 0   => Zobler soil type  ( 9 category)
     # isot = 1   => STATSGO soil type (19 category)
-    ivegsrc: int = 2  # Source for veg and soil categories:
-    # ivegsrc = 0   => USGS,
-    # ivegsrc = 1   => IGBP (20 category)
-    # ivegsrc = 2   => UMD  (13 category)
-    lheatstrg: bool = DEFAULT_BOOL  # flag for canopy heat storage parameterization
+    ivegsrc: int = 2
+    """
+    Source for veg and soil categories:
+    ivegsrc = 0 => USGS
+    ivegsrc = 1 => IGBP (20 category)
+    ivegsrc = 2 => UMD (13 category)
+    """
+    nstf_name: tuple[int, int, int, int, int] = (0, 0, 1, 0, 5)
+    """
+    nstf_name contains the NSSTM related parameters:
+    nstf_name(1) : 0 = NSSTM off, 1 = NSSTM on but uncoupled, 2 = NSSTM on and coupled
+    nstf_name(2) : 1 = NSSTM spin up on, 0 = NSSTM spin up off
+    nstf_name(3) : 1 = NSSTM analysis on, 0 = NSSTM analysis off
+    nstf_name(4) : zsea1 in mm
+    nstf_name(5) : zsea2 in mm
+    TODO: implement via namelist?
+    """
+    sfc_data: str = "~/INPUT/sfc_data.nc"
+    """
+    path to surface data files
+    TODO: implement per-tile
+    """
+    lheatstrg: bool = DEFAULT_BOOL
+    """flag for canopy heat storage parameterization"""
     pertvegf: List[Float] = dataclasses.field(
         default_factory=lambda: [-999.0, -999.0, -999.0, -999.0, -999.0]
     )
     namelist_override: Optional[str] = None
+    daily_mean: bool = DEFAULT_BOOL  # flag to replace cosz with daily mean value
 
     def __post_init__(self):
         if self.schemes is None:
@@ -263,6 +299,7 @@ class PhysicsConfig:
             tice=namelist.tice,
             alin=namelist.alin,
             clin=namelist.clin,
+            daily_mean=namelist.daily_mean,
         )
 
     @property
@@ -282,6 +319,8 @@ class PhysicsConfig:
             ivegsrc=self.ivegsrc,
             lheatstrg=self.lheatstrg,
             pertvegf=self.pertvegf,
+            nstf_name=self.nstf_name,
+            sfc_data=self.sfc_data,
         )
 
     @property

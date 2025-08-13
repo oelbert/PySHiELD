@@ -1,7 +1,7 @@
 from gt4py.cartesian import gtscript
 from gt4py.cartesian.gtscript import FORWARD, PARALLEL, computation, exp, interval
 
-import pySHiELD.constants as physcons
+import pyshield.constants as physcons
 from ndsl.constants import X_DIM, Y_DIM, Z_DIM
 
 # from pace.dsl.dace.orchestration import orchestrate
@@ -16,7 +16,7 @@ from ndsl.dsl.typing import (
 )
 from ndsl.initialization.allocator import QuantityFactory
 from ndsl.quantity import Quantity
-from pySHiELD.stencils.surface.noah_lsm.sstep import SoilCanopyMoisture
+from pyshield.stencils.surface.noah_lsm.sstep import SoilCanopyMoisture
 
 
 @gtscript.function
@@ -27,16 +27,16 @@ def wdfcnd_fn(smc, smcmax, bexp, dksat, dwsat, sicemax):
 
     # prep an expntl coef and calc the soil water diffusivity
     expon = bexp + 2.0
-    wdf = dwsat * factr0 ** expon
+    wdf = dwsat * factr0**expon
 
     # frozen soil hydraulic diffusivity.
     if sicemax > 0.0:
         vkwgt = 1.0 / (1.0 + (500.0 * sicemax) ** 3.0)
-        wdf = vkwgt * wdf + (1.0 - vkwgt) * dwsat * factr ** expon
+        wdf = vkwgt * wdf + (1.0 - vkwgt) * dwsat * factr**expon
 
     # reset the expntl coef and calc the hydraulic conductivity
     expon = (2.0 * bexp) + 3.0
-    wcnd = dksat * factr0 ** expon
+    wcnd = dksat * factr0**expon
 
     return wdf, wcnd
 

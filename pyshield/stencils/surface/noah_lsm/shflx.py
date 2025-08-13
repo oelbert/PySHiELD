@@ -2,7 +2,7 @@ from gt4py.cartesian import gtscript
 from gt4py.cartesian.gtscript import FORWARD, PARALLEL, computation, interval, log
 
 import ndsl.constants as constants
-import pySHiELD.constants as physcons
+import pyshield.constants as physcons
 from ndsl.constants import X_DIM, Y_DIM, Z_DIM
 
 # from pace.dsl.dace.orchestration import orchestrate
@@ -178,7 +178,7 @@ def tdfcnd(smc, qz, smcmax, sh2o):
     thkqtz = 7.7
 
     # solids` conductivity
-    thks = (thkqtz ** qz) * (thko ** (1.0 - qz))
+    thks = (thkqtz**qz) * (thko ** (1.0 - qz))
 
     # unfrozen fraction
     xunfroz = (sh2o + 1.0e-9) / (smc + 1.0e-9)

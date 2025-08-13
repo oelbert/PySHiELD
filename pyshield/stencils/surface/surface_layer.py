@@ -1,7 +1,7 @@
 from gt4py.cartesian.gtscript import PARALLEL, computation, interval
 
 import ndsl.constants as constants
-from ndsl.constants import X_DIM, Y_DIM, Z_DIM
+from ndsl.constants import X_DIM, Y_DIM
 
 # from pace.dsl.dace.orchestration import orchestrate
 from ndsl.dsl.stencil import StencilFactory
@@ -16,12 +16,12 @@ from ndsl.dsl.typing import (
 )
 from ndsl.initialization.allocator import QuantityFactory
 from ndsl.quantity import Quantity
-from pySHiELD._config import SurfaceConfig
-from pySHiELD.functions.set_sfc_params import set_sfc_arrays
-from pySHiELD.stencils.surface.sfc_diff import SurfaceExchange
-from pySHiELD.stencils.surface.sfc_ocean import SurfaceOcean
-from pySHiELD.stencils.surface.sfc_sice import SurfaceSeaIce
-from pySHiELD.stencils.surface.sfc_state import SurfaceState
+from pyshield._config import SurfaceConfig
+from pyshield.functions.set_sfc_params import set_sfc_arrays
+from pyshield.stencils.surface.sfc_diff import SurfaceExchange
+from pyshield.stencils.surface.sfc_ocean import SurfaceOcean
+from pyshield.stencils.surface.sfc_sice import SurfaceSeaIce
+from pyshield.stencils.surface.sfc_state import SurfaceState
 
 
 def init_step_vars(
@@ -137,10 +137,13 @@ class SurfaceLayer:
 
         self._exchange = SurfaceExchange(
             stencil_factory=stencil_factory,
+            ivegsrc=config.ivegsrc,
             do_z0_hwrf15=config.do_z0_hwrf15,
             do_z0_hwrf17=config.do_z0_hwrf17,
             do_z0_hwrf17_hwonly=config.do_z0_hwrf17_hwonly,
             do_z0_moon=config.do_z0_moon,
+            redrag=config.redrag,
+            wind_th_hwrf=config.wind_th_hwrf,
         )
         self._update_guess_0 = stencil_factory.from_origin_domain(
             update_guess_0,
@@ -165,15 +168,15 @@ class SurfaceLayer:
 
     def __call__(self, state: SurfaceState):
         for iteration in range(2):
-            self._exchange()
+            # self._exchange()
 
-            self._update_guess_0(state.wind, iteration, self._flag_guess)
+            # self._update_guess_0(state.wind, iteration, self._flag_guess)
 
-            self._sfc_ocean()
+            # self._sfc_ocean()
 
-            #  TODO: LSM here
+            # TODO: LSM here
 
-            self._sfc_sice()
+            # self._sfc_sice()
 
             self._update_guess_1(
                 state.wind,

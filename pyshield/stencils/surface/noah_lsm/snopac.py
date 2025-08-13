@@ -2,7 +2,7 @@ from gt4py.cartesian import gtscript
 from gt4py.cartesian.gtscript import FORWARD, PARALLEL, computation, exp, interval
 
 import ndsl.constants as constants
-import pySHiELD.constants as physcons
+import pyshield.constants as physcons
 from ndsl.constants import X_DIM, Y_DIM, Z_DIM
 
 # from pace.dsl.dace.orchestration import orchestrate
@@ -20,9 +20,9 @@ from ndsl.dsl.typing import (
 )
 from ndsl.initialization.allocator import QuantityFactory
 from ndsl.quantity import Quantity
-from pySHiELD.stencils.surface.noah_lsm.evapo import EvapoTranspiration
-from pySHiELD.stencils.surface.noah_lsm.shflx import SoilHeatFlux
-from pySHiELD.stencils.surface.noah_lsm.smflx import SoilMoistureFlux
+from pyshield.stencils.surface.noah_lsm.evapo import EvapoTranspiration
+from pyshield.stencils.surface.noah_lsm.shflx import SoilHeatFlux
+from pyshield.stencils.surface.noah_lsm.smflx import SoilMoistureFlux
 
 
 @gtscript.function
@@ -292,8 +292,8 @@ def update_temp_and_melt_snow(
                 snomlt = 0.0
 
             else:  # snow melt will occur.
-                t1 = constants.TICE0 * max(0.01, sncovr ** snoexp) + t12 * (
-                    1.0 - max(0.01, sncovr ** snoexp)
+                t1 = constants.TICE0 * max(0.01, sncovr**snoexp) + t12 * (
+                    1.0 - max(0.01, sncovr**snoexp)
                 )
                 ssoil = df1 * (t1 - stc) / dtot
 

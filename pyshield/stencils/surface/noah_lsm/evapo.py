@@ -1,7 +1,7 @@
 from gt4py.cartesian import gtscript
 from gt4py.cartesian.gtscript import FORWARD, computation, interval
 
-import pySHiELD.constants as physcons
+import pyshield.constants as physcons
 from ndsl.constants import X_DIM, Y_DIM
 
 # from pace.dsl.dace.orchestration import orchestrate
@@ -24,7 +24,7 @@ def devap_fn(etp1, smc, shdfac, smcmax, smcdry):
     sratio = (smc - smcdry) / (smcmax - smcdry)
 
     if sratio > 0.0:
-        fx = sratio ** physcons.FXEXP
+        fx = sratio**physcons.FXEXP
         fx = max(min(fx, 1.0), 0.0)
     else:
         fx = 0.0

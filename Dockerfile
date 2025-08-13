@@ -1,4 +1,4 @@
-FROM python:3.8
+FROM python:3.11
 
 RUN apt-get update &&\
     apt install -y --no-install-recommends \
@@ -16,7 +16,6 @@ RUN apt-get update -y && \
     libgeos-dev \
     libopenmpi3 \
     libopenmpi-dev \
-    libboost-all-dev \
     libhdf5-serial-dev \
     libffi-dev \
     netcdf-bin \

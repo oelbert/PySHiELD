@@ -1,6 +1,6 @@
 import numpy as np
 
-import pySHiELD.constants as physcons
+import pyshield.constants as physcons
 from ndsl.dsl.typing import Float, Int
 
 

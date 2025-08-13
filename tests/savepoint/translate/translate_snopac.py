@@ -1,7 +1,9 @@
 from gt4py.cartesian.gtscript import FORWARD, computation, interval
 
-import pySHiELD.constants as physcons
+import pyshield.constants as physcons
+from ndsl import Namelist, StencilFactory
 from ndsl.constants import X_DIM, Y_DIM, Z_DIM
+from ndsl.dsl.stencil import GridIndexing
 from ndsl.dsl.typing import (
     Bool,
     BoolFieldIJ,
@@ -13,11 +15,10 @@ from ndsl.dsl.typing import (
 )
 from ndsl.initialization.allocator import QuantityFactory
 from ndsl.initialization.sizer import SubtileGridSizer
-from ndsl import Namelist, StencilFactory
-from ndsl.dsl.stencil import GridIndexing
-from pySHiELD.stencils.surface.noah_lsm.snopac import SNOPAC
-from pySHiELD.stencils.surface.noah_lsm.lsm_2d import snopac_fn
+from pyshield.stencils.surface.noah_lsm.lsm_2d import snopac_fn
+from pyshield.stencils.surface.noah_lsm.snopac import SNOPAC
 from tests.savepoint.translate.translate_physics import TranslatePhysicsFortranData2Py
+
 
 def invert_bool(
     bool_in: BoolFieldIJ,
@@ -59,33 +60,27 @@ class SnopacTest:
         domain_2d = (domain[0], domain[1], 1)
 
         self._snopack_mask = quantity_factory.zeros(
-                [X_DIM, Y_DIM],
-                units="unknown",
-                dtype=Bool,
-            )
+            [X_DIM, Y_DIM],
+            units="unknown",
+            dtype=Bool,
+        )
 
         self._k_mask = quantity_factory.zeros(
-                [X_DIM, Y_DIM, Z_DIM],
-                units="unknown",
-                dtype=Int,
-            )
+            [X_DIM, Y_DIM, Z_DIM],
+            units="unknown",
+            dtype=Int,
+        )
 
         for k in range(nsoil):
             self._k_mask.data[:, :, k] = k
-            
+
         self._invert = stencil_factory.from_origin_domain(
             func=invert_bool,
             origin=grid_indexing.origin_compute(),
             domain=domain_2d,
         )
-        
-        self._snopac = SNOPAC(
-            stencil_factory,
-            quantity_factory,
-            ivegsrc,
-            lheatstrg,
-            dt
-        )
+
+        self._snopac = SNOPAC(stencil_factory, quantity_factory, ivegsrc, lheatstrg, dt)
 
     def __call__(
         self,
@@ -212,6 +207,7 @@ class SnopacTest:
             self._snopack_mask,
             self._k_mask,
         )
+
 
 class TranslateSnopack3D(TranslatePhysicsFortranData2Py):
     def __init__(

@@ -3,7 +3,7 @@ from gt4py.cartesian.gtscript import FORWARD, computation, exp, interval, log, l
 from numpy import ndarray
 
 import ndsl.constants as constants
-import pySHiELD.constants as physcons
+import pyshield.constants as physcons
 from ndsl.constants import X_DIM, Y_DIM, Z_DIM, Z_INTERFACE_DIM
 
 # from pace.dsl.dace.orchestration import orchestrate
@@ -18,9 +18,9 @@ from ndsl.dsl.typing import (
 )
 from ndsl.initialization.allocator import QuantityFactory
 from ndsl.quantity import Quantity
-from pySHiELD._config import FloatFieldTracer, LSMConfig
-from pySHiELD.functions.physics_functions import fpvs
-from pySHiELD.stencils.surface.noah_lsm.sfc_params import BARE, set_soil_veg
+from pyshield._config import FloatFieldTracer, LSMConfig
+from pyshield.functions.physics_functions import fpvs
+from pyshield.stencils.surface.noah_lsm.sfc_params import BARE, set_soil_veg
 
 
 @gtscript.function
@@ -46,7 +46,7 @@ def tdfcnd_fn(smc, qz, smcmax, sh2o):
     thkqtz = 7.7
 
     # solids` conductivity
-    thks = (thkqtz ** qz) * (thko ** (1.0 - qz))
+    thks = (thkqtz**qz) * (thko ** (1.0 - qz))
 
     # unfrozen fraction
     xunfroz = (sh2o + 1.0e-9) / (smc + 1.0e-9)
@@ -159,7 +159,7 @@ def canres_fn(
     # determine canopy resistance due to all factors
 
     rc = rsmin / (xlai * rcs * rct * rcq * rcsoil)
-    rr = (4.0 * sfcems * physcons.SIGMA1 * physcons.RD1 / cpx1) * (sfctmp ** 4.0) / (
+    rr = (4.0 * sfcems * physcons.SIGMA1 * physcons.RD1 / cpx1) * (sfctmp**4.0) / (
         sfcprs * ch
     ) + 1.0
     delta = (physcons.LSUBC / cpx1) * dqsdt2
@@ -345,7 +345,7 @@ def devap_fn(etp1, smc, shdfac, smcmax, smcdry, fxexp):
     sratio = (smc - smcdry) / (smcmax - smcdry)
 
     if sratio > 0.0:
-        fx = sratio ** fxexp
+        fx = sratio**fxexp
         fx = max(min(fx, 1.0), 0.0)
     else:
         fx = 0.0
@@ -1373,16 +1373,16 @@ def wdfcnd_fn(smc, smcmax, bexp, dksat, dwsat, sicemax):
 
     # prep an expntl coef and calc the soil water diffusivity
     expon = bexp + 2.0
-    wdf = dwsat * factr0 ** expon
+    wdf = dwsat * factr0**expon
 
     # frozen soil hydraulic diffusivity.
     if sicemax > 0.0:
         vkwgt = 1.0 / (1.0 + (500.0 * sicemax) ** 3.0)
-        wdf = vkwgt * wdf + (1.0 - vkwgt) * dwsat * factr ** expon
+        wdf = vkwgt * wdf + (1.0 - vkwgt) * dwsat * factr**expon
 
     # reset the expntl coef and calc the hydraulic conductivity
     expon = (2.0 * bexp) + 3.0
-    wcnd = dksat * factr0 ** expon
+    wcnd = dksat * factr0**expon
 
     return wdf, wcnd
 
@@ -2317,13 +2317,23 @@ def nopac_fn(
     eta = 0.0
     eta1 = 0.0
 
-    et1_0, et1_1, et1_2, et1_3, = (
+    (
+        et1_0,
+        et1_1,
+        et1_2,
+        et1_3,
+    ) = (
         0.0,
         0.0,
         0.0,
         0.0,
     )
-    et_0, et_1, et_2, et_3, = (
+    (
+        et_0,
+        et_1,
+        et_2,
+        et_3,
+    ) = (
         0.0,
         0.0,
         0.0,
@@ -2670,13 +2680,23 @@ def snopac_fn(
     esnow1 = 0.0
     esnow2 = 0.0
 
-    et1_0, et1_1, et1_2, et1_3, = (
+    (
+        et1_0,
+        et1_1,
+        et1_2,
+        et1_3,
+    ) = (
         0.0,
         0.0,
         0.0,
         0.0,
     )
-    et_0, et_1, et_2, et_3, = (
+    (
+        et_0,
+        et_1,
+        et_2,
+        et_3,
+    ) = (
         0.0,
         0.0,
         0.0,
@@ -2796,8 +2816,8 @@ def snopac_fn(
         snomlt = 0.0
 
     else:  # snow melt will occur.
-        t1 = constants.TFREEZE * max(0.01, sncovr ** snoexp) + t12 * (
-            1.0 - max(0.01, sncovr ** snoexp)
+        t1 = constants.TFREEZE * max(0.01, sncovr**snoexp) + t12 * (
+            1.0 - max(0.01, sncovr**snoexp)
         )
         ssoil = df1 * (t1 - stc0) / dtot
 

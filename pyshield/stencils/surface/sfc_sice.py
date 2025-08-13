@@ -2,7 +2,7 @@ from gt4py.cartesian import gtscript
 from gt4py.cartesian.gtscript import FORWARD, computation, interval
 
 import ndsl.constants as constants
-import pySHiELD.constants as physcons
+import pyshield.constants as physcons
 
 # from pace.dsl.dace.orchestration import orchestrate
 from ndsl.dsl.stencil import StencilFactory
@@ -15,8 +15,8 @@ from ndsl.dsl.typing import (
     Int,
     IntFieldIJ,
 )
-from pySHiELD._config import FloatFieldTracer
-from pySHiELD.functions.physics_functions import fpvs
+from pyshield._config import FloatFieldTracer
+from pyshield.functions.physics_functions import fpvs
 
 
 @gtscript.function
@@ -43,17 +43,17 @@ def ice3lay(
                                                                            *
                                                                            *
           -> +---------+ <- tice - diagnostic surface temperature ( <= 0c )*
-         /   |         |                                                   *
+         //  |         |                                                   *
      snowd   |  snow   | <- 0-heat capacity snow layer                     *
-         \   |         |                                                   *
+         \\  |         |                                                   *
           => +---------+                                                   *
-         /   |         |                                                   *
-        /    |         | <- t1 - upper 1/2 ice temperature; this layer has *
-       /     |         |         a variable (t/s dependent) heat capacity  *
+         //  |         |                                                   *
+        //   |         | <- t1 - upper 1/2 ice temperature; this layer has *
+       //    |         |         a variable (t/s dependent) heat capacity  *
      hice    |...ice...|                                                   *
-       \     |         |                                                   *
-        \    |         | <- t2 - lower 1/2 ice temp. (fixed heat capacity) *
-         \   |         |                                                   *
+       \\    |         |                                                   *
+        \\   |         | <- t2 - lower 1/2 ice temp. (fixed heat capacity) *
+         \\  |         |                                                   *
           -> +---------+ <- base of ice fixed at seawater freezing temp.   *
                                                                            *
     =====================  definition of variables  =====================  *

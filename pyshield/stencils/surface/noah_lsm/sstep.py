@@ -1,6 +1,6 @@
 from gt4py.cartesian.gtscript import FORWARD, PARALLEL, computation, interval
 
-import pySHiELD.constants as physcons
+import pyshield.constants as physcons
 from ndsl.constants import X_DIM, Y_DIM, Z_DIM
 
 # from pace.dsl.dace.orchestration import orchestrate

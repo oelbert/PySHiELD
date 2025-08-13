@@ -1,5 +1,5 @@
 from ndsl import Namelist, StencilFactory
-from pySHiELD.stencils.surface.sfc_sice import SurfaceSeaIce
+from pyshield.stencils.surface.sfc_sice import SurfaceSeaIce
 from tests.savepoint.translate.translate_physics import TranslatePhysicsFortranData2Py
 
 
@@ -11,7 +11,7 @@ class TranslateSurfaceSeaIce_iter1(TranslatePhysicsFortranData2Py):
         stencil_factory: StencilFactory,
     ):
         super().__init__(grid, namelist, stencil_factory)
-        self.max_error = 2.e-14
+        self.max_error = 2.0e-14
         self.in_vars["data_vars"] = {
             "u1": {"serialname": "sice_u1", "shield": True},
             "v1": {"serialname": "sice_v1", "shield": True},
@@ -96,4 +96,4 @@ class TranslateSurfaceSeaIce_iter2(TranslateSurfaceSeaIce_iter1):
         stencil_factory: StencilFactory,
     ):
         super().__init__(grid, namelist, stencil_factory)
-        self.max_error = 1.e-14
+        self.max_error = 1.0e-14

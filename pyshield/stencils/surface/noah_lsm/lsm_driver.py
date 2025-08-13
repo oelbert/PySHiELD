@@ -3,7 +3,7 @@ from gt4py.cartesian.gtscript import FORWARD, PARALLEL, computation, exp, interv
 from numpy import ndarray, zeros
 
 import ndsl.constants as constants
-import pySHiELD.constants as physcons
+import pyshield.constants as physcons
 from ndsl.constants import X_DIM, Y_DIM, Z_DIM
 
 # from pace.dsl.dace.orchestration import orchestrate
@@ -21,12 +21,12 @@ from ndsl.dsl.typing import (
 )
 from ndsl.initialization.allocator import QuantityFactory
 from ndsl.quantity import Quantity
-from pySHiELD._config import FloatFieldTracer, LSMConfig
-from pySHiELD.functions.physics_functions import fpvs
-from pySHiELD.stencils.surface.noah_lsm.nopac import NOPAC
-from pySHiELD.stencils.surface.noah_lsm.sfc_params import set_soil_veg
-from pySHiELD.stencils.surface.noah_lsm.shflx import tdfcnd
-from pySHiELD.stencils.surface.noah_lsm.snopac import SNOPAC
+from pyshield._config import FloatFieldTracer, LSMConfig
+from pyshield.functions.physics_functions import fpvs
+from pyshield.stencils.surface.noah_lsm.nopac import NOPAC
+from pyshield.stencils.surface.noah_lsm.sfc_params import set_soil_veg
+from pyshield.stencils.surface.noah_lsm.shflx import tdfcnd
+from pyshield.stencils.surface.noah_lsm.snopac import SNOPAC
 
 
 @gtscript.function
@@ -125,7 +125,7 @@ def canres(
 
                 rc = rsmin / (xlai * rcs * rct * rcq * rcsoil)
                 rr = (4.0 * sfcems * physcons.SIGMA1 * physcons.RD1 / physcons.CP1) * (
-                    sfctmp ** 4.0
+                    sfctmp**4.0
                 ) / (sfcprs * ch) + 1.0
                 delta = (physcons.LSUBC / physcons.CP1) * dqsdt2
 
