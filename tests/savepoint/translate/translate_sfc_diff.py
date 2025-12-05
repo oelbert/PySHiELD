@@ -1,4 +1,4 @@
-from ndsl import Namelist, StencilFactory
+from ndsl import StencilFactory
 from pyshield.stencils.surface.sfc_diff import SurfaceExchange
 from tests.savepoint.translate.translate_physics import TranslatePhysicsFortranData2Py
 
@@ -7,10 +7,10 @@ class TranslateSurfaceExchange_iter1(TranslatePhysicsFortranData2Py):
     def __init__(
         self,
         grid,
-        namelist: Namelist,
+        config,
         stencil_factory: StencilFactory,
     ):
-        super().__init__(grid, namelist, stencil_factory)
+        super().__init__(grid, config, stencil_factory)
         self.in_vars["data_vars"] = {
             "u1": {"shield": True},
             "v1": {"shield": True},
@@ -67,6 +67,9 @@ class TranslateSurfaceExchange_iter1(TranslatePhysicsFortranData2Py):
 
     def compute(self, inputs):
         self.make_storage_data_input_vars(inputs)
+        inputs["qvapor"] = inputs["q1"][:, :, :, 0]
+        inputs.pop("q1")
+        inputs.pop("z0s_max")
         self.compute_func = SurfaceExchange(
             self.stencil_factory,
             inputs.pop("ivegsrc"),
@@ -76,9 +79,19 @@ class TranslateSurfaceExchange_iter1(TranslatePhysicsFortranData2Py):
             inputs.pop("do_z0_moon"),
             inputs.pop("redrag"),
             inputs.pop("wind_th_hwrf"),
-            inputs.pop("z0s_max"),
         )
-        self.compute_func(**inputs)
+        new_inputs = {}
+        for key in inputs.keys():
+            if len(inputs[key].shape) == 3:
+                new_inputs[key] = inputs[key][:, :, 0]
+            else:
+                new_inputs[key] = inputs[key]
+        self.compute_func(**new_inputs)
+        for key in inputs.keys():
+            if len(inputs[key].shape) == 3:
+                inputs[key][:, :, 0] = new_inputs[key]
+            else:
+                inputs[key] = new_inputs[key]
         return self.slice_output(inputs)
 
 
@@ -86,7 +99,7 @@ class TranslateSurfaceExchange_iter2(TranslateSurfaceExchange_iter1):
     def __init__(
         self,
         grid,
-        namelist: Namelist,
+        config,
         stencil_factory: StencilFactory,
     ):
-        super().__init__(grid, namelist, stencil_factory)
+        super().__init__(grid, config, stencil_factory)

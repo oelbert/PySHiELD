@@ -1,34 +1,68 @@
+from __future__ import annotations
+
 import dataclasses
 from enum import Enum, unique
 from typing import List, Optional, Tuple
 
 import f90nml
+from dacite import Config, from_dict
 
 from ndsl import MetaEnumStr
-from ndsl.dsl.typing import Float, Int, set_4d_field_size
-from ndsl.namelist import Namelist, NamelistDefaults
+from ndsl.dsl.gt4py_utils import tracer_variables
+from ndsl.dsl.typing import Float, set_4d_field_size
+from ndsl.utils import f90nml_as_dict
 
 
-# TODO: This is a hack
+# TODO: This will become a TracerBundle when ready
 FloatFieldTracer = set_4d_field_size(9, Float)
 
-DEFAULT_FLOAT = 0.0
 DEFAULT_INT = 0
+DEFAULT_FLOAT = 0.0
+DEFAULT_STR = ""
 DEFAULT_BOOL = False
+DEFAULT_FLOAT = Float(0.0)
 DEFAULT_SCHEMES = ["GFS_microphysics"]
+TRACER_DIM = "n_tracers"
+DEFAULT_PHYS_NML_GROUPS = (
+    "main_nml",
+    "coupler_nml",
+    "fv_core_nml",
+    "gfdl_cloud_microphysics_nml",
+    "integ_phys_nml",
+    "gfs_physics_nml",
+)
 
 
+# TODO: Should we have an enum for each class of parameterization
+# microphysics, PBL, shallow convection, etc?
 @unique
 class PHYSICS_PACKAGES(Enum, metaclass=MetaEnumStr):
+    SAMF_SHALCONV = "SAMF_SHALCONV"
     GFS_microphysics = "GFS_microphysics"
+    GFDL_cloud_microphysics = "GFDL_cloud_microphysics"
+    SATM_EDMF = "SATM_EDMF"
+    SFC_layer = "SFC_layer"
 
 
 @dataclasses.dataclass
 class LSMConfig:
-    lsoil: int = NamelistDefaults.lsoil
+    lsoil: int = 4
+    """Number of soil levels"""
     isot: int = DEFAULT_INT
+    """
+    Soil category type:
+    isot = 0   => Zobler soil type  ( 9 category)
+    isot = 1   => STATSGO soil type (19 category)
+    """
     ivegsrc: int = DEFAULT_INT
+    """
+    Source for veg and soil categories:
+    ivegsrc = 0 => USGS
+    ivegsrc = 1 => IGBP (20 category)
+    ivegsrc = 2 => UMD (13 category)
+    """
     lheatstrg: bool = DEFAULT_BOOL
+    """flag for canopy heat storage parameterization"""
     pertvegf: List[Float] = dataclasses.field(
         default_factory=lambda: [-999.0, -999.0, -999.0, -999.0, -999.0]
     )
@@ -43,14 +77,14 @@ class SurfaceConfig:
     dt_atmos: Float = DEFAULT_FLOAT
     mom4ice: bool = DEFAULT_BOOL
     ivegsrc: int = DEFAULT_INT
-    lsm: Int = DEFAULT_INT
+    lsm: int = DEFAULT_INT
     redrag: bool = DEFAULT_BOOL
-    wind_th_hwrf: Float = DEFAULT_FLOAT
-    lsoil: int = NamelistDefaults.lsoil
+    wind_th_hwrf: float = DEFAULT_FLOAT
+    lsoil: int = 4
     isot: int = DEFAULT_INT
     ivegsrc: int = DEFAULT_INT
     lheatstrg: bool = DEFAULT_BOOL
-    pertvegf: List[Float] = dataclasses.field(
+    pertvegf: List[float] = dataclasses.field(
         default_factory=lambda: [-999.0, -999.0, -999.0, -999.0, -999.0]
     )
     nstf_name: tuple[int, int, int, int, int] = (0, 0, 1, 0, 5)
@@ -82,133 +116,145 @@ class SurfaceConfig:
 
 @dataclasses.dataclass
 class PhysicsConfig:
-    dt_atmos: Float = DEFAULT_FLOAT
+    dt_atmos: float = DEFAULT_FLOAT
     hydrostatic: bool = DEFAULT_BOOL
     npx: int = DEFAULT_INT
     npy: int = DEFAULT_INT
     npz: int = DEFAULT_INT
-    lsoil: int = NamelistDefaults.lsoil
     nwat: int = DEFAULT_INT
     schemes: List = None
+    ntracers: int = int(len(tracer_variables))
+    ntiw: int = DEFAULT_INT
+    ntcw: int = DEFAULT_INT
+    ntke: int = DEFAULT_INT
     do_qa: bool = DEFAULT_BOOL
-    do_z0_hwrf15: bool = DEFAULT_BOOL
-    do_z0_hwrf17: bool = DEFAULT_BOOL
-    do_z0_hwrf17_hwonly: bool = DEFAULT_BOOL
-    do_z0_moon: bool = DEFAULT_BOOL
-    c_cracw: Float = NamelistDefaults.c_cracw
-    c_paut: Float = NamelistDefaults.c_paut
-    c_pgacs: Float = NamelistDefaults.c_pgacs
-    c_psaci: Float = NamelistDefaults.c_psaci
-    ccn_l: Float = NamelistDefaults.ccn_l
-    ccn_o: Float = NamelistDefaults.ccn_o
-    const_vg: bool = NamelistDefaults.const_vg
-    const_vi: bool = NamelistDefaults.const_vi
-    const_vr: bool = NamelistDefaults.const_vr
-    const_vs: bool = NamelistDefaults.const_vs
-    vs_fac: Float = NamelistDefaults.vs_fac
-    vg_fac: Float = NamelistDefaults.vg_fac
-    vi_fac: Float = NamelistDefaults.vi_fac
-    vr_fac: Float = NamelistDefaults.vr_fac
-    de_ice: bool = NamelistDefaults.de_ice
-    layout: Tuple[Int, Int] = NamelistDefaults.layout
+    do_inline_mp: bool = False
+    """Whether microphysics is inlined in the dycore"""
+    c_cracw: float = 0.8
+    """Rain accretion efficiency"""
+    c_paut: float = 0.5
+    """Autoconversion cloud water to rain (use 0.5 to reduce autoconversion"""
+    c_pgacs: float = 0.01
+    """Snow to graupel "accretion" eff. (was 0.1 in zetac)"""
+    c_psaci: float = 0.05
+    """Accretion: cloud ice to snow (was 0.1 in zetac)"""
+    ccn_l: float = 300.0
+    """CCN over land (cm^-3)"""
+    ccn_o: float = 100.0
+    """CCN over ocean (cm^-3)"""
+    const_vg: bool = False
+    """Fall velocity tuning constant of graupel"""
+    const_vi: bool = False
+    """Fall velocity tuning constant of ice"""
+    const_vr: bool = False
+    """Fall velocity tuning constant of rain water"""
+    const_vs: bool = False
+    """Fall velocity tuning constant of snow"""
+    vs_fac: float = 1.0
+    """if const_vs: 1."""
+    vg_fac: float = 1.0
+    """if const_vg: 2."""
+    vi_fac: float = 1.0
+    """if const_vi: 1/3"""
+    vr_fac: float = 1.0
+    """if const_vr: 4."""
+    de_ice: bool = False
+    """To prevent excessive build-up of cloud ice from external sources"""
+    layout: Tuple[int, int] = (1, 1)
     # gfdl_cloud_microphys.F90
-    tau_imlt: Float = NamelistDefaults.tau_imlt  # cloud ice melting
-    tau_i2s: Float = NamelistDefaults.tau_i2s  # cloud ice to snow auto - conversion
-    tau_g2v: Float = NamelistDefaults.tau_g2v  # graupel sublimation
-    tau_v2g: Float = (
-        NamelistDefaults.tau_v2g
-    )  # graupel deposition -- make it a slow process
-    ql_mlt: Float = (
-        NamelistDefaults.ql_mlt
-    )  # max value of cloud water allowed from melted cloud ice
-    qs_mlt: Float = NamelistDefaults.qs_mlt  # max cloud water due to snow melt
-    t_sub: Float = NamelistDefaults.t_sub  # min temp for sublimation of cloud ice
-    qi_gen: Float = (
-        NamelistDefaults.qi_gen
-    )  # max cloud ice generation during remapping step
-    qi_lim: Float = (
-        NamelistDefaults.qi_lim
-    )  # cloud ice limiter to prevent large ice build up
-    qi0_max: Float = NamelistDefaults.qi0_max  # max cloud ice value (by other sources)
-    rad_snow: bool = (
-        NamelistDefaults.rad_snow
-    )  # consider snow in cloud fraction calculation
-    rad_rain: bool = (
-        NamelistDefaults.rad_rain
-    )  # consider rain in cloud fraction calculation
-    dw_ocean: Float = NamelistDefaults.dw_ocean  # base value for ocean
-    dw_land: Float = (
-        NamelistDefaults.dw_land
-    )  # base value for subgrid deviation / variability over land
+    tau_imlt: float = 600.0
+    """cloud ice melting"""
+    tau_i2s: float = 1000.0
+    """cloud ice to snow auto - conversion"""
+    tau_g2v: float = 1200.0
+    """graupel sublimation"""
+    tau_v2g: float = 21600.0
+    """graupel deposition -- make it a slow process"""
+    ql_mlt: float = 2.0e-3
+    """max value of cloud water allowed from melted cloud ice"""
+    qs_mlt: float = 1.0e-6
+    """max cloud water due to snow melt"""
+    t_sub: float = 184.0
+    """min temp for sublimation of cloud ice"""
+    qi_gen: float = 1.82e-6
+    """max cloud ice generation during remapping step"""
+    qi_lim: float = 1.0
+    """cloud ice limiter to prevent large ice build up"""
+    qi0_max: float = 1.0e-4
+    """max cloud ice value (by other sources)"""
+    rad_snow: bool = True
+    """consider snow in cloud fraction calculation"""
+    rad_rain: bool = True
+    """consider rain in cloud fraction calculation"""
+    dw_ocean: float = 0.10
+    """base value for ocean"""
+    dw_land: float = 0.15
+    """base value for subgrid deviation / variability over land"""
     # cloud scheme 0 - ?
     # 1: old fvgfs gfdl) mp implementation
     # 2: binary cloud scheme (0 / 1)
-    tau_l2v: Float = (
-        NamelistDefaults.tau_l2v
-    )  # cloud water to water vapor (evaporation)
-    c2l_ord: Int = NamelistDefaults.c2l_ord
-    do_sedi_heat: bool = NamelistDefaults.do_sedi_heat
-    do_sedi_w: bool = NamelistDefaults.do_sedi_w
-    fast_sat_adj: bool = NamelistDefaults.fast_sat_adj
-    qc_crt: Float = NamelistDefaults.qc_crt
-    fix_negative: bool = NamelistDefaults.fix_negative
-    irain_f: Int = NamelistDefaults.irain_f
-    mp_time: Float = NamelistDefaults.mp_time
-    prog_ccn: bool = NamelistDefaults.prog_ccn
-    qi0_crt: Float = NamelistDefaults.qi0_crt
-    qs0_crt: Float = NamelistDefaults.qs0_crt
-    rh_inc: Float = NamelistDefaults.rh_inc
-    rh_inr: Float = NamelistDefaults.rh_inr
+    tau_l2v: float = 300.0
+    """cloud water to water vapor (evaporation)"""
+    c2l_ord: int = 4
+    do_sedi_heat: bool = False
+    """Transport of heat in sedimentation"""
+    do_sedi_w: bool = True
+    """Transport of vertical motion in sedimentation"""
+    fast_sat_adj: bool = True
+    qc_crt: float = 5.0e-8
+    """Minimum condensate mixing ratio to allow partial cloudiness"""
+    fix_negative: bool = True
+    """Fix negative water species"""
+    irain_f: int = 0
+    """Cloud water to rain auto conversion scheme"""
+    mp_time: float = 225.0
+    """Maximum microphysics timestep (sec)"""
+    prog_ccn: bool = False
+    """Do prognostic ccn (yi ming's method)"""
+    qi0_crt: float = 8e-05
+    """Cloud ice to snow autoconversion threshold"""
+    qs0_crt: float = 0.003
+    """Snow to graupel density threshold (0.6e-3 in purdue lin scheme)"""
+    rh_inc: float = 0.2
+    """RH increment for complete evaporation of cloud water and cloud ice"""
+    rh_inr: float = 0.3
+    """RH increment for minimum evaporation of rain"""
     # rh_ins: Any
-    rthresh: Float = NamelistDefaults.rthresh
-    sedi_transport: bool = NamelistDefaults.sedi_transport
+    rthresh: float = 1e-05
+    """Critical cloud drop radius (micrometers)"""
+    sedi_transport: bool = True
+    """Transport of momentum in sedimentation"""
     # use_ccn: Any
-    use_ppm: bool = NamelistDefaults.use_ppm
-    vg_max: Float = NamelistDefaults.vg_max
-    vi_max: Float = NamelistDefaults.vi_max
-    vr_max: Float = NamelistDefaults.vr_max
-    vs_max: Float = NamelistDefaults.vs_max
-    z_slope_ice: bool = NamelistDefaults.z_slope_ice
-    z_slope_liq: bool = NamelistDefaults.z_slope_liq
-    tice: float = NamelistDefaults.tice
-    alin: float = NamelistDefaults.alin
-    clin: float = NamelistDefaults.clin
-    mom4ice: bool = NamelistDefaults.mom4ice
-    lsm: Int = NamelistDefaults.lsm
-    redrag: bool = NamelistDefaults.redrag
-    wind_th_hwrf: Float = DEFAULT_FLOAT
-    isot: int = 0  # Soil category type:
-    # isot = 0   => Zobler soil type  ( 9 category)
-    # isot = 1   => STATSGO soil type (19 category)
-    ivegsrc: int = 2
-    """
-    Source for veg and soil categories:
-    ivegsrc = 0 => USGS
-    ivegsrc = 1 => IGBP (20 category)
-    ivegsrc = 2 => UMD (13 category)
-    """
-    nstf_name: tuple[int, int, int, int, int] = (0, 0, 1, 0, 5)
-    """
-    nstf_name contains the NSSTM related parameters:
-    nstf_name(1) : 0 = NSSTM off, 1 = NSSTM on but uncoupled, 2 = NSSTM on and coupled
-    nstf_name(2) : 1 = NSSTM spin up on, 0 = NSSTM spin up off
-    nstf_name(3) : 1 = NSSTM analysis on, 0 = NSSTM analysis off
-    nstf_name(4) : zsea1 in mm
-    nstf_name(5) : zsea2 in mm
-    TODO: implement via namelist?
-    """
-    sfc_data: str = "~/INPUT/sfc_data.nc"
-    """
-    path to surface data files
-    TODO: implement per-tile
-    """
-    lheatstrg: bool = DEFAULT_BOOL
-    """flag for canopy heat storage parameterization"""
-    pertvegf: List[Float] = dataclasses.field(
-        default_factory=lambda: [-999.0, -999.0, -999.0, -999.0, -999.0]
-    )
+    use_ppm: bool = False
+    """Use ppm fall scheme"""
+    vg_max: float = 16.0
+    """Maximum fall speed for graupel"""
+    vi_max: float = 1.0
+    """Maximum fall speed for ice"""
+    vr_max: float = 16.0
+    """Maximum fall speed for rain"""
+    vs_max: float = 2.0
+    """Maximum fall speed for snow"""
+    z_slope_ice: bool = True
+    """Use linear mono slope for autoconversions"""
+    z_slope_liq: bool = True
+    """Use linear mono slope for autoconversions"""
+    tice: float = 273.16
+    """set tice = 165. to turn off ice - phase phys (kessler emulator)"""
+    alin: float = 842.0
+    """value for 'a' in lin1983"""
+    clin: float = 4.8
+    """"c" in lin 1983, 4.8 -- > 6. (to enhance ql -- > qs)"""
+    ntke: int = DEFAULT_INT
+    """Tracer index of turbulent kinetic energy"""
+    ntiw: int = DEFAULT_INT
+    """Tracer index of ice condensate"""
+    ntcw: int = DEFAULT_INT
+    """Tracer index of cloud water"""
     namelist_override: Optional[str] = None
-    daily_mean: bool = DEFAULT_BOOL  # flag to replace cosz with daily mean value
+    target_nml_groups: Optional[Tuple[str, ...]] = DEFAULT_PHYS_NML_GROUPS
+    daily_mean: bool = DEFAULT_BOOL
+    """flag to replace cosz with daily mean value"""
 
     def __post_init__(self):
         if self.schemes is None:
@@ -219,116 +265,58 @@ class PhysicsConfig:
                 raise NotImplementedError(f"{scheme} physics scheme not implemented")
             package_schemes.append(PHYSICS_PACKAGES[scheme])
         self.schemes = package_schemes
+        self.ntiw = tracer_variables.index("qice")
+        self.ntcw = tracer_variables.index("qliquid")
+        self.ntke = tracer_variables.index("qsgs_tke")
         if self.namelist_override is not None:
             try:
                 f90_nml = f90nml.read(self.namelist_override)
             except FileNotFoundError:
                 print(f"{self.namelist_override} does not exist")
-            physics_config = self.from_f90nml(f90_nml)
+            # TODO: Find a better way to do below. Passing self.* as an argument
+            # to a class function of the same class is always a bit fishy.
+            physics_config = self.from_f90nml(f90_nml, self.target_nml_groups)
             for var in physics_config.__dict__.keys():
                 setattr(self, var, physics_config.__dict__[var])
 
     @classmethod
-    def from_f90nml(self, f90_namelist: f90nml.Namelist) -> "PhysicsConfig":
-        namelist = Namelist.from_f90nml(f90_namelist)
-        return self.from_namelist(namelist)
+    def from_f90nml(
+        cls,
+        nml: f90nml.Namelist,
+        target_groups: Tuple[str, ...] | None = DEFAULT_PHYS_NML_GROUPS,
+    ) -> PhysicsConfig:
+        """Uses the nml to create a PhysicsConfig.
+
+        Args:
+            nml: f90nml.Namelist
+            target_groups: Tuple[str,...] | None
+                This list will be used to specify which groups in the nml to
+                use when initializing the PhysicsConfig. If None, all
+                groups will be used. (Default: DEFAULT_PHYS_NML_GROUPS)
+        """
+        groups = list(target_groups) if target_groups is not None else None
+        nml_dict = f90nml_as_dict(nml, flatten=True, target_groups=groups)
+        nml_dict["target_nml_groups"] = target_groups
+        return cls.from_dict(nml_dict)
 
     @classmethod
-    def from_namelist(cls, namelist: Namelist) -> "PhysicsConfig":
-        return cls(
-            dt_atmos=namelist.dt_atmos,
-            hydrostatic=namelist.hydrostatic,
-            npx=namelist.npx,
-            npy=namelist.npy,
-            npz=namelist.npz,
-            nwat=namelist.nwat,
-            do_qa=namelist.do_qa,
-            c_cracw=namelist.c_cracw,
-            c_paut=namelist.c_paut,
-            c_pgacs=namelist.c_pgacs,
-            c_psaci=namelist.c_psaci,
-            ccn_l=namelist.ccn_l,
-            ccn_o=namelist.ccn_o,
-            const_vg=namelist.const_vg,
-            const_vi=namelist.const_vi,
-            const_vr=namelist.const_vr,
-            const_vs=namelist.const_vs,
-            vs_fac=namelist.vs_fac,
-            vg_fac=namelist.vg_fac,
-            vi_fac=namelist.vi_fac,
-            vr_fac=namelist.vr_fac,
-            de_ice=namelist.de_ice,
-            layout=namelist.layout,
-            tau_imlt=namelist.tau_imlt,
-            tau_i2s=namelist.tau_i2s,
-            tau_g2v=namelist.tau_g2v,
-            tau_v2g=namelist.tau_v2g,
-            ql_mlt=namelist.ql_mlt,
-            qs_mlt=namelist.qs_mlt,
-            t_sub=namelist.t_sub,
-            qi_gen=namelist.qi_gen,
-            qi_lim=namelist.qi_lim,
-            qi0_max=namelist.qi0_max,
-            rad_snow=namelist.rad_snow,
-            rad_rain=namelist.rad_rain,
-            dw_ocean=namelist.dw_ocean,
-            dw_land=namelist.dw_land,
-            tau_l2v=namelist.tau_l2v,
-            c2l_ord=namelist.c2l_ord,
-            do_sedi_heat=namelist.do_sedi_heat,
-            do_sedi_w=namelist.do_sedi_w,
-            fast_sat_adj=namelist.fast_sat_adj,
-            qc_crt=namelist.qc_crt,
-            fix_negative=namelist.fix_negative,
-            irain_f=namelist.irain_f,
-            mp_time=namelist.mp_time,
-            prog_ccn=namelist.prog_ccn,
-            qi0_crt=namelist.qi0_crt,
-            qs0_crt=namelist.qs0_crt,
-            rh_inc=namelist.rh_inc,
-            rh_inr=namelist.rh_inr,
-            rthresh=namelist.rthresh,
-            sedi_transport=namelist.sedi_transport,
-            use_ppm=namelist.use_ppm,
-            vg_max=namelist.vg_max,
-            vi_max=namelist.vi_max,
-            vr_max=namelist.vr_max,
-            vs_max=namelist.vs_max,
-            z_slope_ice=namelist.z_slope_ice,
-            z_slope_liq=namelist.z_slope_liq,
-            tice=namelist.tice,
-            alin=namelist.alin,
-            clin=namelist.clin,
-            daily_mean=namelist.daily_mean,
-        )
+    def from_dict(
+        cls,
+        data: dict,
+    ) -> PhysicsConfig:
+        """Create a PhysicsConfig from the given data.
 
-    @property
-    def surface(self) -> SurfaceConfig:
-        return SurfaceConfig(
-            do_z0_hwrf15=self.do_z0_hwrf15,
-            do_z0_hwrf17=self.do_z0_hwrf17,
-            do_z0_hwrf17_hwonly=self.do_z0_hwrf17_hwonly,
-            do_z0_moon=self.do_z0_moon,
-            dt_atmos=self.dt_atmos,
-            mom4ice=self.mom4ice,
-            lsm=self.lsm,
-            redrag=self.redrag,
-            wind_th_hwrf=self.wind_th_hwrf,
-            lsoil=self.lsoil,
-            isot=self.isot,
-            ivegsrc=self.ivegsrc,
-            lheatstrg=self.lheatstrg,
-            pertvegf=self.pertvegf,
-            nstf_name=self.nstf_name,
-            sfc_data=self.sfc_data,
+        Args:
+            data: "flattened" dictionary where the keys match the class member variables
+        """
+        # NOTE: We're setting strict to False so that extra keys in the data are
+        # ignored. Eventually, we'd like to turn this to True once we move away from
+        # expecting dicts that are basically flattened f90nml files.
+        dacite_config = Config(
+            strict=False,
+            type_hooks={
+                Tuple[int, int]: lambda x: tuple(x),
+                Tuple[str, ...]: lambda x: tuple(x) if x is not None else None,
+            },
         )
-
-    @property
-    def lsm_config(self) -> LSMConfig:
-        return LSMConfig(
-            lsoil=self.lsoil,
-            isot=self.isot,
-            ivegsrc=self.ivegsrc,
-            lheatstrg=self.lheatstrg,
-            pertvegf=self.pertvegf,
-        )
+        return from_dict(data_class=PhysicsConfig, data=data, config=dacite_config)

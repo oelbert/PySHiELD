@@ -1,26 +1,17 @@
-from gt4py.cartesian import gtscript
-from gt4py.cartesian.gtscript import FORWARD, computation, exp, interval, log, sqrt
-
 import ndsl.constants as constants
-import pyshield.constants as physcons
+import pyshield.stencils.surface.constants as sfcons
 
 # from pace.dsl.dace.orchestration import orchestrate
-from ndsl.dsl.stencil import StencilFactory
-from ndsl.dsl.typing import (
-    Bool,
-    BoolFieldIJ,
-    Float,
-    FloatField,
-    FloatFieldIJ,
-    Int,
-    IntFieldIJ,
-)
+from ndsl import StencilFactory
+from ndsl.dsl.gt4py import FORWARD, computation, exp
+from ndsl.dsl.gt4py import function as gtfunction
+from ndsl.dsl.gt4py import interval, log, sqrt
+from ndsl.dsl.typing import Bool, BoolFieldIJ, Float, FloatFieldIJ, Int, IntFieldIJ
 from ndsl.stencils.basic_operations import sign
-from pyshield._config import FloatFieldTracer
 from pyshield.functions.physics_functions import fpvsx
 
 
-@gtscript.function
+@gtfunction
 def monin_obukhov_similarity(
     z1: FloatFieldIJ,
     snwdph: FloatFieldIJ,
@@ -34,7 +25,7 @@ def monin_obukhov_similarity(
 
     tem1 = z0max / z1
     if abs(1.0 - tem1) > 1.0e-6:
-        ztmax1 = -physcons.BETA * log(tem1) / (physcons.ALPHA2 * (1.0 - tem1))
+        ztmax1 = -sfcons.BETA * log(tem1) / (sfcons.ALPHA2 * (1.0 - tem1))
     else:
         ztmax1 = 99.0
     if (z0max < 0.05) and (snwdph < 10.0):
@@ -55,7 +46,7 @@ def monin_obukhov_similarity(
     fm10 = log((z0max + 10.0) * tem1)
     fh2 = log((ztmax + 2.0) * tem2)
     hlinf = rb * fm * fm / fh
-    hlinf = min(max(hlinf, physcons.ZTMIN), ztmax1)
+    hlinf = min(max(hlinf, sfcons.ZTMIN), ztmax1)
 
     # stable case
     if dtv >= 0.0:
@@ -64,34 +55,34 @@ def monin_obukhov_similarity(
             tem1 = hlinf * z1i
             hl0inf = z0max * tem1
             hltinf = ztmax * tem1
-            aa = sqrt(1.0 + physcons.ALPHA4 * hlinf)
-            aa0 = sqrt(1.0 + physcons.ALPHA4 * hl0inf)
+            aa = sqrt(1.0 + sfcons.ALPHA4 * hlinf)
+            aa0 = sqrt(1.0 + sfcons.ALPHA4 * hl0inf)
             bb = aa
-            bb0 = sqrt(1.0 + physcons.ALPHA4 * hltinf)
+            bb0 = sqrt(1.0 + sfcons.ALPHA4 * hltinf)
             pm = aa0 - aa + log((aa + 1.0) / (aa0 + 1.0))
             ph = bb0 - bb + log((bb + 1.0) / (bb0 + 1.0))
             fms = fm - pm
             fhs = fh - ph
             hl1 = fms * fms * rb / fhs
-            hl1 = min(max(hl1, physcons.ZTMIN), ztmax1)
+            hl1 = min(max(hl1, sfcons.ZTMIN), ztmax1)
 
         # second iteration
         tem1 = hl1 * z1i
         hl0 = z0max * tem1
         hlt = ztmax * tem1
-        aa = sqrt(1.0 + physcons.ALPHA4 * hl1)
-        aa0 = sqrt(1.0 + physcons.ALPHA4 * hl0)
+        aa = sqrt(1.0 + sfcons.ALPHA4 * hl1)
+        aa0 = sqrt(1.0 + sfcons.ALPHA4 * hl0)
         bb = aa
-        bb0 = sqrt(1.0 + physcons.ALPHA4 * hlt)
+        bb0 = sqrt(1.0 + sfcons.ALPHA4 * hlt)
         pm = aa0 - aa + log((1.0 + aa) / (1.0 + aa0))
         ph = bb0 - bb + log((1.0 + bb) / (1.0 + bb0))
         hl110 = hl1 * 10.0 * z1i
-        hl110 = min(max(hl110, physcons.ZTMIN), ztmax1)
-        aa = sqrt(1.0 + physcons.ALPHA4 * hl110)
+        hl110 = min(max(hl110, sfcons.ZTMIN), ztmax1)
+        aa = sqrt(1.0 + sfcons.ALPHA4 * hl110)
         pm10 = aa0 - aa + log((1.0 + aa) / (1.0 + aa0))
         hl12 = (hl1 + hl1) * z1i
-        hl12 = min(max(hl12, physcons.ZTMIN), ztmax1)
-        bb = sqrt(1.0 + physcons.ALPHA4 * hl12)
+        hl12 = min(max(hl12, sfcons.ZTMIN), ztmax1)
+        bb = sqrt(1.0 + sfcons.ALPHA4 * hl12)
         ph2 = bb0 - bb + log((1.0 + bb) / (1.0 + bb0))
 
         # unstable case - check for unphysical obukhov length
@@ -101,34 +92,34 @@ def monin_obukhov_similarity(
         tem1 = 50.0 * z0max
         if abs(olinf) <= tem1:
             hlinf = -z1 / tem1
-            hlinf = min(max(hlinf, physcons.ZTMIN), ztmax1)
+            hlinf = min(max(hlinf, sfcons.ZTMIN), ztmax1)
 
         # get pm and ph
         if hlinf >= -0.5:
             hl1 = hlinf
             pm = (
-                (physcons.A0 + physcons.A1 * hl1)
+                (sfcons.A0 + sfcons.A1 * hl1)
                 * hl1
-                / (1.0 + (physcons.B1 + physcons.B2 * hl1) * hl1)
+                / (1.0 + (sfcons.B1 + sfcons.B2 * hl1) * hl1)
             )
             ph = (
-                (physcons.A0P + physcons.A1P * hl1)
+                (sfcons.A0P + sfcons.A1P * hl1)
                 * hl1
-                / (1.0 + (physcons.B1P + physcons.B2P * hl1) * hl1)
+                / (1.0 + (sfcons.B1P + sfcons.B2P * hl1) * hl1)
             )
             hl110 = hl1 * 10.0 * z1i
-            hl110 = min(max(hl110, physcons.ZTMIN), ztmax1)
+            hl110 = min(max(hl110, sfcons.ZTMIN), ztmax1)
             pm10 = (
-                (physcons.A0 + physcons.A1 * hl110)
+                (sfcons.A0 + sfcons.A1 * hl110)
                 * hl110
-                / (1.0 + (physcons.B1 + physcons.B2 * hl110) * hl110)
+                / (1.0 + (sfcons.B1 + sfcons.B2 * hl110) * hl110)
             )
             hl12 = (hl1 + hl1) * z1i
-            hl12 = min(max(hl12, physcons.ZTMIN), ztmax1)
+            hl12 = min(max(hl12, sfcons.ZTMIN), ztmax1)
             ph2 = (
-                (physcons.A0P + physcons.A1P * hl12)
+                (sfcons.A0P + sfcons.A1P * hl12)
                 * hl12
-                / (1.0 + (physcons.B1P + physcons.B2P * hl12) * hl12)
+                / (1.0 + (sfcons.B1P + sfcons.B2P * hl12) * hl12)
             )
         else:  # hlinf < 0.05
             hl1 = -hlinf
@@ -136,10 +127,10 @@ def monin_obukhov_similarity(
             pm = log(hl1) + 2.0 * sqrt(tem1) - 0.8776
             ph = log(hl1) + 0.5 * tem1 + 1.386
             hl110 = hl1 * 10.0 * z1i
-            hl110 = min(max(hl110, physcons.ZTMIN), ztmax1)
+            hl110 = min(max(hl110, sfcons.ZTMIN), ztmax1)
             pm10 = log(hl110) + 2.0 / sqrt(sqrt(hl110)) - 0.8776
             hl12 = (hl1 + hl1) * z1i
-            hl12 = min(max(hl12, physcons.ZTMIN), ztmax1)
+            hl12 = min(max(hl12, sfcons.ZTMIN), ztmax1)
             ph2 = log(hl12) + 0.5 / sqrt(hl12) + 1.386
 
     # finish the exchange coefficient computation to provide fm and fh
@@ -147,8 +138,8 @@ def monin_obukhov_similarity(
     fh = fh - ph
     fm10 = fm10 - pm10
     fh2 = fh2 - ph2
-    cm = physcons.CA * physcons.CA / (fm * fm)
-    ch = physcons.CA * physcons.CA / (fm * fh)
+    cm = sfcons.CA * sfcons.CA / (fm * fm)
+    ch = sfcons.CA * sfcons.CA / (fm * fh)
     tem1 = 0.00001 / z1
     cm = max(cm, tem1)
     ch = max(ch, tem1)
@@ -158,7 +149,7 @@ def monin_obukhov_similarity(
     return rb, fm, fh, fm10, fh2, cm, ch, stress, ustar
 
 
-@gtscript.function
+@gtfunction
 def cal_z0_hwrf15(ws10m):
     # coded by Kun Gao (Kun.Gao@noaa.gov)
     # originally developed by URI/GFDL
@@ -178,7 +169,7 @@ def cal_z0_hwrf15(ws10m):
     b6 = 0.0406766967657759
 
     if ws10m <= 5.0:
-        z0 = 0.0185 / 9.8 * (7.59e-4 * ws10m**2 + 2.46e-2 * ws10m) ** 2
+        z0 = 0.0185 / 9.8 * (7.59e-4 * ws10m * ws10m + 2.46e-2 * ws10m) ** 2
     elif (ws10m > 5.0) and (ws10m <= 10.0):
         z0 = 0.00000235 * (ws10m**2 - 25.0) + 3.805129199617346e-05
     elif (ws10m > 10.0) and (ws10m <= 60.0):
@@ -204,7 +195,7 @@ def cal_z0_hwrf15(ws10m):
     return z0
 
 
-@gtscript.function
+@gtfunction
 def cal_zt_hwrf15(ws10m):
     # coded by Kun Gao (Kun.Gao@noaa.gov)
     # originally developed by URI/GFDL
@@ -265,7 +256,7 @@ def cal_zt_hwrf15(ws10m):
     return zt
 
 
-@gtscript.function
+@gtfunction
 def cal_z0_hwrf17(ws10m):
     # coded by Kun Gao (Kun.Gao@noaa.gov)
     p13 = -1.296521881682694e-02
@@ -311,7 +302,7 @@ def cal_z0_hwrf17(ws10m):
     return z0
 
 
-@gtscript.function
+@gtfunction
 def cal_zt_hwrf17(ws10m):
     # coded by Kun Gao (Kun.Gao@noaa.gov)
     p00 = 1.100000000000000e-04
@@ -377,7 +368,7 @@ def cal_zt_hwrf17(ws10m):
     return zt
 
 
-@gtscript.function
+@gtfunction
 def cal_z0_moon(ws10m):
     # coded by Kun Gao (Kun.Gao@noaa.gov)
     charnock = 0.014
@@ -400,10 +391,10 @@ def cal_z0_moon(ws10m):
 
 
 def sfc_diff(
-    u1: FloatField,
-    v1: FloatField,
-    t1: FloatField,
-    q1: FloatFieldTracer,
+    u1: FloatFieldIJ,
+    v1: FloatFieldIJ,
+    t1: FloatFieldIJ,
+    qvapor: FloatFieldIJ,
     ddvel: FloatFieldIJ,
     tsurf: FloatFieldIJ,
     tskin: FloatFieldIJ,
@@ -445,13 +436,13 @@ def sfc_diff(
 
     with computation(FORWARD), interval(0, 1):
 
-        if flag_iter[0, 0]:
+        if flag_iter:
             # Get lowest atmospheric level variables:
-            wind = max(sqrt(u1**2 + v1**2) + max(0.0, min(ddvel, 30.0)), 1.0)
-            tem1 = 1.0 + constants.ZVIR * max(q1[0, 0, 0][0], 1.0e-8)
+            wind = max(sqrt(u1 * u1 + v1 * v1) + max(0.0, min(ddvel, 30.0)), 1.0)
+            tem1 = 1.0 + constants.ZVIR * max(qvapor[0, 0], 1.0e-8)
             thv1 = t1 * prslki * tem1
             tvs = 0.5 * (tsurf + tskin) * tem1
-            qs1 = fpvs(t1)
+            qs1 = fpvsx(t1)
             qs1 = max(1.0e-8, constants.EPS * qs1 / (prsl1 + constants.EPSM1 * qs1))
 
             # Get surface level variables:
@@ -494,7 +485,7 @@ def sfc_diff(
 
                 tem1 = 1.0 - sigmaf
                 ztmax = z0max * exp(
-                    -tem1 * tem1 * czilc * physcons.CA * sqrt(ustar * (0.01 / 1.5e-05))
+                    -tem1 * tem1 * czilc * sfcons.CA * sqrt(ustar * (0.01 / 1.5e-05))
                 )
 
                 ztmax = max(ztmax, 1.0e-6)
@@ -529,14 +520,14 @@ def sfc_diff(
 
                 # iteration 2
                 # get z0/zt following the old sfc_diff.f
-                z0 = (physcons.CHARNOCK / constants.GRAV) * ustar * ustar
+                z0 = (sfcons.CHARNOCK / constants.GRAV) * ustar * ustar
                 if redrag:
                     z0 = max(min(z0, z0s_max), 1.0e-7)
                 else:
                     z0 = max(min(z0, 0.1), 1.0e-7)
 
-                ustar_1 = sqrt(constants.GRAV * z0 / physcons.CHARNOCK)
-                restar = max(ustar_1 * z0max * physcons.VISI, 0.000001)
+                ustar_1 = sqrt(constants.GRAV * z0 / sfcons.CHARNOCK)
+                restar = max(ustar_1 * z0max * sfcons.VISI, 0.000001)
                 rat = min(7.0, 2.67 * sqrt(sqrt(restar)) - 2.57)
                 zt = z0max * exp(-rat)  # zeng, zhao and dickinson 1997 (eq 25)
 
@@ -612,28 +603,29 @@ class SurfaceExchange:
             == 1
         ), "sfc_diff: exactly one ocean surface option must be enabled"
         grid_indexing = stencil_factory.grid_indexing
+        origin, domain2d = grid_indexing.get_2d_compute_origin_domain()
         self._sfc_diff = stencil_factory.from_origin_domain(
             sfc_diff,
             externals={
-                "do_z0_hwrf15": do_z0_hwrf15,
-                "do_z0_hwrf17": do_z0_hwrf17,
-                "do_z0_hwrf17_hwonly": do_z0_hwrf17_hwonly,
-                "do_z0_moon": do_z0_moon,
+                "do_z0_hwrf15": bool(do_z0_hwrf15),
+                "do_z0_hwrf17": bool(do_z0_hwrf17),
+                "do_z0_hwrf17_hwonly": bool(do_z0_hwrf17_hwonly),
+                "do_z0_moon": bool(do_z0_moon),
                 "ivegsrc": ivegsrc,
-                "redrag": redrag,
+                "redrag": bool(redrag),
                 "wind_th_hwrf": wind_th_hwrf,
-                "z0s_max": physcons.Z0S_MAX,
+                "z0s_max": sfcons.Z0S_MAX,
             },
-            origin=grid_indexing.origin_compute(),
-            domain=grid_indexing.domain_compute(),
+            origin=origin,
+            domain=domain2d,
         )
 
     def __call__(
         self,
-        u1: FloatField,
-        v1: FloatField,
-        t1: FloatField,
-        q1: FloatFieldTracer,
+        u1: FloatFieldIJ,
+        v1: FloatFieldIJ,
+        t1: FloatFieldIJ,
+        qvapor: FloatFieldIJ,
         ddvel: FloatFieldIJ,
         tsurf: FloatFieldIJ,
         tsfc: FloatFieldIJ,
@@ -663,7 +655,7 @@ class SurfaceExchange:
             u1,
             v1,
             t1,
-            q1,
+            qvapor,
             ddvel,
             tsurf,
             tsfc,

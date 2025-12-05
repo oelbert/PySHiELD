@@ -1,4 +1,5 @@
-from ndsl import Namelist, StencilFactory
+from ndsl import StencilFactory
+from ndsl.dsl.typing import Bool, Float, Int
 from pyshield.stencils.surface.sfc_sice import SurfaceSeaIce
 from tests.savepoint.translate.translate_physics import TranslatePhysicsFortranData2Py
 
@@ -7,11 +8,10 @@ class TranslateSurfaceSeaIce_iter1(TranslatePhysicsFortranData2Py):
     def __init__(
         self,
         grid,
-        namelist: Namelist,
+        config,
         stencil_factory: StencilFactory,
     ):
-        super().__init__(grid, namelist, stencil_factory)
-        self.max_error = 2.0e-14
+        super().__init__(grid, config, stencil_factory)
         self.in_vars["data_vars"] = {
             "u1": {"serialname": "sice_u1", "shield": True},
             "v1": {"serialname": "sice_v1", "shield": True},
@@ -76,15 +76,29 @@ class TranslateSurfaceSeaIce_iter1(TranslatePhysicsFortranData2Py):
 
     def compute(self, inputs):
         self.make_storage_data_input_vars(inputs)
+        inputs["qvapor"] = inputs["q1"][:, :, :, 0]
+        inputs["srflag"] = inputs["srflag"].astype(bool)
+        inputs.pop("q1")
         inputs.pop("u1")
         inputs.pop("v1")
         self.compute_func = SurfaceSeaIce(
             self.stencil_factory,
-            mom4ice=inputs.pop("sice_mom4ice"),
-            lsm=inputs.pop("sice_lsm"),
-            dt_atmos=inputs.pop("sice_delt"),
+            mom4ice=Bool(inputs.pop("sice_mom4ice")),
+            lsm=Int(inputs.pop("sice_lsm")),
+            dt_atmos=Float(inputs.pop("sice_delt")),
         )
-        self.compute_func(**inputs)
+        new_inputs = {}
+        for key in inputs.keys():
+            if len(inputs[key].shape) == 3:
+                new_inputs[key] = inputs[key][:, :, 0]
+            else:
+                new_inputs[key] = inputs[key]
+        self.compute_func(**new_inputs)
+        for key in inputs.keys():
+            if len(inputs[key].shape) == 3:
+                inputs[key][:, :, 0] = new_inputs[key]
+            else:
+                inputs[key] = new_inputs[key]
         return self.slice_output(inputs)
 
 
@@ -92,8 +106,7 @@ class TranslateSurfaceSeaIce_iter2(TranslateSurfaceSeaIce_iter1):
     def __init__(
         self,
         grid,
-        namelist: Namelist,
+        config,
         stencil_factory: StencilFactory,
     ):
-        super().__init__(grid, namelist, stencil_factory)
-        self.max_error = 1.0e-14
+        super().__init__(grid, config, stencil_factory)

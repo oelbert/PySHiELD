@@ -1,4 +1,4 @@
-from ndsl import Namelist, StencilFactory
+from ndsl import StencilFactory
 from pyshield.stencils.surface.sfc_ocean import SurfaceOcean
 from tests.savepoint.translate.translate_physics import TranslatePhysicsFortranData2Py
 
@@ -7,10 +7,10 @@ class TranslateSurfaceOcean_iter1(TranslatePhysicsFortranData2Py):
     def __init__(
         self,
         grid,
-        namelist: Namelist,
+        config,
         stencil_factory: StencilFactory,
     ):
-        super().__init__(grid, namelist, stencil_factory)
+        super().__init__(grid, config, stencil_factory)
         self.in_vars["data_vars"] = {
             "ps": {"serialname": "ocean_ps", "shield": True},
             "u1": {"serialname": "ocean_u1", "shield": True},
@@ -49,7 +49,20 @@ class TranslateSurfaceOcean_iter1(TranslatePhysicsFortranData2Py):
             self.stencil_factory,
         )
         self.make_storage_data_input_vars(inputs)
-        self.compute_func(**inputs)
+        inputs["qvapor"] = inputs["q1"][:, :, :, 0]
+        inputs.pop("q1")
+        new_inputs = {}
+        for key in inputs.keys():
+            if len(inputs[key].shape) == 3:
+                new_inputs[key] = inputs[key][:, :, 0]
+            else:
+                new_inputs[key] = inputs[key]
+        self.compute_func(**new_inputs)
+        for key in inputs.keys():
+            if len(inputs[key].shape) == 3:
+                inputs[key][:, :, 0] = new_inputs[key]
+            else:
+                inputs[key] = new_inputs[key]
         return self.slice_output(inputs)
 
 
@@ -57,7 +70,7 @@ class TranslateSurfaceOcean_iter2(TranslateSurfaceOcean_iter1):
     def __init__(
         self,
         grid,
-        namelist: Namelist,
+        config,
         stencil_factory: StencilFactory,
     ):
-        super().__init__(grid, namelist, stencil_factory)
+        super().__init__(grid, config, stencil_factory)
