@@ -1,4 +1,7 @@
 import dataclasses
+from typing import Tuple
+
+from dacite import Config, from_dict
 
 from ndsl.dsl.gt4py_utils import tracer_variables
 from ndsl.dsl.typing import Float, set_4d_field_size
@@ -68,3 +71,27 @@ class ShallowConvectionConfig:
         # TODO: the -1 is because currently samfshalconv expects qvapor to be a
         # separate array from the rest of the tracers. This is pretty awkward and
         # should be improved...
+
+    @classmethod
+    def from_dict(
+        cls,
+        data: dict,
+    ):
+        """Create a ShallowConvectionConfig from the given data.
+
+        Args:
+            data: "flattened" dictionary where the keys match the class member variables
+        """
+        # NOTE: We're setting strict to False so that extra keys in the data are
+        # ignored. Eventually, we'd like to turn this to True once we move away from
+        # expecting dicts that are basically flattened f90nml files.
+        dacite_config = Config(
+            strict=False,
+            type_hooks={
+                Tuple[int, int]: lambda x: tuple(x),
+                Tuple[str, ...]: lambda x: tuple(x) if x is not None else None,
+            },
+        )
+        return from_dict(
+            data_class=ShallowConvectionConfig, data=data, config=dacite_config
+        )

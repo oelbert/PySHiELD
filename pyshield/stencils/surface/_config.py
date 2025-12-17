@@ -1,5 +1,7 @@
 import dataclasses
-from typing import Sequence
+from typing import Sequence, Tuple
+
+from dacite import Config, from_dict
 
 
 DEFAULT_FLOAT = 0.0
@@ -53,3 +55,25 @@ class SurfaceConfig:
             self.nstf_name = tuple(self.nstf_name)
         if len(self.nstf_name) != 5:
             raise IndexError(f"nstf_name must have 5 elements, got {self.nstf_name}")
+
+    @classmethod
+    def from_dict(
+        cls,
+        data: dict,
+    ):
+        """Create a SurfaceConfig from the given data.
+
+        Args:
+            data: "flattened" dictionary where the keys match the class member variables
+        """
+        # NOTE: We're setting strict to False so that extra keys in the data are
+        # ignored. Eventually, we'd like to turn this to True once we move away from
+        # expecting dicts that are basically flattened f90nml files.
+        dacite_config = Config(
+            strict=False,
+            type_hooks={
+                Tuple[int, int]: lambda x: tuple(x),
+                Tuple[str, ...]: lambda x: tuple(x) if x is not None else None,
+            },
+        )
+        return from_dict(data_class=SurfaceConfig, data=data, config=dacite_config)

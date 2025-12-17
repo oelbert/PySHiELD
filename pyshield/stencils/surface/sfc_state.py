@@ -7,6 +7,8 @@ import ndsl.dsl.gt4py_utils as gt_utils
 from ndsl import GridSizer, Quantity, QuantityFactory
 from ndsl.constants import X_DIM, Y_DIM, Z_DIM
 from ndsl.dsl.typing import Bool, Float, Int
+from ndsl.restart._legacy_restart import open_restart
+from ndsl.typing import Communicator
 
 
 @dataclass()
@@ -462,6 +464,86 @@ class SurfaceState:
                     dtype=dtype,
                 )
         return cls(**initial_arrays)
+
+    @classmethod
+    def from_fortran_restart(
+        cls,
+        *,
+        quantity_factory: QuantityFactory,
+        communicator: Communicator,
+        path: str,
+    ):
+        state_dict: Mapping[str, Quantity] = open_restart(
+            dirname=path, communicator=communicator
+        )
+        new = cls.init_zeros(quantity_factory)
+
+        new.tsfc.view[:] = new.tsfc.np.asarray(
+            state_dict["surface_temperature"].transpose(new.tsfc.dims).view[:]
+        )
+        new.islmsk.view[:] = new.islmsk.np.asarray(
+            state_dict["land_sea_mask"].transpose(new.islmsk.dims).view[:]
+        )
+        new.zorl.view[:] = new.zorl.np.asarray(
+            state_dict["surface_roughness"].transpose(new.zorl.dims).view[:]
+        )
+        new.vegtype.view[:] = new.vegtype.np.asarray(
+            state_dict["vegetation_type"].transpose(new.vegtype.dims).view[:]
+        )
+        new.uustar.view[:] = new.uustar.np.asarray(
+            state_dict["friction_velocity"].transpose(new.uustar.dims).view[:]
+        )
+        new.sfcemis.view[:] = 0.98
+        new.vfrac.view[:] = new.vfrac.np.asarray(
+            state_dict["vegetation_fraction"].transpose(new.vfrac.dims).view[:]
+        )
+        new.shdmax.view[:] = new.shdmax.np.asarray(
+            state_dict["maximum_fractional_coverage_of_green_vegetation"]
+            .transpose(new.shdmax.dims)
+            .view[:]
+        )
+        new.snowd.view[:] = new.snowd.np.asarray(
+            state_dict["snow_depth_water_equivalent"].transpose(new.snowd.dims).view[:]
+        )
+        new.ffhh.view[:] = new.ffhh.np.asarray(
+            state_dict["fh_parameter"].transpose(new.ffhh.dims).view[:]
+        )
+        new.ffmm.view[:] = new.ffmm.np.asarray(
+            state_dict["fm_parameter"].transpose(new.ffmm.dims).view[:]
+        )
+        new.stc.view[:] = new.stc.np.asarray(
+            state_dict["soil_temperature"].transpose(new.stc.dims).view[:]
+        )
+        new.srflag.view[:] = new.srflag.np.asarray(
+            state_dict["snow_rain_flag"].transpose(new.srflag.dims).view[:]
+        )
+        new.hice.view[:] = new.hice.np.asarray(
+            state_dict["sea_ice_thickness"].transpose(new.hice.dims).view[:]
+        )
+        new.fice.view[:] = new.fice.np.asarray(
+            state_dict["ice_fraction_over_open_water"].transpose(new.fice.dims).view[:]
+        )
+        new.tisfc.view[:] = new.tisfc.np.asarray(
+            state_dict["surface_temperature_over_ice_fraction"]
+            .transpose(new.tisfc.dims)
+            .view[:]
+        )
+        new.tprcp.view[:] = new.tprcp.np.asarray(
+            state_dict["total_precipitation"].transpose(new.tprcp.dims).view[:]
+        )
+        new.weasd.view[:] = new.weasd.np.asarray(
+            state_dict["water_equivalent_of_accumulated_snow_depth"]
+            .transpose(new.weasd.dims)
+            .view[:]
+        )
+        ua = new.wind.np.asarray(
+            state_dict["eastward_wind_at_surface"].transpose(new.weasd.dims).view[:]
+        )
+        va = new.wind.np.asarray(
+            state_dict["northward_wind_at_surface"].transpose(new.weasd.dims).view[:]
+        )
+        new.wind.view[:] = new.wind.np.sqrt(ua**2.0 + va**2.0)
+        return new
 
     @classmethod
     def init_from_storages(

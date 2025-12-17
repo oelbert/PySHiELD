@@ -53,11 +53,17 @@ def calc_sigma(ak: np.ndarray, bk: np.ndarray, k_toa: int):
     return (ak + bk * physcons.P_REF - ak[k_toa]) / (physcons.P_REF - ak[k_toa])
 
 
-def set_sst(tsea, gridlat):
+def set_sst(tsea: FloatFieldIJ, gridlat: FloatFieldIJ):
+    """
+    Sets sea surface temperature according to equation (1) of Neale and Hoskins
+    """
     from __externals__ import tmax, tmin
 
     with computation(FORWARD), interval(0, 1):
-        tsea = tmax - ((tmax - tmin) * sin(gridlat) ** 2)
+        if gridlat >= (-constants.PI / 3.0) and gridlat <= (constants.PI / 3.0):
+            tsea = tmax - ((tmax - tmin) * sin(3 * gridlat / 2) ** 2)
+        else:
+            tsea = 0.0
 
 
 def calc_p_lay_hydro(

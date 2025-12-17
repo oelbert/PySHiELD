@@ -1,4 +1,7 @@
 import dataclasses
+from typing import Tuple
+
+from dacite import Config, from_dict
 
 from ndsl.dsl.gt4py_utils import tracer_variables
 
@@ -68,3 +71,25 @@ class PBLConfig:
         self.ntiw = tracer_variables.index("qice")
         self.ntcw = tracer_variables.index("qliquid")
         self.ntke = tracer_variables.index("qsgs_tke")
+
+    @classmethod
+    def from_dict(
+        cls,
+        data: dict,
+    ):
+        """Create a PBLConfig from the given data.
+
+        Args:
+            data: "flattened" dictionary where the keys match the class member variables
+        """
+        # NOTE: We're setting strict to False so that extra keys in the data are
+        # ignored. Eventually, we'd like to turn this to True once we move away from
+        # expecting dicts that are basically flattened f90nml files.
+        dacite_config = Config(
+            strict=False,
+            type_hooks={
+                Tuple[int, int]: lambda x: tuple(x),
+                Tuple[str, ...]: lambda x: tuple(x) if x is not None else None,
+            },
+        )
+        return from_dict(data_class=PBLConfig, data=data, config=dacite_config)

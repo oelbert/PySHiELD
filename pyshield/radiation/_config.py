@@ -1,6 +1,9 @@
 import dataclasses
 import datetime
 from pathlib import Path
+from typing import Tuple
+
+from dacite import Config, from_dict
 
 from ndsl.dsl.typing import Float, Int
 
@@ -87,3 +90,25 @@ class RTE_RRTMGPConfig:
             raise NotImplementedError(
                 "climatological ozone (ioznflg = 0) is not supported"
             )
+
+    @classmethod
+    def from_dict(
+        cls,
+        data: dict,
+    ):
+        """Create a RTE_RRTMGPConfig from the given data.
+
+        Args:
+            data: "flattened" dictionary where the keys match the class member variables
+        """
+        # NOTE: We're setting strict to False so that extra keys in the data are
+        # ignored. Eventually, we'd like to turn this to True once we move away from
+        # expecting dicts that are basically flattened f90nml files.
+        dacite_config = Config(
+            strict=False,
+            type_hooks={
+                Tuple[int, int]: lambda x: tuple(x),
+                Tuple[str, ...]: lambda x: tuple(x) if x is not None else None,
+            },
+        )
+        return from_dict(data_class=RTE_RRTMGPConfig, data=data, config=dacite_config)

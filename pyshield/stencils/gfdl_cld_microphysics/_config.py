@@ -2,6 +2,8 @@ import dataclasses
 import math
 from typing import List, Tuple
 
+from dacite import Config, from_dict
+
 import ndsl.constants as constants
 import pyshield.stencils.gfdl_cld_microphysics.constants as mpcons
 
@@ -655,6 +657,28 @@ class GFDLCloudMPConfig:
             self.t_wfr = self.tmin
         else:
             self.t_wfr = mpcons.TICE0 - 40.0
+
+    @classmethod
+    def from_dict(
+        cls,
+        data: dict,
+    ):
+        """Create a GFDLCloudMPConfig from the given data.
+
+        Args:
+            data: "flattened" dictionary where the keys match the class member variables
+        """
+        # NOTE: We're setting strict to False so that extra keys in the data are
+        # ignored. Eventually, we'd like to turn this to True once we move away from
+        # expecting dicts that are basically flattened f90nml files.
+        dacite_config = Config(
+            strict=False,
+            type_hooks={
+                Tuple[int, int]: lambda x: tuple(x),
+                Tuple[str, ...]: lambda x: tuple(x) if x is not None else None,
+            },
+        )
+        return from_dict(data_class=GFDLCloudMPConfig, data=data, config=dacite_config)
 
     @property
     def adjustnegative(self) -> AdjustNegativeTracerConfig:
