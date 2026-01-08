@@ -200,6 +200,11 @@ class PhysicsConfig:
     """flag to replace cosz with daily mean value"""
     prescribe_sst: bool = DEFAULT_BOOL
     """whether to use prescribed sea surface temperatures"""
+    sst_profile: int = DEFAULT_INT
+    """which profile to enforce"""
+    # 0: constant sst
+    # 1: cosine profile in SHiELD
+    # 2: from equation (1) of Neale and Hoskins
     max_sst: float = 293.95
     """maximum temperature for prescribed SSTs"""
     min_sst: float = float(physcons.TICE)

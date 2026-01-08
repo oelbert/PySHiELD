@@ -55,15 +55,23 @@ def calc_sigma(ak: np.ndarray, bk: np.ndarray, k_toa: int):
 
 def set_sst(tsea: FloatFieldIJ, gridlat: FloatFieldIJ):
     """
-    Sets sea surface temperature according to equation (1) of Neale and Hoskins
+    Sets sea surface temperature according the selected profile:
+        0: constant sst
+        1: cosine profile in SHiELD
+        2: from equation (1) of Neale and Hoskins
     """
-    from __externals__ import tmax, tmin
+    from __externals__ import sst_profile, tmax, tmin
 
     with computation(FORWARD), interval(0, 1):
-        if gridlat >= (-constants.PI / 3.0) and gridlat <= (constants.PI / 3.0):
-            tsea = tmax - ((tmax - tmin) * sin(3 * gridlat / 2) ** 2)
-        else:
-            tsea = 0.0
+        if sst_profile == 0:
+            tsea = tmax
+        elif sst_profile == 1:
+            tsea = tmin + (tmax - tmin) * cos(gridlat)
+        elif sst_profile == 2:
+            if gridlat >= (-constants.PI / 3.0) and gridlat <= (constants.PI / 3.0):
+                tsea = tmax - ((tmax - tmin) * sin(3 * gridlat / 2) ** 2)
+            else:
+                tsea = tmin
 
 
 def calc_p_lay_hydro(
@@ -1311,6 +1319,7 @@ class Physics:
             self._set_sst = stencil_factory.from_origin_domain(
                 func=set_sst,
                 externals={
+                    "sst_profile": namelist.sst_profile,
                     "tmax": namelist.max_sst,
                     "tmin": namelist.min_sst,
                 },

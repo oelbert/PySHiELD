@@ -4,7 +4,7 @@ from typing import Any, Dict, Mapping
 import xarray as xr
 
 import ndsl.dsl.gt4py_utils as gt_utils
-from ndsl import GridSizer, Quantity, QuantityFactory
+from ndsl import GridSizer, Quantity, QuantityFactory, State
 from ndsl.constants import X_DIM, Y_DIM, Z_DIM
 from ndsl.dsl.typing import Bool, Float, Int
 from ndsl.restart._legacy_restart import open_restart
@@ -12,7 +12,7 @@ from ndsl.typing import Communicator
 
 
 @dataclass()
-class SurfaceState:
+class SurfaceState(State):
     tsfc: Quantity = field(
         metadata={
             "name": "surface_temperature",
