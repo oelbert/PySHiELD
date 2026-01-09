@@ -3,8 +3,6 @@ from typing import Sequence, Tuple
 
 from dacite import Config, from_dict
 
-from ndsl import Configuration
-
 
 DEFAULT_FLOAT = 0.0
 DEFAULT_INT = 0
@@ -13,7 +11,7 @@ DEFAULT_SCHEMES = ["GFS_microphysics"]
 
 
 @dataclasses.dataclass
-class SurfaceConfig(Configuration):
+class SurfaceConfig:
     do_z0_hwrf15: bool = DEFAULT_BOOL
     """flag to use z0 scheme from 2015 HWRF"""
     do_z0_hwrf17: bool = DEFAULT_BOOL
