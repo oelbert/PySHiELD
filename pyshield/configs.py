@@ -1,8 +1,8 @@
-from radiation._config import RTE_RRTMGPConfig
-from stencils.gfdl_cld_microphysics._config import GFDLCloudMPConfig
-from stencils.pbl._config import PBLConfig
-from stencils.shallow_convection._config import ShallowConvectionConfig
-from stencils.surface._config import SurfaceConfig
+from pyshield.radiation import RTE_RRTMGPConfig
+from pyshield.stencils.gfdl_cld_microphysics import GFDLCloudMPConfig
+from pyshield.stencils.pbl import PBLConfig
+from pyshield.stencils.shallow_convection import ShallowConvectionConfig
+from pyshield.stencils.surface import SurfaceConfig
 
 
 __all__ = [
