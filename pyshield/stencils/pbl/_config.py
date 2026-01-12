@@ -13,7 +13,7 @@ DEFAULT_BOOL = False
 
 @dataclasses.dataclass
 class PBLConfig:
-    dt_atmos: int = DEFAULT_INT
+    dt_atmos: float = DEFAULT_FLOAT
     hydrostatic: bool = DEFAULT_BOOL
     isatmedmf: int = 0
     """flag for specific scale-aware turbulent moist edmf scheme"""

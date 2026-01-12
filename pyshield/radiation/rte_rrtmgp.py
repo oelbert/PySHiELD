@@ -286,10 +286,10 @@ class RTE_RRTMGPDriver:
         self._llyr = cld_init(sigma, config.ivflip)
 
         self._cloud_optics_lw = CloudOptics(cloud_optics_file=CloudOpticsFiles.LW_BND)
-        self._gas_optics_lw = GasOptics(gas_optics_file=GasOpticsFiles.LW_G256)
+        self._gas_optics_lw = GasOptics(gas_optics_file=GasOpticsFiles.LW_G128)
 
         self._cloud_optics_sw = CloudOptics(cloud_optics_file=CloudOpticsFiles.SW_BND)
-        self._gas_optics_sw = GasOptics(gas_optics_file=GasOpticsFiles.SW_G224)
+        self._gas_optics_sw = GasOptics(gas_optics_file=GasOpticsFiles.SW_G112)
         self._gas_mapping = {
             "h2o": "qvapor",
             "o3": "qo3mr",
