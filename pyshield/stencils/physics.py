@@ -5,6 +5,7 @@ import numpy as np
 import ndsl.constants as constants
 import pyshield.constants as physcons
 from ndsl import QuantityFactory, StencilFactory, orchestrate
+from ndsl.comm import Comm
 from ndsl.constants import X_DIM, Y_DIM, Z_DIM, Z_INTERFACE_DIM
 from ndsl.dsl.gt4py import BACKWARD, FORWARD, PARALLEL, computation, cos, exp
 from ndsl.dsl.gt4py import function as gtfunction
@@ -1106,6 +1107,7 @@ class Physics:
         pbl_config: PBLConfig = None,
         sc_config: ShallowConvectionConfig = None,
         gfdl_cld_mp_config: GFDLCloudMPConfig = None,
+        comm: Comm = None,
     ):
         schemes = [scheme.value for scheme in namelist.schemes]
         for scheme in schemes:
@@ -1362,6 +1364,7 @@ class Physics:
                 sigma[::-1],
                 quantity_factory,
                 stencil_factory,
+                comm=comm,
             )
         else:
             self._rterrtmgp = False
