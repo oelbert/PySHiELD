@@ -196,7 +196,7 @@ class RTE_RRTMGPDriver:
             
             if not os.path.exists(cache_path + "rrtmgp-gas-lw-g128.nc"):
                 for fname in os.listdir(fsource):
-                    if not os.path.isdir(fname):
+                    if fname.endswith(".nc"):
                         shutil.copy(os.path.join(fsource, fname), cache_path)
         else:
             cache_path = fsource
