@@ -13,6 +13,7 @@ import ndsl.constants as constants
 from ndsl import QuantityFactory, StencilFactory
 from ndsl.comm import Comm
 from ndsl.constants import X_DIM, Y_DIM, Z_DIM
+from ndsl.debug.tooling import instrument
 from ndsl.dsl.gt4py import FORWARD, PARALLEL, computation
 from ndsl.dsl.gt4py import function as gtfunction
 from ndsl.dsl.gt4py import interval, log
@@ -643,6 +644,7 @@ class RTE_RRTMGPDriver:
         self._assign_constant_gases(radx)
         return radx
 
+    @instrument
     def step_radiation(
         self, state: RTE_RRTMGPState, sfc_state: SurfaceState, date: datetime.datetime
     ):
