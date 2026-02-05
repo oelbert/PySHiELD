@@ -1889,7 +1889,7 @@ def feedback_control_update_mass_flux(
 
     with computation(FORWARD), interval(...):
         # convective cloud water
-        val1 = 0.0
+        # val1 = 0.0
         if cnvflg and k_mask >= kbcon and k_mask < ktcon:
             # Calculate shallow convective cloud water
             cnvw = cnvwt * xmb * dt2
