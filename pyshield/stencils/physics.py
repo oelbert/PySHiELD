@@ -1681,6 +1681,7 @@ class Physics:
             )
             ndsl_log.info("Entering radiation")
             self._radiation.step_radiation(radiation_state, surface_state, date)
+            ndsl_log.info("Exiting radiation")
             self._copy_from_radiation(
                 radiation_state.hrtsw,
                 radiation_state.hrtlw,
