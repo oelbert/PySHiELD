@@ -544,7 +544,6 @@ class Static1:
             heo,
             heso,
         )
-        # breakpoint()
         # cnvflg[3:-4,3:-4][16,1] = True
         conv_b = copy.deepcopy(cnvflg)
 

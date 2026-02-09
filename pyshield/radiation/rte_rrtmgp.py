@@ -194,7 +194,7 @@ class RTE_RRTMGPDriver:
             cache_path = f".cache/rank_{rank}/pyrte_rrtmgp/rrtmgp-data-1.9/"
             if not os.path.exists(cache_path):
                 os.makedirs(cache_path)
-            
+
             if not os.path.exists(cache_path + "rrtmgp-gas-lw-g128.nc"):
                 for fname in os.listdir(fsource):
                     if fname.endswith(".nc"):
@@ -306,11 +306,13 @@ class RTE_RRTMGPDriver:
         # Init clouds:
         self._llyr = cld_init(sigma, config.ivflip)
 
-        self._cloud_optics_lw = CloudOptics(file_path=os.path.join(cache_path, CloudOpticsFiles.LW_BND.value))
-        self._gas_optics_lw = GasOptics(file_path=os.path.join(cache_path, GasOpticsFiles.LW_G128.value))
-
+        # Init Optics classes
+        self._gas_optics_sw = GasOptics(file_path=os.path.join(cache_path, GasOpticsFiles.SW_G224.value))
         self._cloud_optics_sw = CloudOptics(file_path=os.path.join(cache_path, CloudOpticsFiles.SW_BND.value))
-        self._gas_optics_sw = GasOptics(file_path=os.path.join(cache_path, GasOpticsFiles.SW_G112.value))
+
+        self._gas_optics_lw = GasOptics(file_path=os.path.join(cache_path, GasOpticsFiles.LW_G256.value))
+        self._cloud_optics_lw = CloudOptics(file_path=os.path.join(cache_path, CloudOpticsFiles.LW_BND.value))
+
         self._gas_mapping = {
             "h2o": "qvapor",
             "o3": "qo3mr",
