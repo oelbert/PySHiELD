@@ -12,7 +12,7 @@ from pyrte_rrtmgp.rrtmgp_data_files import CloudOpticsFiles, GasOpticsFiles
 import ndsl.constants as constants
 from ndsl import QuantityFactory, StencilFactory
 from ndsl.comm import Comm
-from ndsl.constants import X_DIM, Y_DIM, Z_DIM
+from ndsl.constants import X_DIM, Y_DIM, Z_DIM, Z_INTERFACE_DIM
 from ndsl.debug.tooling import instrument
 from ndsl.dsl.gt4py import FORWARD, PARALLEL, computation
 from ndsl.dsl.gt4py import function as gtfunction
@@ -351,10 +351,9 @@ class RTE_RRTMGPDriver:
             var_mapping=self._var_mapping,
         )
 
-        self._calc_tlvl = stencil_factory.from_origin_domain(
+        self._calc_tlvl = stencil_factory.from_dims_halo(
             func=calc_tlvl_gfs,
-            origin=grid_indexing.origin_compute(),
-            domain=grid_indexing.domain_compute(),
+            compute_dims=[X_DIM, Y_DIM, Z_INTERFACE_DIM],
         )
         if config.icmphys == 4:
             self._cldscheme = 4

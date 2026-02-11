@@ -1304,10 +1304,9 @@ class Physics:
                 "pktop": self._pktop,
             },
         )
-        self._flip_fields = stencil_factory.from_origin_domain(
+        self._flip_fields = stencil_factory.from_dims_halo(
             func=flip_fields,
-            origin=grid_indexing.origin_full(),
-            domain=grid_indexing.domain_full(),
+            compute_dims=[X_DIM, Y_DIM, Z_INTERFACE_DIM],
         )
 
         if self._hydro_delp:
@@ -1347,10 +1346,9 @@ class Physics:
                 )
             self._rterrtmgp = True
             sigma = calc_sigma(grid_data.ak.data, grid_data.bk.data, 0)
-            self._copy_to_radiation = stencil_factory.from_origin_domain(
+            self._copy_to_radiation = stencil_factory.from_dims_halo(
                 func=copy_to_radiation,
-                origin=grid_indexing.origin_full(),
-                domain=grid_indexing.domain_full(),
+                compute_dims=[X_DIM, Y_DIM, Z_INTERFACE_DIM],
             )
             self._copy_from_radiation = stencil_factory.from_origin_domain(
                 func=copy_from_radiation,
@@ -1561,7 +1559,6 @@ class Physics:
             self._dm3d,
             physics_state.pgr,
         )
-
         if self._hydro_delp:
             self._calc_p_lay_hydro(physics_state.prsi, physics_state.delp)
 
@@ -1598,6 +1595,8 @@ class Physics:
         )
         if self._prescribe_sst:
             self._set_sst(physics_state.tsfc, self._gridlat)
+            if surface_state is not None:
+                surface_state.tsfc.data[:] = physics_state.tsfc.data[:]
         # If PBL scheme is present, physics_state should be updated here
         self._get_phi_fv3(
             physics_state.pt,
