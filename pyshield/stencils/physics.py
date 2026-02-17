@@ -54,7 +54,7 @@ def calc_sigma(ak: np.ndarray, bk: np.ndarray, k_toa: int):
     return (ak + bk * physcons.P_REF - ak[k_toa]) / (physcons.P_REF - ak[k_toa])
 
 
-def set_sst(tsea: FloatFieldIJ, gridlat: FloatFieldIJ):
+def set_sst(tsea: FloatFieldIJ, islmsk: IntFieldIJ, gridlat: FloatFieldIJ):
     """
     Sets sea surface temperature according the selected profile:
         0: constant sst
@@ -64,15 +64,16 @@ def set_sst(tsea: FloatFieldIJ, gridlat: FloatFieldIJ):
     from __externals__ import sst_profile, tmax, tmin
 
     with computation(FORWARD), interval(0, 1):
-        if sst_profile == 0:
-            tsea = tmax
-        elif sst_profile == 1:
-            tsea = tmin + (tmax - tmin) * cos(gridlat)
-        elif sst_profile == 2:
-            if gridlat >= (-constants.PI / 3.0) and gridlat <= (constants.PI / 3.0):
-                tsea = tmax - ((tmax - tmin) * sin(3 * gridlat / 2) ** 2)
-            else:
-                tsea = tmin
+        if islmsk == 0:  # Over sea points
+            if sst_profile == 0:
+                tsea = tmax
+            elif sst_profile == 1:
+                tsea = tmin + (tmax - tmin) * cos(gridlat)
+            elif sst_profile == 2:
+                if gridlat >= (-constants.PI / 3.0) and gridlat <= (constants.PI / 3.0):
+                    tsea = tmax - ((tmax - tmin) * sin(3 * gridlat / 2) ** 2)
+                else:
+                    tsea = tmin
 
 
 def calc_p_lay_hydro(
@@ -121,8 +122,9 @@ def atmos_phys_driver_statein(
     pt: FloatField,
     dm: FloatField,
     pgr: FloatFieldIJ,
+    prslk: FloatField,
 ):
-    from __externals__ import nwat, pk0inv, pktop, ptop
+    from __externals__ import nwat, p00, pk0inv, pktop, ptop
 
     with computation(BACKWARD), interval(...):
         phii = 0.0
@@ -160,6 +162,7 @@ def atmos_phys_driver_statein(
         qgraupel = qgraupel / delp
         qo3mr = qo3mr / delp
         qsgs_tke = qsgs_tke / delp
+        prslk = exp(constants.KAPPA * log(delp / p00))
 
     with computation(FORWARD), interval(-1, None):
         prsik = log(prsi)
@@ -1165,7 +1168,7 @@ class Physics:
             dims=[Z_INTERFACE_DIM], units="", dtype=Int
         )
         self._layer_flip = self.quantity_factory.zeros(
-            dims=[Z_INTERFACE_DIM], units="", dtype=Int
+            dims=[Z_DIM], units="", dtype=Int
         )
         for k in range(npz):
             self._level_flip.data[k] = npz - 1 - 2 * k
@@ -1299,6 +1302,7 @@ class Physics:
             domain=grid_indexing.domain_compute(add=(0, 0, 1)),
             externals={
                 "nwat": self._nwat,
+                "p00": self._p00,
                 "ptop": self._ptop,
                 "pk0inv": self._pk0inv,
                 "pktop": self._pktop,
@@ -1419,10 +1423,9 @@ class Physics:
                 raise ValueError("Specify a PBL configuration to use SATM_EDMF scheme")
             self.pbl_state = SATMEDMFVDiffState.init_zeros(self.quantity_factory)
             self._satm_edmf = True
-            self._fill_pbl_state = stencil_factory.from_origin_domain(
+            self._fill_pbl_state = stencil_factory.from_dims_halo(
                 func=fill_pbl_state,
-                origin=grid_indexing.origin_compute(),
-                domain=grid_indexing.domain_compute(),
+                compute_dims=[X_DIM, Y_DIM, Z_INTERFACE_DIM],
                 externals={"levs": nz},
             )
             self._pbl = ScaleAwareTKEMoistEDMF(
@@ -1431,10 +1434,9 @@ class Physics:
                 grid_data.area,
                 pbl_config,
             )
-            self._results_from_pbl = stencil_factory.from_origin_domain(
+            self._results_from_pbl = stencil_factory.from_dims_halo(
                 func=results_from_pbl,
-                origin=grid_indexing.origin_compute(),
-                domain=grid_indexing.domain_compute(),
+                compute_dims=[X_DIM, Y_DIM, Z_INTERFACE_DIM],
             )
         else:
             self._satm_edmf = False
@@ -1558,6 +1560,7 @@ class Physics:
             physics_state.pt,
             self._dm3d,
             physics_state.pgr,
+            physics_state.prslk,
         )
         if self._hydro_delp:
             self._calc_p_lay_hydro(physics_state.prsi, physics_state.delp)
@@ -1594,9 +1597,11 @@ class Physics:
             self._del_gz,
         )
         if self._prescribe_sst:
-            self._set_sst(physics_state.tsfc, self._gridlat)
-            if surface_state is not None:
-                surface_state.tsfc.data[:] = physics_state.tsfc.data[:]
+            if surface_state is None:
+                raise ValueError(
+                    "You must pass a surface state to set sea surface temperature"
+                )
+            self._set_sst(surface_state.tsfc, surface_state.islmsk, self._gridlat)
         # If PBL scheme is present, physics_state should be updated here
         self._get_phi_fv3(
             physics_state.pt,

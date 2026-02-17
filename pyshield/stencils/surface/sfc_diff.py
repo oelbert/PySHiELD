@@ -21,6 +21,24 @@ def monin_obukhov_similarity(
     ztmax: Float,
     tvs: Float,
 ):
+    """
+    ! --- input
+    ! z1     - lowest model level height
+    ! snwdph - surface snow thickness
+    ! wind   - wind speed at lowest model layer
+    ! thv1   - virtual potential temp at lowest model layer
+    ! tvs    - surface temp
+    ! z0max  - surface roughness length for momentum
+    ! ztmax  - surface roughness length for heat
+    !
+    ! --- output
+    ! rb        - a bulk richardson number
+    ! fm, fh    - similarity function defined at lowest model layer
+    ! fm10, fh2 - similarity function defined at 10m (for momentum) and 2m (for heat)
+    ! cm, ch    - surface exchange coefficients for momentum and heat
+    ! stress    - surface wind stress
+    ! ustar     - surface frictional velocity
+    """
     z1i = 1.0 / z1
 
     tem1 = z0max / z1
