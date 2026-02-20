@@ -3402,6 +3402,7 @@ class TranslateInitCol(TranslatePhysicsFortranData2Py):
             n_halo=3,
             data_dimensions={},
             layout=self.config.layout,
+            backend=self.stencil_factory.backend
         )
 
         self.quantity_factory = QuantityFactory.from_backend(
@@ -3515,6 +3516,7 @@ class TranslateStatic1(TranslatePhysicsFortranData2Py):
             n_halo=3,
             data_dimensions={},
             layout=self.config.layout,
+            backend=self.stencil_factory.backend
         )
 
         self.quantity_factory = QuantityFactory.from_backend(
@@ -3620,6 +3622,7 @@ class TranslateStatic2(TranslatePhysicsFortranData2Py):
             n_halo=3,
             data_dimensions={},
             layout=self.config.layout,
+            backend=self.stencil_factory.backend
         )
 
         self.quantity_factory = QuantityFactory.from_backend(
@@ -3737,6 +3740,7 @@ class TranslateUpdateKb9(TranslatePhysicsFortranData2Py):
             n_halo=3,
             data_dimensions={},
             layout=self.config.layout,
+            backend=self.stencil_factory.backend
         )
 
         self.quantity_factory = QuantityFactory.from_backend(
@@ -3850,6 +3854,7 @@ class TranslateStatic10(TranslatePhysicsFortranData2Py):
             n_halo=3,
             data_dimensions={},
             layout=self.config.layout,
+            backend=self.stencil_factory.backend
         )
 
         self.quantity_factory = QuantityFactory.from_backend(
@@ -4017,6 +4022,7 @@ class TranslateStatic11(TranslatePhysicsFortranData2Py):
             n_halo=3,
             data_dimensions={},
             layout=self.config.layout,
+            backend=self.stencil_factory.backend
         )
 
         self.quantity_factory = QuantityFactory.from_backend(
@@ -4182,6 +4188,7 @@ class TranslateStatic12(TranslatePhysicsFortranData2Py):
             n_halo=3,
             data_dimensions={},
             layout=self.config.layout,
+            backend=self.stencil_factory.backend
         )
 
         self.quantity_factory = QuantityFactory.from_backend(
@@ -4317,6 +4324,7 @@ class TranslateFeedbackCtrl(TranslatePhysicsFortranData2Py):
             n_halo=3,
             data_dimensions={},
             layout=self.config.layout,
+            backend=self.stencil_factory.backend
         )
 
         self.quantity_factory = QuantityFactory.from_backend(
@@ -4378,6 +4386,7 @@ class TranslateSC13(TranslatePhysicsFortranData2Py):
             n_halo=3,
             data_dimensions={},
             layout=self.config.layout,
+            backend=self.stencil_factory.backend
         )
 
         self.quantity_factory = QuantityFactory.from_backend(
@@ -4532,6 +4541,7 @@ class TranslateCompTendencies(TranslatePhysicsFortranData2Py):
             n_halo=3,
             data_dimensions={},
             layout=self.config.layout,
+            backend=self.stencil_factory.backend
         )
 
         self.quantity_factory = QuantityFactory.from_backend(

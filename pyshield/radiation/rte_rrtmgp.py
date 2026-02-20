@@ -1,6 +1,6 @@
 import datetime
-import shutil
 import os
+import shutil
 
 import numpy as np
 from pyrte_rrtmgp import rte
@@ -12,7 +12,7 @@ from pyrte_rrtmgp.rrtmgp_data_files import CloudOpticsFiles, GasOpticsFiles
 import ndsl.constants as constants
 from ndsl import QuantityFactory, StencilFactory
 from ndsl.comm import Comm
-from ndsl.constants import X_DIM, Y_DIM, Z_DIM
+from ndsl.constants import X_DIM, Y_DIM, Z_DIM, Z_INTERFACE_DIM
 from ndsl.debug.tooling import instrument
 from ndsl.dsl.gt4py import FORWARD, PARALLEL, computation
 from ndsl.dsl.gt4py import function as gtfunction
@@ -188,7 +188,7 @@ class RTE_RRTMGPDriver:
 
         # check for data:
         # TODO: This is a brute-force solution but it "works"
-        fsource = os.path.expanduser('~') + "/.cache/pyrte_rrtmgp/rrtmgp-data-1.9/"
+        fsource = os.path.expanduser("~") + "/.cache/pyrte_rrtmgp/rrtmgp-data-1.9/"
         if comm is not None:
             rank = comm.Get_rank()
             cache_path = f".cache/rank_{rank}/pyrte_rrtmgp/rrtmgp-data-1.9/"
@@ -307,10 +307,18 @@ class RTE_RRTMGPDriver:
         self._llyr = cld_init(sigma, config.ivflip)
 
         # Init Optics classes
-        self._gas_optics_sw = GasOptics(file_path=os.path.join(cache_path, GasOpticsFiles.SW_G224.value))
-        self._cloud_optics_sw = CloudOptics(file_path=os.path.join(cache_path, CloudOpticsFiles.SW_BND.value))
-        self._gas_optics_lw = GasOptics(file_path=os.path.join(cache_path, GasOpticsFiles.LW_G256.value))
-        self._cloud_optics_lw = CloudOptics(file_path=os.path.join(cache_path, CloudOpticsFiles.LW_BND.value))
+        self._gas_optics_sw = GasOptics(
+            file_path=os.path.join(cache_path, GasOpticsFiles.SW_G224.value)
+        )
+        self._cloud_optics_sw = CloudOptics(
+            file_path=os.path.join(cache_path, CloudOpticsFiles.SW_BND.value)
+        )
+        self._gas_optics_lw = GasOptics(
+            file_path=os.path.join(cache_path, GasOpticsFiles.LW_G256.value)
+        )
+        self._cloud_optics_lw = CloudOptics(
+            file_path=os.path.join(cache_path, CloudOpticsFiles.LW_BND.value)
+        )
 
         self._gas_mapping = {
             "h2o": "qvapor",
@@ -343,10 +351,9 @@ class RTE_RRTMGPDriver:
             var_mapping=self._var_mapping,
         )
 
-        self._calc_tlvl = stencil_factory.from_origin_domain(
+        self._calc_tlvl = stencil_factory.from_dims_halo(
             func=calc_tlvl_gfs,
-            origin=grid_indexing.origin_compute(),
-            domain=grid_indexing.domain_compute(),
+            compute_dims=[X_DIM, Y_DIM, Z_INTERFACE_DIM],
         )
         if config.icmphys == 4:
             self._cldscheme = 4

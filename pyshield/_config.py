@@ -54,9 +54,9 @@ class PhysicsConfig:
     """frequency for shortwave radiation (secs)"""
     fhlwr: float = 3600.0
     """frequency for longwave radiation (secs)"""
-    nsswr: int = 1
+    nsswr: int = 0
     """frequency for shortwave radiation (timesteps), default is every step"""
-    nslwr: int = 1
+    nslwr: int = 0
     """frequency for longwave radiation (timesteps)"""
     hydrostatic: bool = DEFAULT_BOOL
     hydro_delp: bool = False
@@ -232,9 +232,16 @@ class PhysicsConfig:
             physics_config = self.from_f90nml(f90_nml, self.target_nml_groups)
             for var in physics_config.__dict__.keys():
                 setattr(self, var, physics_config.__dict__[var])
-        if self.dt_atmos != 0:
-            self.nsswr = int(self.fhswr / self.dt_atmos)
-            self.nslwr = int(self.fhlwr / self.dt_atmos)
+        if self.nsswr == 0:
+            if self.dt_atmos != 0:
+                self.nsswr = int(self.fhswr / self.dt_atmos)
+            else:
+                self.nsswr = 1
+        if self.nslwr == 0:
+            if self.dt_atmos != 0:
+                self.nslwr = int(self.fhlwr / self.dt_atmos)
+            else:
+                self.nslwr = 1
 
     @classmethod
     def from_f90nml(

@@ -79,6 +79,7 @@ class TranslateMicroph(TranslatePhysicsFortranData2Py):
             nz=self.config.npz,
             n_halo=3,
             layout=self.config.layout,
+            backend=self.stencil_factory.backend
         )
 
         quantity_factory = QuantityFactory.from_backend(
