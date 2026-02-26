@@ -127,7 +127,7 @@ def setup_infrastructure(nx: Int, ny: Int, nz: Int, nzsoil: Int, etafile: Path):
         layout=(1, 1),
         tile_partitioner=communicator.partitioner.tile,
         tile_rank=communicator.tile.rank,
-        backend="numpy"
+        backend="numpy",
     )
     quantity_factory = QuantityFactory.from_backend(sizer, backend="numpy")
 
@@ -140,7 +140,7 @@ def setup_infrastructure(nx: Int, ny: Int, nz: Int, nzsoil: Int, etafile: Path):
         layout=(1, 1),
         tile_partitioner=communicator.partitioner.tile,
         tile_rank=communicator.tile.rank,
-        backend="numpy"
+        backend="numpy",
     )
     qf_soil = QuantityFactory.from_backend(soil_sizer, backend="numpy")
 

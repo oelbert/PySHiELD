@@ -7,8 +7,8 @@ import ndsl.dsl.gt4py_utils as gt_utils
 from ndsl import GridSizer, Quantity, QuantityFactory
 from ndsl.constants import X_DIM, Y_DIM, Z_DIM, Z_INTERFACE_DIM
 from ndsl.dsl.typing import Float
-from ndsl.types import NumpyModule
 from ndsl.logging import ndsl_log
+from ndsl.types import NumpyModule
 
 
 @dataclass()
