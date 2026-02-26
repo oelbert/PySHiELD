@@ -304,7 +304,7 @@ def sedi_melt(
     v_terminal: FloatField,
     r1: FloatFieldIJ,
     icpk: FloatField,
-    k_mask: IntField,
+    k_val: IntField,
 ):
     from __externals__ import k_end, li00, mode, tau_mlt, timestep
 
@@ -323,7 +323,7 @@ def sedi_melt(
             if v_terminal >= 1.0e-10:
                 if q_melt > mpcons.QCMIN:
                     while (
-                        (lev > k_end - k_mask[0, 0, 0])
+                        (lev > k_end - k_val[0, 0, 0])
                         and (q_melt[0, 0, 0] >= mpcons.QCMIN)
                         and (z_terminal[0, 0, 1] < z_edge[0, 0, lev])
                     ):
@@ -485,14 +485,14 @@ class Sedimentation:
         def make_quantity():
             return quantity_factory.zeros([X_DIM, Y_DIM, Z_DIM], units="unknown")
 
-        self._k_mask = quantity_factory.zeros(
+        self._k_val = quantity_factory.zeros(
             [X_DIM, Y_DIM, Z_INTERFACE_DIM],
             units="unknown",
             dtype=Int,
         )
 
         for k in range(self._idx.domain[2] + 1):
-            self._k_mask.data[:, :, k] = k
+            self._k_val.data[:, :, k] = k
 
         self._z_surface = quantity_factory.zeros([X_DIM, Y_DIM], units="unknown")
         self._z_edge = quantity_factory.zeros(
@@ -776,7 +776,7 @@ class Sedimentation:
                 vterminal_ice,
                 column_rain,
                 self._icpk,
-                self._k_mask,
+                self._k_val,
             )
 
         self._terminal_fall(
@@ -856,7 +856,7 @@ class Sedimentation:
                 vterminal_snow,
                 column_rain,
                 self._icpk,
-                self._k_mask,
+                self._k_val,
             )
 
         self._terminal_fall(
@@ -936,7 +936,7 @@ class Sedimentation:
                 vterminal_graupel,
                 column_rain,
                 self._icpk,
-                self._k_mask,
+                self._k_val,
             )
 
         self._terminal_fall(

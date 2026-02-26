@@ -49,10 +49,10 @@ from tests.savepoint.translate.translate_physics import TranslatePhysicsFortranD
 
 
 def set_pfld_kbcon(
-    kbcon: IntFieldIJ, k_mask: IntField, pfld: FloatField, pfld_kbcon: FloatFieldIJ
+    kbcon: IntFieldIJ, k_val: IntField, pfld: FloatField, pfld_kbcon: FloatFieldIJ
 ):
     with computation(FORWARD), interval(...):
-        if k_mask == kbcon:
+        if k_val == kbcon:
             pfld_kbcon = pfld
 
 
@@ -250,14 +250,14 @@ class Static1:
         # Allocate arrays
 
         # Layer mask:
-        self._k_mask = quantity_factory.zeros(
+        self._k_val = quantity_factory.zeros(
             [X_DIM, Y_DIM, Z_DIM],
             units="unknown",
             dtype=Int,
         )
 
         for k in range(grid_indexing.domain[2]):
-            self._k_mask.data[:, :, k] = k
+            self._k_val.data[:, :, k] = k
 
         self._heo_kb = make_quantity_2D()
         self._drag = make_quantity()
@@ -449,7 +449,7 @@ class Static1:
             self._tx1,
             self._ps,
             self._prsl,
-            self._k_mask,
+            self._k_val,
         )
         self._init_final(
             kbm,
@@ -487,7 +487,7 @@ class Static1:
             q1,
             u1,
             v1,
-            self._k_mask,
+            self._k_val,
         )
 
         # Init tracers
@@ -495,7 +495,7 @@ class Static1:
             if (n_tracer != self._ntiw) and (n_tracer != self._ntcw):
                 self._init_tracers(
                     cnvflg,
-                    self._k_mask,
+                    self._k_val,
                     kmax,
                     self._ctr,
                     self._ctro,
@@ -509,7 +509,7 @@ class Static1:
             hmax,
             heo,
             kb,
-            self._k_mask,
+            self._k_val,
             kpbl,
             kmax,
             self._zo,
@@ -526,7 +526,7 @@ class Static1:
             if (n_tracer != self._ntiw) and (n_tracer != self._ntcw):
                 self._stencil_ntrstatic0(
                     cnvflg,
-                    self._k_mask,
+                    self._k_val,
                     kmax,
                     self._ctro,
                     n_tracer,
@@ -537,7 +537,7 @@ class Static1:
             flg,
             kbcon,
             kmax,
-            self._k_mask,
+            self._k_val,
             kbm,
             kb,
             self._heo_kb,
@@ -618,14 +618,14 @@ class Static2:
         # Allocate arrays
 
         # Layer mask:
-        self._k_mask = quantity_factory.zeros(
+        self._k_val = quantity_factory.zeros(
             [X_DIM, Y_DIM, Z_DIM],
             units="unknown",
             dtype=Int,
         )
 
         for k in range(grid_indexing.domain[2]):
-            self._k_mask.data[:, :, k] = k
+            self._k_val.data[:, :, k] = k
 
         self._heo_kb = make_quantity_2D()
         self._drag = make_quantity()
@@ -872,7 +872,7 @@ class Static2:
             self._tx1,
             self._ps,
             self._prsl,
-            self._k_mask,
+            self._k_val,
         )
         self._init_final(
             self._kbm,
@@ -910,7 +910,7 @@ class Static2:
             q1,
             u1,
             v1,
-            self._k_mask,
+            self._k_val,
         )
 
         # Init tracers
@@ -918,7 +918,7 @@ class Static2:
             if (n_tracer != self._ntiw) and (n_tracer != self._ntcw):
                 self._init_tracers(
                     cnvflg,
-                    self._k_mask,
+                    self._k_val,
                     self._kmax,
                     self._ctr,
                     self._ctro,
@@ -932,7 +932,7 @@ class Static2:
             self._hmax,
             self._heo,
             kb,
-            self._k_mask,
+            self._k_val,
             self._kpbl,
             self._kmax,
             self._zo,
@@ -949,7 +949,7 @@ class Static2:
             if (n_tracer != self._ntiw) and (n_tracer != self._ntcw):
                 self._stencil_ntrstatic0(
                     cnvflg,
-                    self._k_mask,
+                    self._k_val,
                     self._kmax,
                     self._ctro,
                     n_tracer,
@@ -960,7 +960,7 @@ class Static2:
             self._flg,
             kbcon,
             self._kmax,
-            self._k_mask,
+            self._k_val,
             self._kbm,
             kb,
             self._heo_kb,
@@ -980,7 +980,7 @@ class Static2:
             pdot,
             dot,
             islimsk,
-            self._k_mask,
+            self._k_val,
             kbcon,
             kb,
             pfld,
@@ -1057,14 +1057,14 @@ class UpdateKB9:
         # Allocate arrays
 
         # Layer mask:
-        self._k_mask = quantity_factory.zeros(
+        self._k_val = quantity_factory.zeros(
             [X_DIM, Y_DIM, Z_DIM],
             units="unknown",
             dtype=Int,
         )
 
         for k in range(grid_indexing.domain[2]):
-            self._k_mask.data[:, :, k] = k
+            self._k_val.data[:, :, k] = k
 
         self._heo_kb = make_quantity_2D()
         self._drag = make_quantity()
@@ -1348,7 +1348,7 @@ class UpdateKB9:
             self._tx1,
             self._ps,
             self._prsl,
-            self._k_mask,
+            self._k_val,
         )
         self._init_final(
             kbm,
@@ -1386,7 +1386,7 @@ class UpdateKB9:
             q1,
             u1,
             v1,
-            self._k_mask,
+            self._k_val,
         )
 
         # Init tracers
@@ -1394,7 +1394,7 @@ class UpdateKB9:
             if (n_tracer != self._ntiw) and (n_tracer != self._ntcw):
                 self._init_tracers(
                     cnvflg,
-                    self._k_mask,
+                    self._k_val,
                     kmax,
                     self._ctr,
                     self._ctro,
@@ -1408,7 +1408,7 @@ class UpdateKB9:
             self._hmax,
             self._heo,
             self._kb,
-            self._k_mask,
+            self._k_val,
             self._kpbl,
             kmax,
             self._zo,
@@ -1425,7 +1425,7 @@ class UpdateKB9:
             if (n_tracer != self._ntiw) and (n_tracer != self._ntcw):
                 self._stencil_ntrstatic0(
                     cnvflg,
-                    self._k_mask,
+                    self._k_val,
                     kmax,
                     self._ctro,
                     n_tracer,
@@ -1436,7 +1436,7 @@ class UpdateKB9:
             flg,
             kbcon,
             kmax,
-            self._k_mask,
+            self._k_val,
             kbm,
             self._kb,
             self._heo_kb,
@@ -1455,7 +1455,7 @@ class UpdateKB9:
             self._pdot,
             dot,
             islimsk,
-            self._k_mask,
+            self._k_val,
             kbcon,
             self._kb,
             pfld,
@@ -1473,7 +1473,7 @@ class UpdateKB9:
             self._sumx,
             self._tkemean,
             cnvflg,
-            self._k_mask,
+            self._k_val,
             self._kb,
             kbcon,
             self._zo,
@@ -1487,7 +1487,7 @@ class UpdateKB9:
             self._clamt,
             self._zi,
             self._xlamud,
-            self._k_mask,
+            self._k_val,
             kbcon,
             self._kb,
             self._eta,
@@ -1508,7 +1508,7 @@ class UpdateKB9:
             if (n_tracer != self._ntiw) and (n_tracer != self._ntcw):
                 self._stencil_ntrstatic1(
                     cnvflg,
-                    self._k_mask,
+                    self._k_val,
                     self._kb,
                     self._ecko,
                     self._ctro,
@@ -1517,7 +1517,7 @@ class UpdateKB9:
 
         self._stencil_static7(
             cnvflg,
-            self._k_mask,
+            self._k_val,
             self._kb,
             kmax,
             self._zi,
@@ -1537,7 +1537,7 @@ class UpdateKB9:
             if (n_tracer != self._ntiw) and (n_tracer != self._ntcw):
                 self._stencil_ntrstatic2(
                     cnvflg,
-                    self._k_mask,
+                    self._k_val,
                     self._kb,
                     kmax,
                     self._zi,
@@ -1555,7 +1555,7 @@ class UpdateKB9:
             kbcon,
             kbcon1,
             flg,
-            self._k_mask,
+            self._k_val,
         )
         conv_b = copy.deepcopy(cnvflg)
 
@@ -1566,7 +1566,7 @@ class UpdateKB9:
             pfld,
             self._pfld_kbcon,
             self._pfld_kbcon1,
-            self._k_mask,
+            self._k_val,
             kbcon1,
         )
 
@@ -1639,14 +1639,14 @@ class Static10:
         # Allocate arrays
 
         # Layer mask:
-        self._k_mask = quantity_factory.zeros(
+        self._k_val = quantity_factory.zeros(
             [X_DIM, Y_DIM, Z_DIM],
             units="unknown",
             dtype=Int,
         )
 
         for k in range(grid_indexing.domain[2]):
-            self._k_mask.data[:, :, k] = k
+            self._k_val.data[:, :, k] = k
 
         self._heo_kb = make_quantity_2D()
         self._drag = make_quantity()
@@ -1927,7 +1927,7 @@ class Static10:
             self._tx1,
             self._ps,
             self._prsl,
-            self._k_mask,
+            self._k_val,
         )
         self._init_final(
             self._kbm,
@@ -1965,7 +1965,7 @@ class Static10:
             q1,
             u1,
             v1,
-            self._k_mask,
+            self._k_val,
         )
 
         # Init tracers
@@ -1973,7 +1973,7 @@ class Static10:
             if (n_tracer != self._ntiw) and (n_tracer != self._ntcw):
                 self._init_tracers(
                     cnvflg,
-                    self._k_mask,
+                    self._k_val,
                     self._kmax,
                     self._ctr,
                     self._ctro,
@@ -1987,7 +1987,7 @@ class Static10:
             self._hmax,
             self._heo,
             kb,
-            self._k_mask,
+            self._k_val,
             self._kpbl,
             self._kmax,
             zo,
@@ -2004,7 +2004,7 @@ class Static10:
             if (n_tracer != self._ntiw) and (n_tracer != self._ntcw):
                 self._stencil_ntrstatic0(
                     cnvflg,
-                    self._k_mask,
+                    self._k_val,
                     self._kmax,
                     self._ctro,
                     n_tracer,
@@ -2015,7 +2015,7 @@ class Static10:
             self._flg,
             self._kbcon,
             self._kmax,
-            self._k_mask,
+            self._k_val,
             self._kbm,
             kb,
             self._heo_kb,
@@ -2034,7 +2034,7 @@ class Static10:
             pdot,
             dot,
             islimsk,
-            self._k_mask,
+            self._k_val,
             self._kbcon,
             kb,
             self._pfld,
@@ -2052,7 +2052,7 @@ class Static10:
             self._sumx,
             self._tkemean,
             cnvflg,
-            self._k_mask,
+            self._k_val,
             kb,
             self._kbcon,
             zo,
@@ -2066,7 +2066,7 @@ class Static10:
             self._clamt,
             self._zi,
             self._xlamud,
-            self._k_mask,
+            self._k_val,
             self._kbcon,
             kb,
             self._eta,
@@ -2087,7 +2087,7 @@ class Static10:
             if (n_tracer != self._ntiw) and (n_tracer != self._ntcw):
                 self._stencil_ntrstatic1(
                     cnvflg,
-                    self._k_mask,
+                    self._k_val,
                     kb,
                     self._ecko,
                     self._ctro,
@@ -2096,7 +2096,7 @@ class Static10:
 
         self._stencil_static7(
             cnvflg,
-            self._k_mask,
+            self._k_val,
             kb,
             self._kmax,
             self._zi,
@@ -2116,7 +2116,7 @@ class Static10:
             if (n_tracer != self._ntiw) and (n_tracer != self._ntcw):
                 self._stencil_ntrstatic2(
                     cnvflg,
-                    self._k_mask,
+                    self._k_val,
                     kb,
                     self._kmax,
                     self._zi,
@@ -2134,7 +2134,7 @@ class Static10:
             self._kbcon,
             kbcon1,
             self._flg,
-            self._k_mask,
+            self._k_val,
         )
         conv_b = copy.deepcopy(cnvflg[:])
 
@@ -2145,7 +2145,7 @@ class Static10:
             self._pfld,
             self._pfld_kbcon,
             self._pfld_kbcon1,
-            self._k_mask,
+            self._k_val,
             kbcon1,
         )
         if exit_routine(cnvflg[:]):
@@ -2158,7 +2158,7 @@ class Static10:
         self._stencil_static10(
             cina,
             cnvflg,
-            self._k_mask,
+            self._k_val,
             kb,
             kbcon1,
             zo,
@@ -2286,7 +2286,7 @@ class Static11(ScaleAwareMassFluxShallowConvection):
             self._tx1,
             self._ps,
             self._prsl,
-            self._k_mask,
+            self._k_val,
         )
         self._init_final(
             kbm,
@@ -2324,7 +2324,7 @@ class Static11(ScaleAwareMassFluxShallowConvection):
             q1,
             u1,
             v1,
-            self._k_mask,
+            self._k_val,
         )
 
         # Init tracers
@@ -2332,7 +2332,7 @@ class Static11(ScaleAwareMassFluxShallowConvection):
             if (n_tracer != self._ntiw) and (n_tracer != self._ntcw):
                 self._init_tracers(
                     cnvflg,
-                    self._k_mask,
+                    self._k_val,
                     self._kmax,
                     self._ctr,
                     self._ctro,
@@ -2346,7 +2346,7 @@ class Static11(ScaleAwareMassFluxShallowConvection):
             self._hmax,
             self._heo,
             kb,
-            self._k_mask,
+            self._k_val,
             self._kpbl,
             self._kmax,
             zo,
@@ -2363,7 +2363,7 @@ class Static11(ScaleAwareMassFluxShallowConvection):
             if (n_tracer != self._ntiw) and (n_tracer != self._ntcw):
                 self._stencil_ntrstatic0(
                     cnvflg,
-                    self._k_mask,
+                    self._k_val,
                     self._kmax,
                     self._ctro,
                     n_tracer,
@@ -2374,7 +2374,7 @@ class Static11(ScaleAwareMassFluxShallowConvection):
             flg,
             kbcon,
             self._kmax,
-            self._k_mask,
+            self._k_val,
             kbm,
             kb,
             self._heo_kb,
@@ -2393,7 +2393,7 @@ class Static11(ScaleAwareMassFluxShallowConvection):
             self._pdot,
             dot,
             islimsk,
-            self._k_mask,
+            self._k_val,
             kbcon,
             kb,
             self._pfld,
@@ -2411,7 +2411,7 @@ class Static11(ScaleAwareMassFluxShallowConvection):
             self._sumx,
             self._tkemean,
             cnvflg,
-            self._k_mask,
+            self._k_val,
             kb,
             kbcon,
             zo,
@@ -2425,7 +2425,7 @@ class Static11(ScaleAwareMassFluxShallowConvection):
             self._clamt,
             zi,
             xlamud,
-            self._k_mask,
+            self._k_val,
             kbcon,
             kb,
             eta,
@@ -2446,7 +2446,7 @@ class Static11(ScaleAwareMassFluxShallowConvection):
             if (n_tracer != self._ntiw) and (n_tracer != self._ntcw):
                 self._stencil_ntrstatic1(
                     cnvflg,
-                    self._k_mask,
+                    self._k_val,
                     kb,
                     self._ecko,
                     self._ctro,
@@ -2455,7 +2455,7 @@ class Static11(ScaleAwareMassFluxShallowConvection):
 
         self._stencil_static7(
             cnvflg,
-            self._k_mask,
+            self._k_val,
             kb,
             self._kmax,
             zi,
@@ -2475,7 +2475,7 @@ class Static11(ScaleAwareMassFluxShallowConvection):
             if (n_tracer != self._ntiw) and (n_tracer != self._ntcw):
                 self._stencil_ntrstatic2(
                     cnvflg,
-                    self._k_mask,
+                    self._k_val,
                     kb,
                     self._kmax,
                     zi,
@@ -2493,7 +2493,7 @@ class Static11(ScaleAwareMassFluxShallowConvection):
             kbcon,
             kbcon1,
             flg,
-            self._k_mask,
+            self._k_val,
         )
         conv_b = copy.deepcopy(cnvflg[:])
 
@@ -2504,7 +2504,7 @@ class Static11(ScaleAwareMassFluxShallowConvection):
             self._pfld,
             self._pfld_kbcon,
             self._pfld_kbcon1,
-            self._k_mask,
+            self._k_val,
             kbcon1,
         )
         if exit_routine(cnvflg[:]):
@@ -2517,7 +2517,7 @@ class Static11(ScaleAwareMassFluxShallowConvection):
         self._stencil_static10(
             self._cina,
             cnvflg,
-            self._k_mask,
+            self._k_val,
             kb,
             kbcon1,
             zo,
@@ -2561,7 +2561,7 @@ class Static11(ScaleAwareMassFluxShallowConvection):
             buo,
             drag,
             zo,
-            self._k_mask,
+            self._k_val,
             pwo,
             cnvwt,
         )
@@ -2687,7 +2687,7 @@ class Static12(ScaleAwareMassFluxShallowConvection):
             self._tx1,
             self._ps,
             self._prsl,
-            self._k_mask,
+            self._k_val,
         )
         self._init_final(
             kbm,
@@ -2725,7 +2725,7 @@ class Static12(ScaleAwareMassFluxShallowConvection):
             q1,
             u1,
             v1,
-            self._k_mask,
+            self._k_val,
         )
 
         # Init tracers
@@ -2733,7 +2733,7 @@ class Static12(ScaleAwareMassFluxShallowConvection):
             if (n_tracer != self._ntiw) and (n_tracer != self._ntcw):
                 self._init_tracers(
                     cnvflg,
-                    self._k_mask,
+                    self._k_val,
                     self._kmax,
                     self._ctr,
                     self._ctro,
@@ -2747,7 +2747,7 @@ class Static12(ScaleAwareMassFluxShallowConvection):
             self._hmax,
             self._heo,
             self._kb,
-            self._k_mask,
+            self._k_val,
             self._kpbl,
             self._kmax,
             zo,
@@ -2764,7 +2764,7 @@ class Static12(ScaleAwareMassFluxShallowConvection):
             if (n_tracer != self._ntiw) and (n_tracer != self._ntcw):
                 self._stencil_ntrstatic0(
                     cnvflg,
-                    self._k_mask,
+                    self._k_val,
                     self._kmax,
                     self._ctro,
                     n_tracer,
@@ -2775,7 +2775,7 @@ class Static12(ScaleAwareMassFluxShallowConvection):
             flg,
             self._kbcon,
             self._kmax,
-            self._k_mask,
+            self._k_val,
             kbm,
             self._kb,
             self._heo_kb,
@@ -2794,7 +2794,7 @@ class Static12(ScaleAwareMassFluxShallowConvection):
             self._pdot,
             dot,
             islimsk,
-            self._k_mask,
+            self._k_val,
             self._kbcon,
             self._kb,
             self._pfld,
@@ -2812,7 +2812,7 @@ class Static12(ScaleAwareMassFluxShallowConvection):
             sumx,
             self._tkemean,
             cnvflg,
-            self._k_mask,
+            self._k_val,
             self._kb,
             self._kbcon,
             zo,
@@ -2826,7 +2826,7 @@ class Static12(ScaleAwareMassFluxShallowConvection):
             self._clamt,
             zi,
             xlamud,
-            self._k_mask,
+            self._k_val,
             self._kbcon,
             self._kb,
             eta,
@@ -2847,7 +2847,7 @@ class Static12(ScaleAwareMassFluxShallowConvection):
             if (n_tracer != self._ntiw) and (n_tracer != self._ntcw):
                 self._stencil_ntrstatic1(
                     cnvflg,
-                    self._k_mask,
+                    self._k_val,
                     self._kb,
                     self._ecko,
                     self._ctro,
@@ -2856,7 +2856,7 @@ class Static12(ScaleAwareMassFluxShallowConvection):
 
         self._stencil_static7(
             cnvflg,
-            self._k_mask,
+            self._k_val,
             self._kb,
             self._kmax,
             zi,
@@ -2876,7 +2876,7 @@ class Static12(ScaleAwareMassFluxShallowConvection):
             if (n_tracer != self._ntiw) and (n_tracer != self._ntcw):
                 self._stencil_ntrstatic2(
                     cnvflg,
-                    self._k_mask,
+                    self._k_val,
                     self._kb,
                     self._kmax,
                     zi,
@@ -2894,7 +2894,7 @@ class Static12(ScaleAwareMassFluxShallowConvection):
             self._kbcon,
             kbcon1,
             flg,
-            self._k_mask,
+            self._k_val,
         )
         conv_b = copy.deepcopy(cnvflg[:])
 
@@ -2905,7 +2905,7 @@ class Static12(ScaleAwareMassFluxShallowConvection):
             self._pfld,
             self._pfld_kbcon,
             self._pfld_kbcon1,
-            self._k_mask,
+            self._k_val,
             kbcon1,
         )
         if exit_routine(cnvflg[:]):
@@ -2918,7 +2918,7 @@ class Static12(ScaleAwareMassFluxShallowConvection):
         self._stencil_static10(
             self._cina,
             cnvflg,
-            self._k_mask,
+            self._k_val,
             self._kb,
             kbcon1,
             zo,
@@ -2962,7 +2962,7 @@ class Static12(ScaleAwareMassFluxShallowConvection):
             buo,
             drag,
             zo,
-            self._k_mask,
+            self._k_val,
             pwo,
             cnvwt,
         )
@@ -2979,7 +2979,7 @@ class Static12(ScaleAwareMassFluxShallowConvection):
             flg,
             ktcon1,
             kbm,
-            self._k_mask,
+            self._k_val,
             ktcon,
             zo,
             qeso,
@@ -3025,13 +3025,13 @@ class FeedbackCtrl:
             units="unknown",
             dtype=Float,
         )
-        self._k_mask = quantity_factory.zeros(
+        self._k_val = quantity_factory.zeros(
             [X_DIM, Y_DIM, Z_DIM],
             units="unknown",
             dtype=Int,
         )
         for k in range(grid_indexing.domain[2]):
-            self._k_mask.data[:, :, k] = k
+            self._k_val.data[:, :, k] = k
 
         self._feedback_control_update_mass_flux = stencil_factory.from_dims_halo(
             func=feedback_control_update_mass_flux,
@@ -3085,7 +3085,7 @@ class FeedbackCtrl:
     ):
         self._feedback_control_update_mass_flux(
             cnvflg,
-            self._k_mask,
+            self._k_val,
             kmax,
             kb,
             ktcon,
@@ -3140,13 +3140,13 @@ class SC13:
     ):
         grid_indexing = stencil_factory.grid_indexing
         self._ncloud = ncloud
-        self._k_mask = quantity_factory.zeros(
+        self._k_val = quantity_factory.zeros(
             [X_DIM, Y_DIM, Z_DIM],
             units="unknown",
             dtype=Int,
         )
         for k in range(grid_indexing.domain[2]):
-            self._k_mask.data[:, :, k] = k
+            self._k_val.data[:, :, k] = k
         self._stencil_static13 = stencil_factory.from_dims_halo(
             func=stencil_static13,
             compute_dims=[X_DIM, Y_DIM, Z_DIM],
@@ -3165,7 +3165,7 @@ class SC13:
         if self._ncloud > 0:
             self._stencil_static13(
                 cnvflg,
-                self._k_mask,
+                self._k_val,
                 ktcon,
                 qeso,
                 to,
@@ -3190,13 +3190,13 @@ class CompTendencies:
         self._zi_kbcon = quantity_factory.zeros(
             [X_DIM, Y_DIM], units="unknown", dtype=Float
         )
-        self._k_mask = quantity_factory.zeros(
+        self._k_val = quantity_factory.zeros(
             [X_DIM, Y_DIM, Z_DIM],
             units="unknown",
             dtype=Int,
         )
         for k in range(grid_indexing.domain[2]):
-            self._k_mask.data[:, :, k] = k
+            self._k_val.data[:, :, k] = k
         self._comp_tendencies = stencil_factory.from_dims_halo(
             func=comp_tendencies,
             externals={"dt2": self._dt2},
@@ -3250,7 +3250,7 @@ class CompTendencies:
     ):
         self._comp_tendencies(
             cnvflg,
-            self._k_mask,
+            self._k_val,
             kmax,
             kb,
             ktcon,

@@ -8,6 +8,7 @@ from ndsl import GridSizer, Quantity, QuantityFactory
 from ndsl.constants import X_DIM, Y_DIM, Z_DIM, Z_INTERFACE_DIM
 from ndsl.dsl.typing import Float
 from ndsl.types import NumpyModule
+from ndsl.logging import ndsl_log
 
 
 @dataclass()
@@ -355,6 +356,7 @@ class RTE_RRTMGPState:
         with dimensions (column, layer)
         """
         data_vars = {}
+        ndsl_log.info("writing radiation state to xarray")
         for name, field_info in self.__dataclass_fields__.items():
             if name not in ["quantity_factory", "np_like"]:
                 if field_info.metadata["intent"] != "out":
@@ -365,14 +367,14 @@ class RTE_RRTMGPState:
                         nz = self._nz
                         for dim_name in field_info.metadata["dims"]:
                             # dims.append(f"{dim_name}_{name}")
-                            if dim_name == "z_interface":
+                            if dim_name == "k_interface":
                                 slice_list.append(self._np.s_[:])
                                 nz = self._nz + 1
                                 dims.append("level")
-                            elif dim_name == "z":
+                            elif dim_name == "k":
                                 slice_list.append(self._np.s_[:-1])
                                 dims.append("layer")
-                            elif "INTERFACE" in dim_name:
+                            elif "interface" in dim_name:
                                 slice_list.append(self._np.s_[3:-3])
                             else:
                                 slice_list.append(self._np.s_[3:-4])
@@ -392,6 +394,7 @@ class RTE_RRTMGPState:
                                     f"arrays, {dim_name} has {ndims} axes"
                                 )
                             )
+                        # ndsl_log.info(f"{name} has shape {newshape}")
                         data_vars[name] = xr.DataArray(
                             gt_utils.asarray(getattr(self, name).data)[
                                 tuple(slice_list)

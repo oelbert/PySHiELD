@@ -92,7 +92,7 @@ class InitTurb:
             units="Pa",
             dtype=Float,
         )
-        self._k_mask = quantity_factory.zeros(
+        self._k_val = quantity_factory.zeros(
             [X_DIM, Y_DIM, Z_DIM],
             units="unknown",
             dtype=Int,
@@ -104,7 +104,7 @@ class InitTurb:
         )
 
         for k in range(idx.domain[2]):
-            self._k_mask.data[:, :, k] = k
+            self._k_val.data[:, :, k] = k
 
         self._init_turbulence = stencil_factory.from_origin_domain(
             func=init_turbulence,
@@ -231,7 +231,7 @@ class InitTurb:
             prn,
             kx1,
             prsi,
-            self._k_mask,
+            self._k_val,
             kinver,
             tx1,
             tx2,
@@ -325,14 +325,14 @@ class MRFScheme:
             origin=idx.origin_compute(),
             domain=idx.domain_compute(),
         )
-        self._k_mask = quantity_factory.zeros(
+        self._k_val = quantity_factory.zeros(
             [X_DIM, Y_DIM, Z_DIM],
             units="unknown",
             dtype=Int,
         )
 
         for k in range(idx.domain[2]):
-            self._k_mask.data[:, :, k] = k
+            self._k_val.data[:, :, k] = k
 
         self._thlvx_0 = quantity_factory.zeros(
             [X_DIM, Y_DIM],
@@ -377,7 +377,7 @@ class MRFScheme:
             crb,
             flg,
             kpblx,
-            self._k_mask,
+            self._k_val,
             rbdn,
             rbup,
             rbsoil,
@@ -400,7 +400,7 @@ class MRFScheme:
             hpblx,
             kpbl,
             kpblx,
-            self._k_mask,
+            self._k_val,
             pblflg,
             pcnvflg,
             phih,
@@ -430,14 +430,14 @@ class ThermalPBL:
         km1 = idx.domain[2] - 1
         self._kmpbl = idx.domain[2] // 2 + 1
         self._kmscu = idx.domain[2] // 2 + 1
-        self._k_mask = quantity_factory.zeros(
+        self._k_val = quantity_factory.zeros(
             [X_DIM, Y_DIM, Z_DIM],
             units="unknown",
             dtype=Int,
         )
 
         for k in range(idx.domain[2]):
-            self._k_mask.data[:, :, k] = k
+            self._k_val.data[:, :, k] = k
 
         self._thlvx_0 = quantity_factory.zeros(
             [X_DIM, Y_DIM],
@@ -489,7 +489,7 @@ class ThermalPBL:
             crb,
             flg,
             kpbl,
-            self._k_mask,
+            self._k_val,
             rbdn,
             rbup,
             thermal,
@@ -504,7 +504,7 @@ class ThermalPBL:
             crb,
             hpbl,
             kpbl,
-            self._k_mask,
+            self._k_val,
             pblflg,
             pcnvflg,
             rbdn,
@@ -524,14 +524,14 @@ class Stratocumulus:
         km1 = idx.domain[2] - 1
         self._kmpbl = idx.domain[2] // 2 + 1
         self._kmscu = idx.domain[2] // 2 + 1
-        self._k_mask = quantity_factory.zeros(
+        self._k_val = quantity_factory.zeros(
             [X_DIM, Y_DIM, Z_DIM],
             units="unknown",
             dtype=Int,
         )
 
         for k in range(idx.domain[2]):
-            self._k_mask.data[:, :, k] = k
+            self._k_val.data[:, :, k] = k
 
         self._stratocumulus = stencil_factory.from_origin_domain(
             func=stratocumulus,
@@ -557,7 +557,7 @@ class Stratocumulus:
             kcld,
             krad,
             lcld,
-            self._k_mask,
+            self._k_val,
             radmin,
             radx,
             qlx,
@@ -583,7 +583,7 @@ class PBLAML:
             dtype=Int,
         )
 
-        self._k_mask = quantity_factory.zeros(
+        self._k_val = quantity_factory.zeros(
             [X_DIM, Y_DIM, Z_DIM],
             units="unknown",
             dtype=Int,
@@ -600,7 +600,7 @@ class PBLAML:
         )
 
         for k in range(idx.domain[2]):
-            self._k_mask.data[:, :, k] = k
+            self._k_val.data[:, :, k] = k
 
         self._compute_asymptotic_mixing_length = stencil_factory.from_origin_domain(
             func=compute_asymptotic_mixing_length,
@@ -644,7 +644,7 @@ class PBLAML:
             zol,
             gdx,
             self._lev,
-            self._k_mask,
+            self._k_val,
             self._mlenflg,
         )
 
@@ -662,14 +662,14 @@ class TKETridiag:
         self._kmscu = idx.domain[2] // 2 + 1
         self._dt_atmos = config.dt_atmos
         self._ntke = config.ntracers - 1
-        self._k_mask = quantity_factory.zeros(
+        self._k_val = quantity_factory.zeros(
             [X_DIM, Y_DIM, Z_DIM],
             units="unknown",
             dtype=Int,
         )
 
         for k in range(idx.domain[2]):
-            self._k_mask.data[:, :, k] = k
+            self._k_val.data[:, :, k] = k
 
         self._cu = quantity_factory.zeros(
             [X_DIM, Y_DIM, Z_DIM],
@@ -734,7 +734,7 @@ class TKETridiag:
             self._f1_p1,
             kpbl,
             krad,
-            self._k_mask,
+            self._k_val,
             mrad,
             pcnvflg,
             prsl,
@@ -758,14 +758,14 @@ class Prandtl:
     ):
         idx = stencil_factory.grid_indexing
         self._kmpbl = idx.domain[2] // 2 + 1
-        self._k_mask = quantity_factory.zeros(
+        self._k_val = quantity_factory.zeros(
             [X_DIM, Y_DIM, Z_DIM],
             units="unknown",
             dtype=Int,
         )
 
         for k in range(idx.domain[2]):
-            self._k_mask.data[:, :, k] = k
+            self._k_val.data[:, :, k] = k
 
         self._compute_prandtl_num_exchange_coeff = stencil_factory.from_origin_domain(
             func=compute_prandtl_num_exchange_coeff,
@@ -790,7 +790,7 @@ class Prandtl:
             ckz,
             hpbl,
             kpbl,
-            self._k_mask,
+            self._k_val,
             pcnvflg,
             phih,
             phim,
@@ -844,7 +844,7 @@ class EdDiffShear:
         quantity_factory: QuantityFactory,
     ):
         idx = stencil_factory.grid_indexing
-        self._k_mask = quantity_factory.zeros(
+        self._k_val = quantity_factory.zeros(
             [X_DIM, Y_DIM, Z_DIM],
             units="unknown",
             dtype=Int,
@@ -856,7 +856,7 @@ class EdDiffShear:
         )
 
         for k in range(idx.domain[2]):
-            self._k_mask.data[:, :, k] = k
+            self._k_val.data[:, :, k] = k
 
         self._compute_eddy_diffusivity_buoy_shear = stencil_factory.from_origin_domain(
             func=compute_eddy_diffusivity_buoy_shear,
@@ -916,7 +916,7 @@ class EdDiffShear:
             elm,
             gotvx,
             kpbl,
-            self._k_mask,
+            self._k_val,
             mrad,
             krad,
             pblflg,
@@ -957,14 +957,14 @@ class UpDownTKE:
         idx = stencil_factory.grid_indexing
         self._ntke = config.ntracers - 1
 
-        self._k_mask = quantity_factory.zeros(
+        self._k_val = quantity_factory.zeros(
             [X_DIM, Y_DIM, Z_DIM],
             units="unknown",
             dtype=Int,
         )
 
         for k in range(idx.domain[2]):
-            self._k_mask.data[:, :, k] = k
+            self._k_val.data[:, :, k] = k
 
         self._tke_up_down_prop = stencil_factory.from_origin_domain(
             func=tke_up_down_prop,
@@ -996,7 +996,7 @@ class UpDownTKE:
             scuflg,
             tke,
             kpbl,
-            self._k_mask,
+            self._k_val,
             xlamue,
             zl,
             krad,
@@ -1047,14 +1047,14 @@ class MomentTridiagComp:
             units="unknown",
             dtype=Float,
         )
-        self._k_mask = self.quantity_factory.zeros(
+        self._k_val = self.quantity_factory.zeros(
             [X_DIM, Y_DIM, Z_DIM],
             units="unknown",
             dtype=Int,
         )
 
         for k in range(idx.domain[2]):
-            self._k_mask.data[:, :, k] = k
+            self._k_val.data[:, :, k] = k
 
         self._moment_tridiag_mat_ele_comp = stencil_factory.from_origin_domain(
             func=moment_tridiag_mat_ele_comp,
@@ -1111,7 +1111,7 @@ class MomentTridiagComp:
             self._f2_p1,
             kpbl,
             krad,
-            self._k_mask,
+            self._k_val,
             mrad,
             pcnvflg,
             prsl,
@@ -1179,14 +1179,14 @@ class HeatTracerTridiag:
             units="unknown",
             dtype=Float,
         )
-        self._k_mask = self.quantity_factory.zeros(
+        self._k_val = self.quantity_factory.zeros(
             [X_DIM, Y_DIM, Z_DIM],
             units="unknown",
             dtype=Int,
         )
 
         for k in range(idx.domain[2]):
-            self._k_mask.data[:, :, k] = k
+            self._k_val.data[:, :, k] = k
 
         self._heat_moist_tridiag_mat_ele_comp = stencil_factory.from_origin_domain(
             func=heat_moist_tridiag_mat_ele_comp,
@@ -1245,7 +1245,7 @@ class HeatTracerTridiag:
             self._f2_p1,
             kpbl,
             krad,
-            self._k_mask,
+            self._k_val,
             mrad,
             pcnvflg,
             prsl,
@@ -1274,7 +1274,7 @@ class HeatTracerTridiag:
                     if self._ntrac1 >= 2:
                         self._setup_multi_tracer_tridiag(
                             pcnvflg,
-                            self._k_mask,
+                            self._k_val,
                             kpbl,
                             delta,
                             prsl,
@@ -1308,14 +1308,14 @@ class TKETendencyCalc:
         self._dt_atmos = config.dt_atmos
         self._rdt = 1.0 / self._dt_atmos
         self._ntke = config.ntracers - 1
-        self._k_mask = quantity_factory.zeros(
+        self._k_val = quantity_factory.zeros(
             [X_DIM, Y_DIM, Z_DIM],
             units="unknown",
             dtype=Int,
         )
 
         for k in range(idx.domain[2]):
-            self._k_mask.data[:, :, k] = k
+            self._k_val.data[:, :, k] = k
 
         self._cu = quantity_factory.zeros(
             [X_DIM, Y_DIM, Z_DIM],
@@ -1401,7 +1401,7 @@ class TKETendencyCalc:
             self._f1_p1,
             kpbl,
             krad,
-            self._k_mask,
+            self._k_val,
             mrad,
             pcnvflg,
             prsl,
@@ -1479,14 +1479,14 @@ class HeatTracerTendencyCalc:
             units="unknown",
             dtype=Float,
         )
-        self._k_mask = self.quantity_factory.zeros(
+        self._k_val = self.quantity_factory.zeros(
             [X_DIM, Y_DIM, Z_DIM],
             units="unknown",
             dtype=Int,
         )
 
         for k in range(idx.domain[2]):
-            self._k_mask.data[:, :, k] = k
+            self._k_val.data[:, :, k] = k
 
         self._heat_moist_tridiag_mat_ele_comp = stencil_factory.from_origin_domain(
             func=heat_moist_tridiag_mat_ele_comp,
@@ -1572,7 +1572,7 @@ class HeatTracerTendencyCalc:
             self._f2_p1,
             kpbl,
             krad,
-            self._k_mask,
+            self._k_val,
             mrad,
             pcnvflg,
             prsl,
@@ -1601,7 +1601,7 @@ class HeatTracerTendencyCalc:
                     if self._ntrac1 >= 2:
                         self._setup_multi_tracer_tridiag(
                             pcnvflg,
-                            self._k_mask,
+                            self._k_val,
                             kpbl,
                             delta,
                             prsl,
@@ -1697,14 +1697,14 @@ class MomentTendencyCalc:
             units="unknown",
             dtype=Float,
         )
-        self._k_mask = self.quantity_factory.zeros(
+        self._k_val = self.quantity_factory.zeros(
             [X_DIM, Y_DIM, Z_DIM],
             units="unknown",
             dtype=Int,
         )
 
         for k in range(idx.domain[2]):
-            self._k_mask.data[:, :, k] = k
+            self._k_val.data[:, :, k] = k
 
         self._moment_tridiag_mat_ele_comp = stencil_factory.from_origin_domain(
             func=moment_tridiag_mat_ele_comp,
@@ -1795,7 +1795,7 @@ class MomentTendencyCalc:
             self._f2_p1,
             kpbl,
             krad,
-            self._k_mask,
+            self._k_val,
             mrad,
             pcnvflg,
             prsl,
@@ -1840,7 +1840,7 @@ class MomentTendencyCalc:
             hpblx,
             kpbl,
             kpblx,
-            self._k_mask,
+            self._k_val,
             u1,
             v1,
         )
@@ -1911,13 +1911,13 @@ class Half2:
             dtype=Float,
         )
 
-        self._k_mask = quantity_factory.zeros(
+        self._k_val = quantity_factory.zeros(
             [X_DIM, Y_DIM, Z_DIM],
             units="unknown",
             dtype=Int,
         )
         for k in range(idx.domain[2]):
-            self._k_mask.data[:, :, k] = k
+            self._k_val.data[:, :, k] = k
 
         self._tem1 = make_quantity()
         self._lev = make_quantity_2D(Int)
@@ -2183,7 +2183,7 @@ class Half2:
             ucko,
             vcko,
             xlamue,
-            self._k_mask,
+            self._k_val,
         )
 
         self._mfscu(
@@ -2211,7 +2211,7 @@ class Half2:
             ucdo,
             vcdo,
             xlamde,
-            self._k_mask,
+            self._k_val,
         )
 
         self._compute_prandtl_num_exchange_coeff(
@@ -2219,7 +2219,7 @@ class Half2:
             ckz,
             hpbl,
             kpbl,
-            self._k_mask,
+            self._k_val,
             pcnvflg,
             phih,
             phim,
@@ -2244,7 +2244,7 @@ class Half2:
             zol,
             gdx,
             self._lev,
-            self._k_mask,
+            self._k_val,
             self._mlenflg,
         )
 
@@ -2260,7 +2260,7 @@ class Half2:
             elm,
             gotvx,
             kpbl,
-            self._k_mask,
+            self._k_val,
             mrad,
             krad,
             pblflg,
@@ -2305,7 +2305,7 @@ class Half2:
             scuflg,
             tke,
             kpbl,
-            self._k_mask,
+            self._k_val,
             xlamue,
             zl,
             krad,
@@ -2324,7 +2324,7 @@ class Half2:
             self._f1_p1,
             kpbl,
             krad,
-            self._k_mask,
+            self._k_val,
             mrad,
             pcnvflg,
             prsl,
@@ -2367,7 +2367,7 @@ class Half2:
             self._f2_p1,
             kpbl,
             krad,
-            self._k_mask,
+            self._k_val,
             mrad,
             pcnvflg,
             prsl,
@@ -2396,7 +2396,7 @@ class Half2:
                     if self._ntrac1 >= 2:
                         self._setup_multi_tracer_tridiag(
                             pcnvflg,
-                            self._k_mask,
+                            self._k_val,
                             kpbl,
                             delta,
                             prsl,
@@ -2463,7 +2463,7 @@ class Half2:
             self._f2_p1,
             kpbl,
             krad,
-            self._k_mask,
+            self._k_val,
             mrad,
             pcnvflg,
             prsl,
@@ -2508,7 +2508,7 @@ class Half2:
             hpblx,
             kpbl,
             kpblx,
-            self._k_mask,
+            self._k_val,
             u1,
             v1,
         )
@@ -2582,13 +2582,13 @@ class SCUEnd:
             dtype=Bool,
         )
 
-        self._k_mask = quantity_factory.zeros(
+        self._k_val = quantity_factory.zeros(
             [X_DIM, Y_DIM, Z_DIM],
             units="unknown",
             dtype=Int,
         )
         for k in range(idx.domain[2]):
-            self._k_mask.data[:, :, k] = k
+            self._k_val.data[:, :, k] = k
 
         self._mfscu = StratocumulusMassFlux(
             stencil_factory,
@@ -2840,7 +2840,7 @@ class SCUEnd:
             ucdo,
             vcdo,
             xlamde,
-            self._k_mask,
+            self._k_val,
         )
 
         self._compute_prandtl_num_exchange_coeff(
@@ -2848,7 +2848,7 @@ class SCUEnd:
             ckz,
             hpbl,
             kpbl,
-            self._k_mask,
+            self._k_val,
             pcnvflg,
             phih,
             phim,
@@ -2873,7 +2873,7 @@ class SCUEnd:
             zol,
             gdx,
             self._lev,
-            self._k_mask,
+            self._k_val,
             self._mlenflg,
         )
 
@@ -2889,7 +2889,7 @@ class SCUEnd:
             elm,
             gotvx,
             kpbl,
-            self._k_mask,
+            self._k_val,
             mrad,
             krad,
             pblflg,
@@ -2934,7 +2934,7 @@ class SCUEnd:
             scuflg,
             tke,
             kpbl,
-            self._k_mask,
+            self._k_val,
             xlamue,
             zl,
             krad,
@@ -2953,7 +2953,7 @@ class SCUEnd:
             self._f1_p1,
             kpbl,
             krad,
-            self._k_mask,
+            self._k_val,
             mrad,
             pcnvflg,
             prsl,
@@ -2996,7 +2996,7 @@ class SCUEnd:
             self._f2_p1,
             kpbl,
             krad,
-            self._k_mask,
+            self._k_val,
             mrad,
             pcnvflg,
             prsl,
@@ -3025,7 +3025,7 @@ class SCUEnd:
                     if self._ntrac1 >= 2:
                         self._setup_multi_tracer_tridiag(
                             pcnvflg,
-                            self._k_mask,
+                            self._k_val,
                             kpbl,
                             delta,
                             prsl,
@@ -3092,7 +3092,7 @@ class SCUEnd:
             self._f2_p1,
             kpbl,
             krad,
-            self._k_mask,
+            self._k_val,
             mrad,
             pcnvflg,
             prsl,
@@ -3137,7 +3137,7 @@ class SCUEnd:
             hpblx,
             kpbl,
             kpblx,
-            self._k_mask,
+            self._k_val,
             u1,
             v1,
         )

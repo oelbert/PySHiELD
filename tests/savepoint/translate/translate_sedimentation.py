@@ -261,14 +261,14 @@ class SediMelt:
         self.c1_vap = config.c1_vap
         self.c1_liq = config.c1_liq
         self.c1_ice = config.c1_ice
-        self._k_mask = quantity_factory.zeros(
+        self._k_val = quantity_factory.zeros(
             [X_DIM, Y_DIM, Z_INTERFACE_DIM],
             units="unknown",
             dtype=Int,
         )
 
         for k in range(self._idx.domain[2] + 1):
-            self._k_mask.data[:, :, k] = k
+            self._k_val.data[:, :, k] = k
 
         self._sedi_melt_ice = stencil_factory.from_origin_domain(
             func=sedi_melt,
@@ -355,7 +355,7 @@ class SediMelt:
                         vterminal,
                         column_rain,
                         icpk,
-                        self._k_mask,
+                        self._k_val,
                     )
                 elif mode == "snow":
                     self._sedi_melt_snow(
@@ -374,7 +374,7 @@ class SediMelt:
                         vterminal,
                         column_rain,
                         icpk,
-                        self._k_mask,
+                        self._k_val,
                     )
                 elif mode == "graupel":
                     self._sedi_melt_graupel(
@@ -393,7 +393,7 @@ class SediMelt:
                         vterminal,
                         column_rain,
                         icpk,
-                        self._k_mask,
+                        self._k_val,
                     )
                 else:
                     raise ValueError(f"sedi_melt mode {mode} not ice, snow, or graupel")

@@ -158,7 +158,7 @@ def init_kbm_kmax(
     tx1: FloatFieldIJ,
     ps: FloatFieldIJ,
     prsl: FloatField,
-    k_mask: IntField,
+    k_val: IntField,
 ):
     from __externals__ import km
 
@@ -170,9 +170,9 @@ def init_kbm_kmax(
         tx1 = 1.0 / ps
     with computation(FORWARD), interval(...):
         if prsl * tx1 > 0.7:
-            kbm = k_mask + 1
+            kbm = k_val + 1
         if prsl * tx1 > 0.6:
-            kmax = k_mask + 1
+            kmax = k_val + 1
     with computation(FORWARD), interval(-1, None):
         kbm = min(kbm, kmax)
 
@@ -213,7 +213,7 @@ def init_final(
     q1: FloatField,
     u1: FloatField,
     v1: FloatField,
-    k_mask: IntField,
+    k_val: IntField,
 ):
     with computation(PARALLEL), interval(...):
         # Calculate hydrostatic height at layer centers assuming a flat
@@ -232,7 +232,7 @@ def init_final(
         # Find the index for the PBL top using the PBL height; enforce
         # that it is lower than the maximum parcel starting level
         if flg and (zo <= hpbl):
-            kpbl = k_mask
+            kpbl = k_val
         else:
             flg = False
 
@@ -244,7 +244,7 @@ def init_final(
         val2 = 0.0
         tem = 0.0
 
-        if cnvflg and k_mask <= kmax:
+        if cnvflg and k_val <= kmax:
 
             # Convert prsl from centibar to millibar, set normalized mass
             # flux to 1, cloud properties to 0, and save model state
@@ -286,7 +286,7 @@ def init_final(
 
 def init_tracers(
     cnvflg: BoolFieldIJ,
-    k_mask: IntField,
+    k_val: IntField,
     kmax: IntFieldIJ,
     ctr: FloatFieldShalConv,
     ctro: FloatFieldShalConv,
@@ -296,7 +296,7 @@ def init_tracers(
 ):
     with computation(PARALLEL), interval(...):
         # Initialize tracer variables
-        if cnvflg and k_mask <= kmax:
+        if cnvflg and k_val <= kmax:
             ctr[0, 0, 0][n_tracer] = qtr[0, 0, 0][n_tracer]
             ctro[0, 0, 0][n_tracer] = qtr[0, 0, 0][n_tracer]
             ecko[0, 0, 0][n_tracer] = 0.0
@@ -307,7 +307,7 @@ def stencil_static0(
     hmax: FloatFieldIJ,
     heo: FloatField,
     kb: IntFieldIJ,
-    k_mask: IntField,
+    k_val: IntField,
     kpbl: IntFieldIJ,
     kmax: IntFieldIJ,
     zo: FloatField,
@@ -331,9 +331,9 @@ def stencil_static0(
             kb = 0
 
     with computation(FORWARD), interval(1, None):
-        if (cnvflg) and (k_mask <= kpbl):
+        if (cnvflg) and (k_val <= kpbl):
             if heo > hmax:
-                kb = k_mask
+                kb = k_val
                 hmax = heo
 
     # Calculate the temperature, water vapor mixing ratio,
@@ -352,7 +352,7 @@ def stencil_static0(
         dt = 1.0
         dq = 1.0
 
-        if cnvflg and (k_mask <= kmax - 1):
+        if cnvflg and (k_val <= kmax - 1):
             dz = 0.5 * (zo[0, 0, 1] - zo[0, 0, 0])
             dp = 0.5 * (pfld[0, 0, 1] - pfld[0, 0, 0])
             es = 0.01 * tmp  # fpvs is in pa
@@ -379,7 +379,7 @@ def stencil_static0(
         # interface levels. Enforce minimum specific humidity.
         tmp = fpvs(to)
 
-        if cnvflg and k_mask <= kmax - 1:
+        if cnvflg and k_val <= kmax - 1:
             qeso = 0.01 * tmp  # fpvs is in pa
             qeso = constants.EPS * qeso / (po + (constants.EPS - 1) * qeso)
             val1 = 1.0e-8
@@ -404,13 +404,13 @@ def stencil_static0(
 # ntr stencil put at last
 def stencil_ntrstatic0(
     cnvflg: BoolFieldIJ,
-    k_mask: IntField,
+    k_val: IntField,
     kmax: IntFieldIJ,
     ctro: FloatFieldShalConv,
     n_tracer: int,
 ):
     with computation(FORWARD), interval(0, -1):
-        if (cnvflg) and (k_mask <= (kmax - 1)):
+        if (cnvflg) and (k_val <= (kmax - 1)):
             ctro[0, 0, 0][n_tracer] = 0.5 * (
                 ctro[0, 0, 0][n_tracer] + ctro[0, 0, 1][n_tracer]
             )
@@ -421,7 +421,7 @@ def stencil_static1(
     flg: BoolFieldIJ,
     kbcon: IntFieldIJ,
     kmax: IntFieldIJ,
-    k_mask: IntField,
+    k_val: IntField,
     kbm: IntFieldIJ,
     kb: IntFieldIJ,
     heo_kb: FloatFieldIJ,
@@ -434,7 +434,7 @@ def stencil_static1(
     # starting level and saturation moist static energy, respectively.
     # Set "kbcon" to the index of the LFC.
     with computation(FORWARD), interval(...):
-        if k_mask == kb:
+        if k_val == kb:
             heo_kb[0, 0] = heo[0, 0, 0]
     with computation(FORWARD):
         with interval(0, 1):
@@ -443,10 +443,10 @@ def stencil_static1(
                 kbcon = kmax
 
         with interval(1, -1):
-            if flg and k_mask < kbm:
+            if flg and k_val < kbm:
                 # To use heo_kb to represent heo(i,kb(i))
-                if k_mask > kb and heo_kb > heso:
-                    kbcon = k_mask
+                if k_val > kb and heo_kb > heso:
+                    kbcon = k_val
                     flg = False
 
         with interval(-1, None):
@@ -460,7 +460,7 @@ def stencil_static2(
     pdot: FloatFieldIJ,
     dot: FloatField,
     islimsk: IntFieldIJ,
-    k_mask: IntField,
+    k_val: IntField,
     kbcon: IntFieldIJ,
     kb: IntFieldIJ,
     pfld: FloatField,
@@ -477,11 +477,11 @@ def stencil_static2(
     # the state variables.
     with computation(FORWARD), interval(...):
         if cnvflg:
-            if k_mask == kbcon:
+            if k_val == kbcon:
                 # pdot = 10. * dot
                 pdot = 0.01 * dot  # Now dot is in Pa/s
                 pfld_kbcon = pfld
-            if k_mask == kb:
+            if k_val == kb:
                 pfld_kb = pfld
 
     with computation(FORWARD), interval(0, 1):
@@ -526,7 +526,7 @@ def stencil_static3(
     sumx: FloatFieldIJ,
     tkemean: FloatFieldIJ,
     cnvflg: BoolFieldIJ,
-    k_mask: IntField,
+    k_val: IntField,
     kb: IntFieldIJ,
     kbcon: IntFieldIJ,
     zo: FloatField,
@@ -548,7 +548,7 @@ def stencil_static3(
         tem = 0.0
         if ntk > -1:
             if cnvflg:
-                if (k_mask >= kb) and (k_mask < kbcon):
+                if (k_val >= kb) and (k_val < kbcon):
                     dz = zo[0, 0, 1] - zo
                     tem = 0.5 * (qtr[0, 0, 0][ntk] + qtr[0, 0, 1][ntk])
                     tkemean = tkemean + tem * dz
@@ -577,7 +577,7 @@ def stencil_static5(
     clamt: FloatFieldIJ,
     zi: FloatField,
     xlamud: FloatFieldIJ,
-    k_mask: IntField,
+    k_val: IntField,
     kbcon: IntFieldIJ,
     kb: IntFieldIJ,
     eta: FloatField,
@@ -629,7 +629,7 @@ def stencil_static5(
         dz = 0.0
         ptem = 0.0
         if cnvflg:
-            if (k_mask < kbcon) and (k_mask >= kb):
+            if (k_val < kbcon) and (k_val >= kb):
                 dz = zi[0, 0, 1] - zi
                 ptem = 0.5 * (xlamue + xlamue[0, 0, 1]) - xlamud
                 eta = eta[0, 0, 1] / (1.0 + ptem * dz)
@@ -642,14 +642,14 @@ def stencil_static5(
         dz = 0.0
         ptem = 0.0
         if flg:
-            if (k_mask > kbcon) and (k_mask < kmax):
+            if (k_val > kbcon) and (k_val < kmax):
                 dz = zi - zi[0, 0, -1]
                 ptem = 0.5 * (xlamue + xlamue[0, 0, -1]) - xlamud
                 eta = eta[0, 0, -1] * (1 + ptem * dz)
 
                 if eta <= 0.0:
-                    kmax = k_mask
-                    ktconn = k_mask
+                    kmax = k_val
+                    ktconn = k_val
                     kbm = min(kbm, kmax)
                     flg = False
 
@@ -658,7 +658,7 @@ def stencil_static5(
     # at updraft starting level (kb).
     with computation(PARALLEL), interval(...):
         if cnvflg:
-            if k_mask == kb:
+            if k_val == kb:
                 hcko = heo
                 ucko = uo
                 vcko = vo
@@ -666,20 +666,20 @@ def stencil_static5(
 
 def stencil_ntrstatic1(
     cnvflg: BoolFieldIJ,
-    k_mask: IntField,
+    k_val: IntField,
     kb: IntFieldIJ,
     ecko: FloatFieldShalConv,
     ctro: FloatFieldShalConv,
     n_tracer: Int,
 ):
     with computation(PARALLEL), interval(...):
-        if (cnvflg) and (k_mask == kb):
+        if (cnvflg) and (k_val == kb):
             ecko[0, 0, 0][n_tracer] = ctro[0, 0, 0][n_tracer]
 
 
 def stencil_static7(
     cnvflg: BoolFieldIJ,
-    k_mask: IntField,
+    k_val: IntField,
     kb: IntFieldIJ,
     kmax: IntFieldIJ,
     zi: FloatField,
@@ -713,7 +713,7 @@ def stencil_static7(
         factor = 0.0
 
         if cnvflg:
-            if k_mask > kb and k_mask < kmax:
+            if k_val > kb and k_val < kmax:
                 dz = zi[0, 0, 0] - zi[0, 0, -1]
                 tem = 0.5 * (xlamue[0, 0, 0] + xlamue[0, 0, -1]) * dz
                 tem1 = 0.5 * xlamud * dz
@@ -739,7 +739,7 @@ def stencil_static7(
 # pass
 def stencil_ntrstatic2(
     cnvflg: BoolFieldIJ,
-    k_mask: IntField,
+    k_val: IntField,
     kb: IntFieldIJ,
     kmax: IntFieldIJ,
     zi: FloatField,
@@ -754,7 +754,7 @@ def stencil_ntrstatic2(
         factor = 0.0
 
         if cnvflg:
-            if k_mask > kb and k_mask < kmax:
+            if k_val > kb and k_val < kmax:
                 dz = zi - zi[0, 0, -1]
                 tem = 0.25 * (xlamue + xlamue[0, 0, -1]) * dz
                 factor = 1.0 + tem
@@ -772,7 +772,7 @@ def stencil_update_kbcon1_cnvflg(
     kbcon: IntFieldIJ,
     kbcon1: IntFieldIJ,
     flg: BoolFieldIJ,
-    k_mask: IntField,
+    k_val: IntField,
 ):
     # Taking account into convection inhibition due to existence of
     # dry layers below cloud base
@@ -787,9 +787,9 @@ def stencil_update_kbcon1_cnvflg(
         kbcon1 = kmax
 
     with computation(FORWARD), interval(1, -1):
-        if flg and (k_mask < kbm):
-            if (k_mask >= kbcon) and (dbyo > 0.0):
-                kbcon1 = k_mask
+        if flg and (k_val < kbm):
+            if (k_val >= kbcon) and (dbyo > 0.0):
+                kbcon1 = k_val
                 flg = False
 
     with computation(FORWARD), interval(-1, None):
@@ -803,11 +803,11 @@ def stencil_static9(
     pfld: FloatField,
     pfld_kbcon: FloatFieldIJ,
     pfld_kbcon1: FloatFieldIJ,
-    k_mask: IntField,
+    k_val: IntField,
     kbcon1: IntFieldIJ,
 ):
     with computation(FORWARD), interval(...):
-        if k_mask == kbcon1:
+        if k_val == kbcon1:
             pfld_kbcon1 = pfld
 
     with computation(FORWARD), interval(0, 1):
@@ -825,7 +825,7 @@ def stencil_static9(
 def stencil_static10(
     cina: FloatFieldIJ,
     cnvflg: BoolFieldIJ,
-    k_mask: IntField,
+    k_val: IntField,
     kb: IntFieldIJ,
     kbcon1: IntFieldIJ,
     zo: FloatField,
@@ -845,7 +845,7 @@ def stencil_static10(
         rfact = 0.0
 
         if cnvflg:
-            if k_mask > kb and k_mask < kbcon1:
+            if k_val > kb and k_val < kbcon1:
                 dz1 = zo[0, 0, 1] - zo
                 gamma = physcons.EL2ORC * qeso / (to * to)
                 rfact = 1.0 + physcons.DELTA * constants.CP_AIR * (
@@ -926,7 +926,7 @@ def stencil_static11(
     buo: FloatField,
     drag: FloatField,
     zo: FloatField,
-    k_mask: IntField,
+    k_val: IntField,
     pwo: FloatField,
     cnvwt: FloatField,
     pfld: FloatField,
@@ -947,9 +947,9 @@ def stencil_static11(
             ktcon = kbm
 
     with computation(FORWARD), interval(1, -1):
-        if flg and k_mask < kbm:
-            if k_mask > kbcon1 and dbyo < 0.0:
-                ktcon = k_mask
+        if flg and k_val < kbm:
+            if k_val > kbcon1 and dbyo < 0.0:
+                ktcon = k_val
                 flg = False
                 pfld_ktcon = pfld
                 prsl_ktcon = prsl
@@ -977,7 +977,7 @@ def stencil_static11(
         dp = 0.0
 
         if cnvflg:
-            if k_mask == kbcon:
+            if k_val == kbcon:
                 dp = 1000.0 * del0
 
                 xmbmax = dp / (2.0 * constants.GRAV * dt2)
@@ -988,7 +988,7 @@ def stencil_static11(
     with computation(FORWARD), interval(...):
         if cnvflg:
             aa1 = 0.0
-            if k_mask == kb:
+            if k_val == kb:
                 qcko = qo
                 qrcko = qo
 
@@ -1016,7 +1016,7 @@ def stencil_static11(
         rfact = 0.0
 
         if cnvflg:
-            if k_mask > kb and k_mask < ktcon:
+            if k_val > kb and k_val < ktcon:
                 dz = zi - zi[0, 0, -1]
                 gamma = physcons.EL2ORC * qeso / (to * to)
                 qrch = qeso + gamma * dbyo / (constants.HLV * (1.0 + gamma))
@@ -1029,11 +1029,11 @@ def stencil_static11(
                 qrcko = qcko
                 dq = eta * (qcko - qrch)
 
-                # rhbar(i) = rhbar(i) + qo(i,k_mask) / qeso(i,k_mask)
+                # rhbar(i) = rhbar(i) + qo(i,k_val) / qeso(i,k_val)
 
                 # Below lfc check if there is excess moisture to release
                 # latent heat
-                if k_mask >= kbcon and dq > 0.0:
+                if k_val >= kbcon and dq > 0.0:
                     etah = 0.5 * (eta + eta[0, 0, -1])
                     dp = 1000.0 * del0
 
@@ -1049,7 +1049,7 @@ def stencil_static11(
                     pwo = etah * c0t * dz * qlk
                     cnvwt = etah * qlk * constants.GRAV / dp
 
-                if k_mask >= kbcon:
+                if k_val >= kbcon:
                     rfact = 1.0 + physcons.DELTA * constants.CP_AIR * gamma * (
                         to / constants.HLV
                     )
@@ -1084,7 +1084,7 @@ def stencil_static11(
     with computation(FORWARD), interval(1, -1):
         dz1 = 0.0
         if cnvflg:
-            if k_mask >= kbcon and k_mask < ktcon:
+            if k_val >= kbcon and k_val < ktcon:
                 dz1 = zo[0, 0, 1] - zo
                 aa1 = aa1 + buo * dz1
 
@@ -1100,7 +1100,7 @@ def stencil_static12(
     flg: BoolFieldIJ,
     ktcon1: IntFieldIJ,
     kbm: IntFieldIJ,
-    k_mask: IntField,
+    k_val: IntField,
     ktcon: IntFieldIJ,
     zo: FloatField,
     qeso: FloatField,
@@ -1152,7 +1152,7 @@ def stencil_static12(
             rfact = 0.0
 
             if flg:
-                if k_mask >= ktcon and k_mask < kbm:
+                if k_val >= ktcon and k_val < kbm:
                     dz1 = zo[0, 0, 1] - zo
                     gamma = physcons.EL2ORC * qeso / (to * to)
                     rfact = 1.0 + (
@@ -1169,12 +1169,12 @@ def stencil_static12(
 
                     # val = 0.
                     # aa1(i) = aa1(i) +
-                    #         dz1 * eta(i,k_mask) * g * delta *
+                    #         dz1 * eta(i,k_val) * g * delta *
                     #         dz1 * g * delta *
-                    #         max(val,(qeso(i,k_mask) - qo(i,k_mask)))
+                    #         max(val,(qeso(i,k_val) - qo(i,k_val)))
 
                     if aa1 < 0.0:
-                        ktcon1 = k_mask
+                        ktcon1 = k_val
                         flg = False
 
     # Compute cloud moisture property, detraining cloud water
@@ -1194,7 +1194,7 @@ def stencil_static12(
         dp = 0.0
 
         if cnvflg:
-            if k_mask >= ktcon and k_mask < ktcon1:
+            if k_val >= ktcon and k_val < ktcon1:
                 # For the overshooting convection, calculate the moisture content of
                 # the entraining/detraining parcel as before. Partition convective
                 # cloud water and precipitation and detrain convective cloud water in
@@ -1248,7 +1248,7 @@ def stencil_static12(
         bb1 = 4.0
         bb2 = 0.8
         if cnvflg:
-            if k_mask > kbcon1 and k_mask < ktcon:
+            if k_val > kbcon1 and k_val < ktcon:
                 dz = zi - zi[0, 0, -1]
                 tem = 0.25 * bb1 * (drag + drag[0, 0, -1]) * dz
                 tem1 = 0.5 * bb2 * (buo + buo[0, 0, -1]) * dz
@@ -1269,7 +1269,7 @@ def stencil_static12(
             tem = 0.0
 
             if cnvflg:
-                if k_mask > kbcon1 and k_mask < ktcon:
+                if k_val > kbcon1 and k_val < ktcon:
                     dz = zi - zi[0, 0, -1]
                     tem = 0.5 * (sqrt(wu2) + sqrt(wu2[0, 0, -1]))
                     wc = wc + tem * dz
@@ -1298,7 +1298,7 @@ def stencil_static12(
 # if(ncloud > 0):
 def stencil_static13(
     cnvflg: BoolFieldIJ,
-    k_mask: IntField,
+    k_val: IntField,
     ktcon: IntFieldIJ,
     qeso: FloatField,
     to: FloatField,
@@ -1315,7 +1315,7 @@ def stencil_static13(
         dq = 0.0
 
         if cnvflg:
-            if k_mask == ktcon - 1:
+            if k_val == ktcon - 1:
                 gamma = physcons.EL2ORC * qeso / (to * to)
                 qrch = qeso + gamma * dbyo / (constants.HLV * (1.0 + gamma))
                 dq = qcko - qrch
@@ -1331,7 +1331,7 @@ def stencil_static13(
 def stencil_static14(
     cnvflg: BoolFieldIJ,
     vshear: FloatFieldIJ,
-    k_mask: IntField,
+    k_val: IntField,
     kb: IntFieldIJ,
     ktcon: IntFieldIJ,
     uo: FloatField,
@@ -1358,23 +1358,23 @@ def stencil_static14(
         if cnvflg:
             vshear = 0.0
 
-        if k_mask == kb:
+        if k_val == kb:
             zi_kb = zi
-        if k_mask == ktcon:
+        if k_val == ktcon:
             zi_ktcon = zi
 
     with computation(FORWARD), interval(1, None):
         if cnvflg:
-            if k_mask > kb and k_mask <= ktcon:
+            if k_val > kb and k_val <= ktcon:
                 # shear = ((uo-uo[0,0,-1]) ** 2 \
                 #      + (vo-vo[0,0,-1]) ** 2)**0.5
                 vshear = vshear + sqrt(
                     (uo - uo[0, 0, -1]) ** 2 + (vo - vo[0, 0, -1]) ** 2
                 )
 
-        if k_mask == kb:
+        if k_val == kb:
             zi_kb = zi
-        if k_mask == ktcon:
+        if k_val == ktcon:
             zi_ktcon = zi
 
     with computation(FORWARD), interval(0, 1):
@@ -1393,7 +1393,7 @@ def stencil_static14(
 
 def comp_tendencies(
     cnvflg: BoolFieldIJ,
-    k_mask: IntField,
+    k_val: IntField,
     kmax: IntFieldIJ,
     kb: IntFieldIJ,
     ktcon: IntFieldIJ,
@@ -1453,13 +1453,13 @@ def comp_tendencies(
         zi_kbcon = 0.0
 
     with computation(FORWARD), interval(...):
-        if k_mask == ktcon1:
+        if k_val == ktcon1:
             zi_ktcon = zi
-        if k_mask == kbcon1:
+        if k_val == kbcon1:
             zi_kbcon = zi
 
     with computation(PARALLEL), interval(...):
-        if cnvflg and k_mask <= kmax:
+        if cnvflg and k_val <= kmax:
             dellah = 0.0
             dellaq = 0.0
             dellau = 0.0
@@ -1485,7 +1485,7 @@ def comp_tendencies(
         tem2 = 0.0
 
         # Changes due to subsidence and entrainment
-        if cnvflg and k_mask > kb and k_mask < ktcon:
+        if cnvflg and k_val > kb and k_val < ktcon:
 
             dp = 1000.0 * del0
             dz = zi[0, 0, 0] - zi[0, 0, -1]
@@ -1539,7 +1539,7 @@ def comp_tendencies(
 
         # Cloud top
         if cnvflg:
-            if k_mask == ktcon:
+            if k_val == ktcon:
                 dp = 1000.0 * del0
 
                 dv1h = heo[0, 0, -1]
@@ -1588,7 +1588,7 @@ def comp_tendencies(
     # wind speed
     with computation(FORWARD), interval(1, -1):
         if cnvflg:
-            if k_mask >= kbcon1 and k_mask < ktcon1:
+            if k_val >= kbcon1 and k_val < ktcon1:
                 dz = zi[0, 0, 0] - zi[0, 0, -1]
                 tem = sqrt(u1 * u1 + v1 * v1)
                 umean = umean + tem * dz
@@ -1605,7 +1605,7 @@ def comp_tendencies(
         # From Han et al.'s (2017) \cite han_et_al_2017 equation
         # 6, calculate cloud base mass flux as a function of the
         # mean updraft velocity
-        if cnvflg and k_mask == kbcon:
+        if cnvflg and k_val == kbcon:
             rho = po * 100.0 / (constants.RDGAS * to)
             tfac = tauadv / dtconv
             tfac = min(tfac, 1.0)
@@ -1650,7 +1650,7 @@ def comp_tendencies(
 
 def comp_tendencies_tr(
     cnvflg: BoolFieldIJ,
-    k_mask: IntField,
+    k_val: IntField,
     kmax: IntFieldIJ,
     kb: IntFieldIJ,
     ktcon: IntFieldIJ,
@@ -1662,7 +1662,7 @@ def comp_tendencies_tr(
     n_tracer: Int,
 ):
     with computation(PARALLEL), interval(...):
-        if cnvflg and k_mask <= kmax:
+        if cnvflg and k_val <= kmax:
             dellae[0, 0, 0][n_tracer] = 0.0
 
     with computation(PARALLEL), interval(1, -1):
@@ -1671,7 +1671,7 @@ def comp_tendencies_tr(
         tem2 = 0.0
         dp = 0.0
 
-        if cnvflg and k_mask > kb and k_mask < ktcon:
+        if cnvflg and k_val > kb and k_val < ktcon:
             # Changes due to subsidence and entrainment
             dp = 1000.0 * del0
 
@@ -1685,7 +1685,7 @@ def comp_tendencies_tr(
     with computation(PARALLEL), interval(1, None):
 
         # Cloud top
-        if cnvflg and ktcon == k_mask:
+        if cnvflg and ktcon == k_val:
             dp = 1000.0 * del0
             dellae[0, 0, 0][n_tracer] = (
                 eta[0, 0, -1]
@@ -1697,7 +1697,7 @@ def comp_tendencies_tr(
 
 def feedback_control_update_mass_flux(
     cnvflg: BoolFieldIJ,
-    k_mask: IntField,
+    k_val: IntField,
     kmax: IntFieldIJ,
     kb: IntFieldIJ,
     ktcon: IntFieldIJ,
@@ -1765,7 +1765,7 @@ def feedback_control_update_mass_flux(
     with computation(FORWARD), interval(...):
         dellat = 0.0
         fpvst1 = 0.0
-        if cnvflg and (k_mask <= kmax):
+        if cnvflg and (k_val <= kmax):
             qeso = 0.01 * fpvs(t1)  # fpvs is in Pa
             qeso = constants.EPS * qeso / (pfld + (constants.EPS - 1) * qeso)
             val = 1.0e-8
@@ -1779,7 +1779,7 @@ def feedback_control_update_mass_flux(
         #   cloud base mass flux
         # Accumulate column-integrated tendencies:
         if cnvflg:
-            if k_mask > kb and k_mask <= ktcon:
+            if k_val > kb and k_val <= ktcon:
                 dellat = (dellah - constants.HLV * dellaq) / constants.CP_AIR
                 t1 = t1 + dellat * xmb * dt2
                 q1 = q1 + dellaq * xmb * dt2
@@ -1796,7 +1796,7 @@ def feedback_control_update_mass_flux(
     with computation(FORWARD), interval(...):
         fpvst1 = 0.01 * fpvs(t1)  # fpvs is in Pa
         if cnvflg:
-            if k_mask > kb and k_mask <= ktcon:
+            if k_val > kb and k_val <= ktcon:
                 # Recalculate saturation specific humidity using the
                 # updated temperature
                 qeso = fpvst1
@@ -1810,7 +1810,7 @@ def feedback_control_update_mass_flux(
         # mass flux (propagate forward)
 
         if cnvflg:
-            if (k_mask < ktcon) and (k_mask > kb):
+            if (k_val < ktcon) and (k_val > kb):
                 rntot = rntot + pwo * xmb * 0.001 * dt2
 
     # evaporating rain
@@ -1828,17 +1828,17 @@ def feedback_control_update_mass_flux(
             tem = 0.0
             tem1 = 0.0
 
-            if k_mask <= kmax:
+            if k_val <= kmax:
 
                 deltv = 0.0
                 delq = 0.0
                 qevap = 0.0
 
                 if cnvflg:
-                    if k_mask > kb and k_mask < ktcon:
+                    if k_val > kb and k_val < ktcon:
                         rn = rn + pwo * xmb * 0.001 * dt2
 
-                if flg and k_mask < ktcon:
+                if flg and k_val < ktcon:
                     if islimsk == 1:
                         evef = edt * sccons.EVFACTL
                     else:
@@ -1890,7 +1890,7 @@ def feedback_control_update_mass_flux(
     with computation(FORWARD), interval(...):
         # convective cloud water
         # val1 = 0.0
-        if cnvflg and k_mask >= kbcon and k_mask < ktcon:
+        if cnvflg and k_val >= kbcon and k_val < ktcon:
             # Calculate shallow convective cloud water
             cnvw = cnvwt * xmb * dt2
             # convective cloud cover
@@ -1906,17 +1906,17 @@ def feedback_control_update_mass_flux(
         # Calculate the updraft convective mass flux.
         if cnvflg:
             # Calculate the updraft convective mass flux
-            if k_mask >= kb and k_mask < ktop:
+            if k_val >= kb and k_val < ktop:
                 ud_mf = eta * xmb * dt2
 
             # Save the updraft convective mass flux at cloud top
-            if k_mask == ktop - 1:
+            if k_val == ktop - 1:
                 dt_mf = ud_mf
 
 
 def feedback_control_upd_trr(
     cnvflg: BoolFieldIJ,
-    k_mask: IntField,
+    k_val: IntField,
     kmax: IntFieldIJ,
     ktcon: IntFieldIJ,
     del0: FloatField,
@@ -1932,8 +1932,8 @@ def feedback_control_upd_trr(
     with computation(FORWARD), interval(0, 1):
         delebar[0, 0, 0][n_tracer] = 0.0  # Should be an [i, j, n_tracer] field
         dp = 1000.0 * del0
-        if cnvflg and k_mask <= kmax:
-            if k_mask <= ktcon:
+        if cnvflg and k_val <= kmax:
+            if k_val <= ktcon:
                 ctr[0, 0, 0][n_tracer] = ctr[0, 0, 0][n_tracer] + (
                     dellae[0, 0, 0][n_tracer] * xmb * dt2
                 )
@@ -1945,8 +1945,8 @@ def feedback_control_upd_trr(
         delebar[0, 0, 0][n_tracer] = delebar[0, 0, -1][n_tracer]
         dp = 1000.0 * del0
 
-        if cnvflg and k_mask <= kmax:
-            if k_mask <= ktcon:
+        if cnvflg and k_val <= kmax:
+            if k_val <= ktcon:
                 ctr[0, 0, 0][n_tracer] = ctr[0, 0, 0][n_tracer] + (
                     dellae[0, 0, 0][n_tracer] * xmb * dt2
                 )
@@ -1962,7 +1962,7 @@ def feedback_control_upd_trr(
 
 def store_aero_conc(
     cnvflg: BoolFieldIJ,
-    k_mask: IntField,
+    k_val: IntField,
     kmax: IntFieldIJ,
     rn: FloatFieldIJ,
     qtr: FloatFieldShalConv,
@@ -1973,13 +1973,13 @@ def store_aero_conc(
     with computation(PARALLEL), interval(...):
 
         # Store aerosol concentrations if present
-        if cnvflg and rn > 0.0 and k_mask <= kmax:
+        if cnvflg and rn > 0.0 and k_val <= kmax:
             qtr[0, 0, 0][n_tracer] = qaero[0, 0, 0][k_aerosol]
 
 
 def separate_detrained_cw(
     cnvflg: BoolFieldIJ,
-    k_mask: IntField,
+    k_val: IntField,
     kbcon: IntFieldIJ,
     ktcon: IntFieldIJ,
     dellal: FloatField,
@@ -1997,7 +1997,7 @@ def separate_detrained_cw(
         tem = 0.0
         tem1 = 0.0
 
-        if cnvflg and k_mask >= kbcon and k_mask <= ktcon:
+        if cnvflg and k_val >= kbcon and k_val <= ktcon:
 
             tem = dellal * xmb * dt2
             tem1 = (sccons.SHAL_TCR - t1) * sccons.SHAL_TCRF
@@ -2013,7 +2013,7 @@ def separate_detrained_cw(
 
 def tke_contribution(
     cnvflg: BoolFieldIJ,
-    k_mask: IntField,
+    k_val: IntField,
     kb: IntFieldIJ,
     ktop: IntFieldIJ,
     eta: FloatField,
@@ -2032,7 +2032,7 @@ def tke_contribution(
         tem1 = 0.0
         ptem = 0.0
 
-        if cnvflg and k_mask > kb and k_mask < ktop:
+        if cnvflg and k_val > kb and k_val < ktop:
             tem = 0.5 * (eta[0, 0, -1] + eta[0, 0, 0]) * xmb
             tem1 = pfld * 100.0 / (constants.RDGAS * t1)
             sigmagfm = max(sigmagfm, sccons.BETAW)
@@ -2206,14 +2206,14 @@ class ScaleAwareMassFluxShallowConvection:
         # Allocate arrays
 
         # Layer mask:
-        self._k_mask = quantity_factory.zeros(
+        self._k_val = quantity_factory.zeros(
             [X_DIM, Y_DIM, Z_DIM],
             units="unknown",
             dtype=Int,
         )
 
         for k in range(grid_indexing.domain[2]):
-            self._k_mask.data[:, :, k] = k
+            self._k_val.data[:, :, k] = k
 
         self._cnvflg = make_quantity_2D(Bool)
         self._heo_kb = make_quantity_2D()
@@ -2540,7 +2540,7 @@ class ScaleAwareMassFluxShallowConvection:
             self._tx1,
             self._ps,
             self._prsl,
-            self._k_mask,
+            self._k_val,
         )
         self._init_final(
             self._kbm,
@@ -2578,7 +2578,7 @@ class ScaleAwareMassFluxShallowConvection:
             state.q1,
             state.u1,
             state.v1,
-            self._k_mask,
+            self._k_val,
         )
 
         # Init tracers
@@ -2586,7 +2586,7 @@ class ScaleAwareMassFluxShallowConvection:
             if (n_tracer != self._ntiw) and (n_tracer != self._ntcw):
                 self._init_tracers(
                     self._cnvflg,
-                    self._k_mask,
+                    self._k_val,
                     self._kmax,
                     self._ctr,
                     self._ctro,
@@ -2600,7 +2600,7 @@ class ScaleAwareMassFluxShallowConvection:
             self._hmax,
             self._heo,
             self._kb,
-            self._k_mask,
+            self._k_val,
             self._kpbl,
             self._kmax,
             self._zo,
@@ -2617,7 +2617,7 @@ class ScaleAwareMassFluxShallowConvection:
             if (n_tracer != self._ntiw) and (n_tracer != self._ntcw):
                 self._stencil_ntrstatic0(
                     self._cnvflg,
-                    self._k_mask,
+                    self._k_val,
                     self._kmax,
                     self._ctro,
                     n_tracer,
@@ -2628,7 +2628,7 @@ class ScaleAwareMassFluxShallowConvection:
             self._flg,
             self._kbcon,
             self._kmax,
-            self._k_mask,
+            self._k_val,
             self._kbm,
             self._kb,
             self._heo_kb,
@@ -2644,7 +2644,7 @@ class ScaleAwareMassFluxShallowConvection:
             self._pdot,
             state.dot,
             state.islimsk,
-            self._k_mask,
+            self._k_val,
             self._kbcon,
             self._kb,
             self._pfld,
@@ -2659,7 +2659,7 @@ class ScaleAwareMassFluxShallowConvection:
             self._sumx,
             self._tkemean,
             self._cnvflg,
-            self._k_mask,
+            self._k_val,
             self._kb,
             self._kbcon,
             self._zo,
@@ -2673,7 +2673,7 @@ class ScaleAwareMassFluxShallowConvection:
             self._clamt,
             self._zi,
             self._xlamud,
-            self._k_mask,
+            self._k_val,
             self._kbcon,
             self._kb,
             self._eta,
@@ -2694,7 +2694,7 @@ class ScaleAwareMassFluxShallowConvection:
             if (n_tracer != self._ntiw) and (n_tracer != self._ntcw):
                 self._stencil_ntrstatic1(
                     self._cnvflg,
-                    self._k_mask,
+                    self._k_val,
                     self._kb,
                     self._ecko,
                     self._ctro,
@@ -2703,7 +2703,7 @@ class ScaleAwareMassFluxShallowConvection:
 
         self._stencil_static7(
             self._cnvflg,
-            self._k_mask,
+            self._k_val,
             self._kb,
             self._kmax,
             self._zi,
@@ -2723,7 +2723,7 @@ class ScaleAwareMassFluxShallowConvection:
             if (n_tracer != self._ntiw) and (n_tracer != self._ntcw):
                 self._stencil_ntrstatic2(
                     self._cnvflg,
-                    self._k_mask,
+                    self._k_val,
                     self._kb,
                     self._kmax,
                     self._zi,
@@ -2741,7 +2741,7 @@ class ScaleAwareMassFluxShallowConvection:
             self._kbcon,
             self._kbcon1,
             self._flg,
-            self._k_mask,
+            self._k_val,
         )
 
         if exit_routine(self._cnvflg.view[:]):
@@ -2752,7 +2752,7 @@ class ScaleAwareMassFluxShallowConvection:
             self._pfld,
             self._pfld_kbcon,
             self._pfld_kbcon1,
-            self._k_mask,
+            self._k_val,
             self._kbcon1,
         )
 
@@ -2762,7 +2762,7 @@ class ScaleAwareMassFluxShallowConvection:
         self._stencil_static10(
             self._cina,
             self._cnvflg,
-            self._k_mask,
+            self._k_val,
             self._kb,
             self._kbcon1,
             self._zo,
@@ -2804,7 +2804,7 @@ class ScaleAwareMassFluxShallowConvection:
             self._buo,
             self._drag,
             self._zo,
-            self._k_mask,
+            self._k_val,
             self._pwo,
             self._cnvwt,
             self._pfld,
@@ -2823,7 +2823,7 @@ class ScaleAwareMassFluxShallowConvection:
             self._flg,
             self._ktcon1,
             self._kbm,
-            self._k_mask,
+            self._k_val,
             self._ktcon,
             self._zo,
             self._qeso,
@@ -2852,7 +2852,7 @@ class ScaleAwareMassFluxShallowConvection:
         if self._ncloud > 0:
             self._stencil_static13(
                 self._cnvflg,
-                self._k_mask,
+                self._k_val,
                 self._ktcon,
                 self._qeso,
                 self._to,
@@ -2864,7 +2864,7 @@ class ScaleAwareMassFluxShallowConvection:
         self._stencil_static14(
             self._cnvflg,
             self._vshear,
-            self._k_mask,
+            self._k_val,
             self._kb,
             self._ktcon,
             self._uo,
@@ -2877,7 +2877,7 @@ class ScaleAwareMassFluxShallowConvection:
 
         self._comp_tendencies(
             self._cnvflg,
-            self._k_mask,
+            self._k_val,
             self._kmax,
             self._kb,
             self._ktcon,
@@ -2927,7 +2927,7 @@ class ScaleAwareMassFluxShallowConvection:
             if (n_tracer != self._ntiw) and (n_tracer != self._ntcw):
                 self._comp_tendencies_tr(
                     self._cnvflg,
-                    self._k_mask,
+                    self._k_val,
                     self._kmax,
                     self._kb,
                     self._ktcon,
@@ -2944,7 +2944,7 @@ class ScaleAwareMassFluxShallowConvection:
 
         self._feedback_control_update_mass_flux(
             self._cnvflg,
-            self._k_mask,
+            self._k_val,
             self._kmax,
             self._kb,
             self._ktcon,
@@ -2993,7 +2993,7 @@ class ScaleAwareMassFluxShallowConvection:
             if (n_tracer != self._ntiw) and (n_tracer != self._ntcw):
                 self._feedback_control_upd_trr(
                     self._cnvflg,
-                    self._k_mask,
+                    self._k_val,
                     self._kmax,
                     self._ktcon,
                     self._del0,
@@ -3008,7 +3008,7 @@ class ScaleAwareMassFluxShallowConvection:
         if self._ncloud > 0:
             self._separate_detrained_cw(
                 self._cnvflg,
-                self._k_mask,
+                self._k_val,
                 self._kbcon,
                 self._ktcon,
                 self._dellal,
@@ -3023,7 +3023,7 @@ class ScaleAwareMassFluxShallowConvection:
         if self._ntk > 0:
             self._tke_contribution(
                 self._cnvflg,
-                self._k_mask,
+                self._k_val,
                 self._kb,
                 state.ktop,
                 self._eta,

@@ -69,13 +69,13 @@ class TranslateMFPBLT(TranslatePhysicsFortranData2Py):
             sizer, self.stencil_factory.backend
         )
 
-        k_mask = quantity_factory.zeros(
+        k_val = quantity_factory.zeros(
             [X_DIM, Y_DIM, Z_DIM],
             units="unknown",
             dtype=Int,
         )
         for k in range(self.stencil_factory.grid_indexing.domain[2]):
-            k_mask.data[:, :, k] = k
+            k_val.data[:, :, k] = k
         self.make_storage_data_input_vars(inputs)
         inputs.pop("t1")
 
@@ -99,6 +99,6 @@ class TranslateMFPBLT(TranslatePhysicsFortranData2Py):
             kmpbl=int(inputs.pop("kmpbl")),
         )
 
-        compute_func(**inputs, k_mask=k_mask, cnvflg=cnvflg)
+        compute_func(**inputs, k_val=k_val, cnvflg=cnvflg)
 
         return self.slice_output(inputs)
