@@ -1602,6 +1602,7 @@ class Physics:
                     "You must pass a surface state to set sea surface temperature"
                 )
             self._set_sst(surface_state.tsfc, surface_state.islmsk, self._gridlat)
+            physics_state.tsfc.field[:] = surface_state.tsfc.field[:]
         # If PBL scheme is present, physics_state should be updated here
         self._get_phi_fv3(
             physics_state.pt,
@@ -1667,7 +1668,7 @@ class Physics:
                 self._prsi1,
                 self._prsl1,
                 self._t1,
-                physics_state.tsfc,
+                surface_state.tsfc,
                 self._qvapor1,
                 self._qliquid1,
                 self._qice1,
