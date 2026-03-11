@@ -668,6 +668,7 @@ class RTE_RRTMGPDriver:
                 surface type, snow cover, etc.
             date (datetime.datetime): datetime for radiation calculations
         """
+        # TODO: Add support for only SW and only LW
         self.solhr = date.hour + date.minute / 60.0 + date.second / 3600.0
         radx = self.prep_radiation(state, sfc_state, date)
 
