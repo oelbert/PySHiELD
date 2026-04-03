@@ -437,8 +437,6 @@ def solar_update(
     # calculate sun-earth distance adjustment factor appropriate to date
     solcon = solc0 / (r1 * r1)
 
-    # TODO: Print out solar info and time here
-
     # setting up calculation parameters used by subr coszmn
 
     nswr = np.round(deltsw / deltim)  # number of mdl t-step per sw call
@@ -453,6 +451,8 @@ def solar_update(
     anginc = (
         (constants.PI / 12.0) * dtswh / float(nstp - 1)
     )  # solar angle inc during each calc step
+
+    ndsl_log.info(f"Julian date: {fjd1},  solcon: {solcon}, RA: {alp}, Dec: {dlt}, incident angle: {anginc}, nstp: {nstp}")
 
     return slag, sdec, cdec, anginc, solcon, solc0, nstp, iyr_sav
 
@@ -547,5 +547,5 @@ def coszmn(
         if daily_mean:
             coszdg = coszenm
             coszen = coszenm
-        if coszen >= 0.0001:
+        if coszen >= CZLIMT:
             daymask = True

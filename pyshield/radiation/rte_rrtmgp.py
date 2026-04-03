@@ -1,6 +1,7 @@
 import datetime
 import os
 import shutil
+import xarray as xr
 
 import numpy as np
 from pyrte_rrtmgp import rte
@@ -18,6 +19,7 @@ from ndsl.dsl.gt4py import FORWARD, PARALLEL, computation
 from ndsl.dsl.gt4py import function as gtfunction
 from ndsl.dsl.gt4py import interval, log
 from ndsl.dsl.typing import Bool, Float, FloatField, FloatFieldIJ
+from ndsl.logging import ndsl_log
 from pyshield.stencils.surface import SurfaceState
 
 from ._config import RTE_RRTMGPConfig
@@ -249,6 +251,10 @@ class RTE_RRTMGPDriver:
             dtype=Float,
         )
 
+        # allocate an xarray state for rte-rrtmgp:
+        # self.radx = xr.Dataset()
+        self.radx = None
+
         self.gridlon = gridlon
         self.gridlat = gridlat
         config.input_dir.joinpath(config.solar_constant_file)
@@ -426,6 +432,62 @@ class RTE_RRTMGPDriver:
             domain=grid_indexing.domain_compute(),
         )
 
+    def _update_inputs_if_needed(
+        self, state: RTE_RRTMGPState, sdate: datetime.datetime
+    ):
+        """
+        Updates input data from external sources when model date differs
+        from the saved date
+        """
+        lsol_chg = False
+        if (self.isolflg not in [0, 10]) and sdate.year != self.saved_iyear:
+            lsol_chg = True
+        (
+            self.slag,
+            self.sdec,
+            self.cdec,
+            self.anginc,
+            self.solcon,
+            self.solc0,
+            self.nstp,
+            self.saved_iyear,
+        ) = solar_update(
+            sdate,
+            self.solc0,
+            self.deltsw,
+            self.delt_rad,
+            lsol_chg,
+            self.saved_iyear,
+            self.isolflg,
+            self._solar_constants,
+        )
+
+        # Here is where we update ozone and aerosols when enabled
+        update_co2 = False
+        if (sdate.month != self.saved_imonth) or (self._first_step):
+            update_co2 = True
+            self.saved_imonth = sdate.month
+
+        (
+            self.co2_glb,
+            self._co2_arr.view[:],
+            self._co2_cyc.view[:],
+        ) = co2_update(
+            sdate.year,
+            sdate.month,
+            self.ico2flg,
+            update_co2,
+            self.ictmflg,
+            self.co2_glb,
+            self._co2_arr.view[:],
+            self._co2_cyc.view[:],
+            self.gridlon.view[:],
+            self.gridlat.view[:],
+            self.co2_glb_data,
+            self.co2_mvr_data,
+            self.co2_cyc_data,
+        )
+
     def _accumulate_radiation_inputs(
         self, state: RTE_RRTMGPState, sfc_state: SurfaceState, sdate: datetime.datetime
     ):
@@ -465,6 +527,8 @@ class RTE_RRTMGPDriver:
             self._coszdg,
             self._daymask,
         )
+
+        ndsl_log.info(f"cosz min: {self._coszdg.field[:].min()}, cosz max: {self._coszdg.field[:].max()}")
 
         if self.ictmflg == -2:
             self._get_gases(
@@ -550,62 +614,6 @@ class RTE_RRTMGPDriver:
         )
         state.sfc_emis.view[:] = self.sfcemis
 
-    def _update_inputs_if_needed(
-        self, state: RTE_RRTMGPState, sdate: datetime.datetime
-    ):
-        """
-        Updates input data from external sources when model date differs
-        from the saved date
-        """
-        lsol_chg = False
-        if (self.isolflg not in [0, 10]) and sdate.year != self.saved_iyear:
-            lsol_chg = True
-        (
-            self.slag,
-            self.sdec,
-            self.cdec,
-            self.anginc,
-            self.solcon,
-            self.solc0,
-            self.nstp,
-            self.saved_iyear,
-        ) = solar_update(
-            sdate,
-            self.solc0,
-            self.deltsw,
-            self.delt_rad,
-            lsol_chg,
-            self.saved_iyear,
-            self.isolflg,
-            self._solar_constants,
-        )
-
-        # Here is where we update ozone and aerosols when enabled
-        update_co2 = False
-        if (sdate.month != self.saved_imonth) or (self._first_step):
-            update_co2 = True
-            self.saved_imonth = sdate.month
-
-        (
-            self.co2_glb,
-            self._co2_arr.view[:],
-            self._co2_cyc.view[:],
-        ) = co2_update(
-            sdate.year,
-            sdate.month,
-            self.ico2flg,
-            update_co2,
-            self.ictmflg,
-            self.co2_glb,
-            self._co2_arr.view[:],
-            self._co2_cyc.view[:],
-            self.gridlon.view[:],
-            self.gridlat.view[:],
-            self.co2_glb_data,
-            self.co2_mvr_data,
-            self.co2_cyc_data,
-        )
-
     def _assign_constant_gases(self, xds):
         xds["ch4"] = Float(self.ch4)
         xds["n2o"] = Float(self.n2o)
@@ -648,9 +656,15 @@ class RTE_RRTMGPDriver:
                 pyRTE-RRTMGP
         """
         self._accumulate_radiation_inputs(state, sfc_state, date)
-        radx = state.to_rterrtmgp_xr()
-        self._assign_constant_gases(radx)
-        return radx
+        breakpoint()
+        if self._first_step:
+            ndsl_log.info("first step")
+            self.radx = state.to_rterrtmgp_xr()
+        else:
+            ndsl_log.info("not first step")
+            state.copy_to_rterrtmgp_xr(self.radx)
+        self._assign_constant_gases(self.radx)
+        # return radx
 
     @instrument
     def step_radiation(
@@ -670,18 +684,18 @@ class RTE_RRTMGPDriver:
         """
         # TODO: Add support for only SW and only LW
         self.solhr = date.hour + date.minute / 60.0 + date.second / 3600.0
-        radx = self.prep_radiation(state, sfc_state, date)
+        self.prep_radiation(state, sfc_state, date)
 
         # Do SW fluxes:
         sw_optics = self._gas_optics_sw.compute(
-            radx,
+            self.radx,
             problem_type=rte.OpticsTypes.TWO_STREAM,
             add_to_input=False,
             gas_name_map=self._gas_mapping,
             variable_mapping=self._atm_map,
         )
-        sw_optics["surface_albedo"] = radx["albedo"]
-        sw_optics["mu0"] = radx["mu0"]
+        sw_optics["surface_albedo"] = self.radx["albedo"]
+        sw_optics["mu0"] = self.radx["mu0"]
         clr_fluxes_sw = sw_optics.rte.solve(add_to_input=False)
         state.fswd_clr.view[:] = clr_fluxes_sw.sw_flux_down.data.reshape(
             state.fswd_clr.view[:].shape
@@ -691,7 +705,7 @@ class RTE_RRTMGPDriver:
         )
 
         sw_cloud_optical_props = self._cloud_optics_sw.compute(
-            radx,
+            self.radx,
             problem_type=rte.OpticsTypes.TWO_STREAM,
             add_to_input=False,
             variable_mapping=self._atm_map,
@@ -705,13 +719,13 @@ class RTE_RRTMGPDriver:
 
         # And do LW fluxes
         lw_optics = self._gas_optics_lw.compute(
-            radx,
+            self.radx,
             problem_type=rte.OpticsTypes.ABSORPTION,
             add_to_input=False,
             gas_name_map=self._gas_mapping,
             variable_mapping=self._atm_map,
         )
-        lw_optics["surface_emissivity"] = radx["sfc_emis"]
+        lw_optics["surface_emissivity"] = self.radx["sfc_emis"]
         clr_fluxes_lw = lw_optics.rte.solve(add_to_input=False)
         state.flwd_clr.view[:] = clr_fluxes_lw.lw_flux_down.data.reshape(
             state.flwd_clr.view[:].shape
@@ -720,7 +734,7 @@ class RTE_RRTMGPDriver:
             state.flwu_clr.view[:].shape
         )
         lw_cloud_optical_props = self._cloud_optics_lw.compute(
-            radx,
+            self.radx,
             problem_type=rte.OpticsTypes.ABSORPTION,
             add_to_input=False,
             variable_mapping=self._atm_map,
@@ -752,3 +766,5 @@ class RTE_RRTMGPDriver:
 
         if self._first_step:
             self._first_step = False
+
+        # radx = None

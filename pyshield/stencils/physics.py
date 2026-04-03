@@ -385,6 +385,14 @@ def copy_from_radiation(
         # TODO: once radiation state is required these become unnecessary
         htrsw_noflip = rad_htrsw
         htrlw_noflip = rad_htrlw
+        # htrsw = 0.0
+        # htrlw = 0.0
+        # swflux_up = 0.0
+        # swflux_down = 0.0
+        # lwflux_up = 0.0
+        # lwflux_down = 0.0
+        # htrsw_noflip = 0.0
+        # htrlw_noflip = 0.0
 
 
 def interpolate_radiation(
@@ -1359,6 +1367,8 @@ class Physics:
                 origin=grid_indexing.origin_full(),
                 domain=grid_indexing.domain_full(),
             )
+            ndsl_log.info(f"GRID LON: {self._gridlon.field[:].min()}, {self._gridlon.field[:].max()}")
+            ndsl_log.info(f"GRID LAT: {self._gridlat.field[:].min()}, {self._gridlat.field[:].max()}")
             self._radiation = RTE_RRTMGPDriver(
                 rad_config,
                 self._gridlon,
