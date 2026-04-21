@@ -9,6 +9,7 @@ from ndsl.dsl.typing import Float, set_4d_field_size
 
 # TODO: This should be handled by tracer functionality when ready
 # and the field size should be nsamftrac + 2 instead of hardcoded
+# TODO: This will have to be refactored when deep convection is added
 FloatFieldShalConv = set_4d_field_size(7, Float)
 
 _DEFAULT_INT = 0
@@ -32,7 +33,7 @@ class ShallowConvectionConfig:
     ntcw: int = -1
     """index of cloud water tracer"""
     ntiw: int = -1
-    """index pf cloud ice tracer"""
+    """index of cloud ice tracer"""
     itc: int = _DEFAULT_INT
     """index of first chemical tracer"""
     clam_shal: float = 0.3

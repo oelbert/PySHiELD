@@ -7,6 +7,7 @@ import pyshield.stencils.gfdl_cld_microphysics.physical_functions as physfun
 from ndsl import GridIndexing, QuantityFactory, StencilFactory
 from ndsl.constants import X_DIM, Y_DIM, Z_DIM
 from ndsl.dsl.gt4py import BACKWARD, FORWARD, PARALLEL, computation, interval, sqrt
+from ndsl.logging import ndsl_log
 from ndsl.dsl.typing import Bool, Float, FloatField, FloatFieldIJ
 from ndsl.grid import GridData
 from ndsl.performance.timer import NullTimer, Timer
@@ -736,7 +737,7 @@ def total_energy_check(
                 sum(total_energy_dry_begin[i, j, :]) + total_energy_bot_dry_begin[i, j]
             )
             if dry_energy_change > te_err:
-                print(f"GFDL-MP-DRY TE: {dry_energy_change}")
+                ndsl_log.info(f"GFDL-MP-DRY TE: {dry_energy_change}")
             moist_energy_change = abs(
                 sum(total_energy_moist_end[i, j, :])
                 + total_energy_bot_moist_end[i, j]
@@ -747,7 +748,7 @@ def total_energy_check(
                 + total_energy_bot_moist_begin[i, j]
             )
             if moist_energy_change > te_err:
-                print(f"GFDL-MP-MOIST TE: {moist_energy_change}")
+                ndsl_log.info(f"GFDL-MP-MOIST TE: {moist_energy_change}")
             dry_water_change = abs(
                 sum(total_water_dry_end[i, j, :])
                 + total_water_bot_dry_end[i, j]
@@ -755,7 +756,7 @@ def total_energy_check(
                 - total_water_bot_dry_begin[i, j]
             ) / (sum(total_water_dry_begin[i, j, :]) + total_water_bot_dry_begin[i, j])
             if dry_water_change > tw_err:
-                print(f"GFDL-MP-DRY TW: {dry_water_change}")
+                ndsl_log.info(f"GFDL-MP-DRY TW: {dry_water_change}")
             moist_water_change = abs(
                 sum(total_water_moist_end[i, j, :])
                 + total_water_bot_moist_end[i, j]
@@ -766,7 +767,7 @@ def total_energy_check(
                 + total_water_bot_moist_begin[i, j]
             )
             if moist_water_change > tw_err:
-                print(f"GFDL-MP-MOIST TW: {moist_water_change}")
+                ndsl_log.info(f"GFDL-MP-MOIST TW: {moist_water_change}")
 
 
 class GFDLCloudMicrophysics:

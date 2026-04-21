@@ -788,6 +788,90 @@ def results_from_pbl(
         va = forward_euler(va, pbl_dv[0, 0, 0], dt)
 
 
+def update_pt_qvap_phi(
+    t: FloatField,
+    q: FloatField,
+    phil: FloatField,
+    phii: FloatField,
+    t1: FloatField,
+    q1: FloatField,
+    phil1: FloatField,
+    phii1: FloatField,
+    layer_flip: IntFieldK,
+    level_flip: IntFieldK,
+):
+    t1 = t[0, 0, layer_flip]
+    q1 = q[0, 0, layer_flip]
+    phil1 = phil[0, 0, layer_flip]
+    phii1 = phii[0, 0, level_flip]
+
+
+def convective_tracers(
+    clw: FloatFieldShalConv,
+    cnvc: FloatField,
+    cnvw: FloatField,
+    qliquid: FloatField,
+    qrain: FloatField,
+    qice: FloatField,
+    qsnow: FloatField,
+    qgraupel: FloatField,
+    qo3mr: FloatField,
+    qsgstke: FloatField,
+    ktop: FloatFieldIJ,
+    kbot: FloatFieldIJ,
+):
+    from __externals__ import ntiw, ntcw, npz
+    with computation(PARALLEL), interval(...):
+        clw[0, 0, 0, ntiw] = 0.0
+        clw[0, 0, 0, ntcw] = -999.9
+
+        cnvc = 0.0
+        cnvw = 0.0
+
+        ntr = 0
+        itr = 0
+        while ntr < 7:  # TODO: this shouldn't be hardcoded
+            if (ntr != ntcw) and (ntr != ntiw):
+                if itr == 0:
+                    clw[0, 0, 0, ntr] = qrain
+                elif itr == 1:
+                    clw[0, 0, 0, ntr] = qsnow
+                elif itr == 2:
+                    clw[0, 0, 0, ntr] = qgraupel
+                elif itr == 4:
+                    clw[0, 0, 0, ntr] = qo3mr
+                else:
+                    clw[0, 0, 0, ntr] = qsgstke
+                itr += 1
+            ntr += 1
+
+        ktop = 1
+        kbot = npz
+
+        # clw[0, 0, 0, ntiw] = qice  # index 0 in Fortran, only for MG microphysics
+        clw[0, 0, 0, ntcw] = qliquid  # index 1 in Fortran
+
+
+def zero_deep_convection_terms(
+    cld1: FloatFieldIJ,
+    rain1: FloatFieldIJ,
+    ud_mf: FloatField,
+    dd_mf: FloatField,
+    dt_mf: FloatField,
+    cnvw: FloatField,
+    cnvc: FloatField,
+):
+    with computation(FORWARD), interval(0, 1):
+        cld1d = 0.0
+        rain1 = 0.0
+    with computation(PARALLEL), interval(...):
+        ud_mf = 0.0
+        dd_mf = 0.0
+        dt_mf = 0.0
+        cnvw = 0.0
+        cnvc = 0.0
+
+
 def fill_shalconv_state(
     shalconv_q1: FloatField,
     shalconv_t1: FloatField,
@@ -802,18 +886,19 @@ def fill_shalconv_state(
     shalconv_psp: FloatFieldIJ,
     shalconv_kcnv: IntFieldIJ,
     shalconv_garea: FloatFieldIJ,
+    shalconv_rain1: FloatFieldIJ,
+    shalconv_ud_mf: FloatField,
+    shalconv_dt_mf: FloatField,
+    shalconv_cnvw: FloatField,
+    shalconv_cnvc: FloatField,
+    shalconv_kbot: FloatFieldIJ,
+    shalconv_ktop: FloatFieldIJ,
     shalconv_islimsk: IntFieldIJ,
     physics_q1: FloatField,
     physics_t1: FloatField,
     physics_u1: FloatField,
     physics_v1: FloatField,
-    qliquid: FloatField,
-    qrain: FloatField,
-    qice: FloatField,
-    qsnow: FloatField,
-    qgraupel: FloatField,
-    qo3mr: FloatField,
-    qsgs_tke: FloatField,
+    physics_clw: FloatFieldShalConv,
     physics_dot: FloatField,
     physics_hpbl: FloatFieldIJ,
     physics_prslp: FloatField,
@@ -821,11 +906,21 @@ def fill_shalconv_state(
     physics_delp: FloatField,
     physics_psp: FloatFieldIJ,
     physics_garea: FloatFieldIJ,
+    physics_rain1: FloatFieldIJ,
+    physics_ud_mf: FloatField,
+    physics_dt_mf: FloatField,
+    physics_cnvw: FloatField,
+    physics_cnvc: FloatField,
+    physics_kbot: FloatFieldIJ,
+    physics_ktop: FloatFieldIJ,
 ):
     with computation(FORWARD), interval(0, 1):
         shalconv_hpbl = physics_hpbl
         shalconv_psp = physics_psp
         shalconv_garea = physics_garea
+        shalconv_rain1 = physics_rain1
+        shalconv_kbot = physics_kbot
+        shalconv_ktop = physics_ktop
         # These will be filled in as they're enabled by previous schemes
         shalconv_kcnv = 0  # no deep convection
         shalconv_islimsk = 0  # sea-only for now
@@ -834,20 +929,15 @@ def fill_shalconv_state(
         shalconv_t1 = physics_t1
         shalconv_u1 = physics_u1
         shalconv_v1 = physics_v1
+        shalconv_qtr = physics_clw
         shalconv_dot = physics_dot
         shalconv_prslp = physics_prslp
         shalconv_phil = physics_phil
         shalconv_delp = physics_delp
-
-        # TODO: These should not be hardcoded
-        shalconv_qtr[0, 0, 0][0] = qliquid
-        shalconv_qtr[0, 0, 0][1] = qrain
-        shalconv_qtr[0, 0, 0][2] = qice
-        shalconv_qtr[0, 0, 0][3] = qsnow
-        shalconv_qtr[0, 0, 0][4] = qgraupel
-        shalconv_qtr[0, 0, 0][5] = qo3mr
-        shalconv_qtr[0, 0, 0][6] = qsgs_tke
-        shalconv_qtr[0, 0, 0][6] = qsgs_tke
+        shalconv_ud_mf = physics_ud_mf
+        shalconv_dt_mf = physics_dt_mf
+        shalconv_cnvw = physics_cnvw
+        shalconv_cnvc = physics_cnvc
 
 
 def results_from_shalconv(
@@ -855,31 +945,63 @@ def results_from_shalconv(
     physics_u: FloatField,
     physics_v: FloatField,
     physics_qvapor: FloatField,
-    physics_qliquid: FloatField,
-    physics_qrain: FloatField,
-    physics_qice: FloatField,
-    physics_qsnow: FloatField,
-    physics_qgraupel: FloatField,
-    physics_qo3mr: FloatField,
-    physics_qsgs_tke: FloatField,
+    physics_clw: FloatFieldShalConv,
+    physics_rain1: FloatFieldIJ,
+    physics_ud_mf: FloatField,
+    physics_dt_mf: FloatField,
     shalconv_t1: FloatField,
     shalconv_u1: FloatField,
     shalconv_v1: FloatField,
     shalconv_q1: FloatField,
     shalconv_qtr: FloatFieldShalConv,
+    shalconv_rain1: FloatFieldIJ,
+    shalconv_ud_mf: FloatField,
+    shalconv_dt_mf: FloatField,
 ):
+    with computation(FORWARD), interval(0, 1):
+        physics_rain1 = shalconv_rain1
     with computation(PARALLEL), interval(...):
         physics_t = shalconv_t1
         physics_u = shalconv_u1
         physics_v = shalconv_v1
         physics_qvapor = shalconv_q1
-        physics_qliquid = shalconv_qtr[0, 0, 0][0]
-        physics_qrain = shalconv_qtr[0, 0, 0][1]
-        physics_qice = shalconv_qtr[0, 0, 0][2]
-        physics_qsnow = shalconv_qtr[0, 0, 0][3]
-        physics_qgraupel = shalconv_qtr[0, 0, 0][4]
-        physics_qo3mr = shalconv_qtr[0, 0, 0][5]
-        physics_qsgs_tke = shalconv_qtr[0, 0, 0][6]
+        physics_clw = shalconv_qtr
+        physics_ud_mf = shalconv_ud_mf
+        physics_dt_mf = shalconv_dt_mf
+
+
+def tracers_from_convection(
+    clw: FloatFieldShalConv,
+    qliquid: FloatField,
+    qrain: FloatField,
+    qice: FloatField,
+    qsnow: FloatField,
+    qgraupel: FloatField,
+    qo3mr: FloatField,
+    qsgstke: FloatField,
+):
+    from __externals__ import ntiw, ntcw
+    with computation(PARALLEL), interval(...):
+        if clw[0, 0, 0, ntcw] <= -999.0:
+            clw[0, 0, 0, ntcw] = 0.0
+
+        ntr = 0
+        itr = 0
+        while ntr < 7:  # TODO: this shouldn't be hardcoded
+            if (ntr != ntcw) and (ntr != ntiw):
+                if itr == 0:
+                    qrain = clw[0, 0, 0, ntr]
+                elif itr == 1:
+                    qsnow = clw[0, 0, 0, ntr]
+                elif itr == 2:
+                    qgraupel = clw[0, 0, 0, ntr]
+                elif itr == 4:
+                    qo3mr = clw[0, 0, 0, ntr]
+                else:
+                    qsgstke = clw[0, 0, 0, ntr]
+                itr += 1
+            ntr += 1
+        qliquid = clw[0, 0, 0, ntcw]
 
 
 def prepare_gfs_microphysics(
@@ -1132,6 +1254,7 @@ class Physics:
             config=stencil_factory.config.dace_config,
             dace_compiletime_args=["physics_state"],
         )
+        self._first_step = True
         self._ntracers = namelist.ntracers
         if self._ntracers != 9:
             raise NotImplementedError(
@@ -1220,6 +1343,16 @@ class Physics:
         self._phii1 = quantity_factory.zeros(
             dims=[X_DIM, Y_DIM, Z_INTERFACE_DIM], units="unknown"
         )
+        # Convective terms:
+        self._cld1d = make_quantity_2d()
+        self._rain1 = make_quantity_2d()
+        self._ktop = make_quantity_2d()
+        self._kbot = make_quantity_2d()
+        self._ud_mf = make_quantity()
+        self._dd_mf = make_quantity()
+        self._dt_mf = make_quantity()
+        self._cnvw = make_quantity()
+        self._cnvc = make_quantity()
         # TODO: once surface state is a required argument we don't need these copies
         self._sfcwind = make_quantity_2d()
         self._uustar = make_quantity_2d()
@@ -1319,6 +1452,16 @@ class Physics:
         self._flip_fields = stencil_factory.from_dims_halo(
             func=flip_fields,
             compute_dims=[X_DIM, Y_DIM, Z_INTERFACE_DIM],
+        )
+
+        self._update_pt_qvap_phi = stencil_factory.from_dims_halo(
+            func=update_pt_qvap_phi,
+            compute_dims=[X_DIM, Y_DIM, Z_INTERFACE_DIM],
+        )
+
+        self._zero_deep_convection = stencil_factory.from_dims_halo(
+            func=zero_deep_convection_terms,
+            compute_dims=[X_DIM, Y_DIM, Z_DIM],
         )
 
         if self._hydro_delp:
@@ -1451,6 +1594,12 @@ class Physics:
         else:
             self._satm_edmf = False
 
+        # Setup deep convection
+        if "SAMF_DEEPCONV" in schemes:
+            raise NotImplementedError("Deep Convection has not been implemented")
+        else:
+            self._deep_convection = False
+
         # Setup shallow convection
         if "SAMF_SHALCONV" in schemes:
             if sc_config is None:
@@ -1461,6 +1610,33 @@ class Physics:
                     self.SC_TRACER_DIM: sc_config.nsamftrac + 2,
                 }
             )
+
+            # TODO: these should be defined if deep convection is active too:
+            self._clw = quantity_factory.zeros(
+                [X_DIM, Y_DIM, Z_DIM, self.SC_TRACER_DIM],
+                units="unknown",
+                dtype=Float,
+            )
+            self._convective_tracers = stencil_factory.from_origin_domain(
+                func=convective_tracers,
+                origin=grid_indexing.origin_compute(),
+                domain=grid_indexing.domain_compute(),
+                externals={
+                    "ntcw": namelist.ntcw,
+                    "ntiw": namelist.ntiw,
+                    "npz": npz,
+                }
+            )
+            self._tracers_from_convection = stencil_factory.from_origin_domain(
+                func=tracers_from_convection,
+                origin=grid_indexing.origin_compute(),
+                domain=grid_indexing.domain_compute(),
+                externals={
+                    "ntcw": namelist.ntcw,
+                    "ntiw": namelist.ntiw,
+                }
+            )
+
             self._fill_shalconv_state = stencil_factory.from_origin_domain(
                 func=fill_shalconv_state,
                 origin=grid_indexing.origin_compute(),
@@ -1552,6 +1728,7 @@ class Physics:
         do_radiation = (self._nsteps % self._nsswr == 0) or (
             self._nsteps % self._nslwr == 0
         )
+        
         self._atmos_phys_driver_statein(
             physics_state.prsik,
             physics_state.phii,
@@ -1606,6 +1783,7 @@ class Physics:
             physics_state.delprsi,
             self._del_gz,
         )
+        # if self._first_step:
         if self._prescribe_sst:
             if surface_state is None:
                 raise ValueError(
@@ -1613,6 +1791,7 @@ class Physics:
                 )
             self._set_sst(surface_state.tsfc, surface_state.islmsk, self._gridlat)
             physics_state.tsfc.field[:] = surface_state.tsfc.field[:]
+
         # If PBL scheme is present, physics_state should be updated here
         self._get_phi_fv3(
             physics_state.pt,
@@ -1914,7 +2093,73 @@ class Physics:
                 self.pbl_state.hpbl,
                 timestep,
             )
+        # Slab ocean goes here
+        # Orograpgic GWD goes here
+        # O3 and H2O physics goes here
 
+        self._update_pt_qvap_phi(
+            physics_state.pt,
+            physics_state.qvapor,
+            physics_state.phil,
+            physics_state.phii,
+            self._t1,
+            self._qvapor1,
+            self._phil1,
+            self._phii1,
+            self._layer_flip,
+            self._level_flip
+        )
+        self._get_phi_fv3(
+            physics_state.pt,
+            physics_state.qvapor,
+            self._del_gz,
+            physics_state.phii,
+            physics_state.phil,
+        )
+        self._update_pt_qvap_phi(
+            self._t1,
+            self._qvapor1,
+            self._phil1,
+            self._phii1,
+            physics_state.pt,
+            physics_state.qvapor,
+            physics_state.phil,
+            physics_state.phii,
+            self._layer_flip,
+            self._level_flip
+        )
+
+        if self._samf_shalconv or self._deep_convection:
+            self._convective_tracers(
+                self._clw,
+                self._cnvc,
+                self._cnvw,
+                self._qliquid1,
+                self._qrain1,
+                self._qice1,
+                self._qsnow1,
+                self._qgraupel1,
+                self._qo3mr1,
+                self._qsgs_tke1,
+                self._ktop,
+                self._kbot,
+            )
+
+        if self._deep_convection:
+            # Deep Convection goes here
+            pass
+        else:
+            zero_deep_convection_terms(
+                self._cld1d,
+                self._rain1,
+                self._ud_mf,
+                self._dd_mf,
+                self._dt_mf,
+                self._cnvw,
+                self._cnvc,
+            )
+
+        # Convective GWD goes here
         # Shallow convection:
         if self._samf_shalconv:
             self._fill_shalconv_state(
@@ -1931,18 +2176,20 @@ class Physics:
                 self.shalconv_state.psp,
                 self.shalconv_state.kcnv,
                 self.shalconv_state.garea,
+                self.shalconv_state.rn,
+                self.shalconv_state.ud_mf,
+                self.shalconv_state.dt_mf,
+                self.shalconv_state.cnvw,
+                self.shalconv_state.cnvc,
+                self.shalconv_state.kbot,
+                self.shalconv_state.ktop,
                 self.shalconv_state.islimsk,
                 self._qvapor1,
                 self._t1,
                 self._u1,
                 self._v1,
                 self._qliquid1,
-                self._qrain1,
-                self._qice1,
-                self._qsnow1,
-                self._qgraupel1,
-                self._qo3mr1,
-                self._qsgs_tke1,
+                self._clw,
                 self._w1,
                 physics_state.hpbl,
                 self._prsl1,
@@ -1950,6 +2197,13 @@ class Physics:
                 self._delp1,
                 physics_state.pgr,
                 self._area,
+                self._rain1,
+                self._ud_mf,
+                self._dt_mf,
+                self._cnvw,
+                self._cnvc,
+                self._kbot,
+                self._ktop
             )
 
             self._samf_shallow_convection(self.shalconv_state)
@@ -1959,6 +2213,23 @@ class Physics:
                 self._u1,
                 self._v1,
                 self._qvapor1,
+                self._clw,
+                self._rain1,
+                self._ud_mf,
+                self._dt_mf,
+                self.shalconv_state.t1,
+                self.shalconv_state.u1,
+                self.shalconv_state.v1,
+                self.shalconv_state.q1,
+                self.shalconv_state.qtr,
+                self.shalconv_state.rn,
+                self.shalconv_state.ud_mf,
+                self.shalconv_state.dt_mf,
+            )
+
+        if self._samf_shalconv or self._deep_convection:
+            self._tracers_from_convection(
+                self._clw,
                 self._qliquid1,
                 self._qrain1,
                 self._qice1,
@@ -1966,11 +2237,6 @@ class Physics:
                 self._qgraupel1,
                 self._qo3mr1,
                 self._qsgs_tke1,
-                self.shalconv_state.t1,
-                self.shalconv_state.u1,
-                self.shalconv_state.v1,
-                self.shalconv_state.q1,
-                self.shalconv_state.qtr,
             )
 
         self._flip_fields(
@@ -2172,3 +2438,4 @@ class Physics:
                 )
         else:
             ndsl_log.info("No microphysics selected, skipping...")
+        self._nsteps += 1

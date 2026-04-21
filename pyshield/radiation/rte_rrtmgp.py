@@ -51,9 +51,9 @@ def calc_heating_rate(flux_up, flux_down, p_lev):
         heating_rate: layer heating rate
     """
     return (
-        (flux_up[0, 0, 1] - flux_up - flux_down[0, 0, 1] + flux_down)
+        ((flux_up + flux_down[0, 0, 1]) - (flux_up[0, 0, 1] + flux_down))
         * GRAV
-        / (CP_DRY * (p_lev[0, 0, 1] - p_lev))
+        / (CP_DRY * (p_lev - p_lev[0, 0, 1]))
     )
 
 
@@ -656,7 +656,6 @@ class RTE_RRTMGPDriver:
                 pyRTE-RRTMGP
         """
         self._accumulate_radiation_inputs(state, sfc_state, date)
-        breakpoint()
         if self._first_step:
             ndsl_log.info("first step")
             self.radx = state.to_rterrtmgp_xr()
@@ -763,6 +762,7 @@ class RTE_RRTMGPDriver:
             state.hrtsw_clr,
             state.hrtlw_clr,
         )
+        ndsl_log.info(f"max ISW Flux: {state.fswd.field[:, :, -1].max()}, max OLR: {state.flwu.field[:, :, -1].max()}, min OLR: {state.flwu.field[:, :, -1].min()}")
 
         if self._first_step:
             self._first_step = False

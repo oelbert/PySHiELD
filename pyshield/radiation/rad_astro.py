@@ -292,8 +292,8 @@ def solar(
         e1 = ep
         iter = iter + 1
         if iter > 10:
-            print(f"ITERATION COUNT FOR LOOP 32 = {iter}")
-            print(f"E, EP, CD =', {e1}, {ep}, {cd}")
+            ndsl_log.info(f"ITERATION COUNT FOR LOOP 32 = {iter}")
+            ndsl_log.info(f"E, EP, CD =', {e1}, {ep}, {cd}")
             break
 
     eq = 2.0 * np.arctan(er * np.tan(0.5 * e1))
@@ -317,7 +317,7 @@ def solar(
         iter = iter + 1
 
         if iter > 10:
-            print(f"ITERATION COUNT FOR LOOP 31 = {iter}")
+            ndsl_log.info(f"ITERATION COUNT FOR LOOP 31 = {iter}")
             break
 
     w1 = 2.0 * np.arctan(er * np.tan(0.5 * e1))
@@ -452,7 +452,8 @@ def solar_update(
         (constants.PI / 12.0) * dtswh / float(nstp - 1)
     )  # solar angle inc during each calc step
 
-    ndsl_log.info(f"Julian date: {fjd1},  solcon: {solcon}, RA: {alp}, Dec: {dlt}, incident angle: {anginc}, nstp: {nstp}")
+    ndsl_log.info(f"Julian date: {fjd1},  solcon: {solcon}, RA: {alp}, Dec: {dlt}, angle increment: {anginc}, nstp: {nstp}")
+    ndsl_log.info(f"sindec: {sdec},  cosdec: {cdec}, Equation of Time: {slag}")
 
     return slag, sdec, cdec, anginc, solcon, solc0, nstp, iyr_sav
 

@@ -10,6 +10,7 @@ from dacite import Config, from_dict
 import pyshield.constants as physcons
 from ndsl import MetaEnumStr
 from ndsl.dsl.gt4py_utils import tracer_variables
+from ndsl.logging import ndsl_log
 from ndsl.dsl.typing import Float, set_4d_field_size
 from ndsl.utils import f90nml_as_dict
 
@@ -237,11 +238,13 @@ class PhysicsConfig:
                 self.nsswr = int(self.fhswr / self.dt_atmos)
             else:
                 self.nsswr = 1
+        ndsl_log.info(f"Calling SW radiation every {self.nsswr} physics steps")
         if self.nslwr == 0:
             if self.dt_atmos != 0:
                 self.nslwr = int(self.fhlwr / self.dt_atmos)
             else:
                 self.nslwr = 1
+        ndsl_log.info(f"Calling LW radiation every {self.nslwr} physics steps")
 
     @classmethod
     def from_f90nml(
