@@ -5,9 +5,10 @@ from f90nml import Namelist
 
 import ndsl.dsl.gt4py_utils as utils
 from ndsl import Quantity, StencilFactory
-from ndsl.constants import X_DIM, X_INTERFACE_DIM, Y_DIM, Y_INTERFACE_DIM, Z_DIM
+from ndsl.constants import I_DIM, I_INTERFACE_DIM, J_DIM, J_INTERFACE_DIM, K_DIM
 from ndsl.dsl.typing import FloatField, FloatFieldIJ
 from ndsl.utils import safe_assign_array
+from pyshield.tracer_workarounds import tracer_variables
 from pyshield.update import ApplyPhysicsToDycore
 from tests.savepoint.translate.translate_physics import (
     ParallelPhysicsTranslate2Py,
@@ -140,7 +141,7 @@ class TranslateFVUpdatePhys(ParallelPhysicsTranslate2Py):
 
             names_4d = None
             if len(inputs[serialname].shape) == 4:
-                names_4d = info.get("names_4d", utils.tracer_variables)
+                names_4d = info.get("names_4d", tracer_variables)
 
             dummy_axes = info.get("dummy_axes", None)
             axis = info.get("axis", 2)
@@ -169,10 +170,11 @@ class TranslateFVUpdatePhys(ParallelPhysicsTranslate2Py):
             storage = inputs.pop(key)
             tendencies[key] = Quantity(
                 storage,
-                dims=[X_DIM, Y_DIM, Z_DIM],
+                dims=[I_DIM, J_DIM, K_DIM],
                 units="test",
                 origin=(0, 0, 0),
                 extent=storage.shape,
+                backend=self.grid.quantity_factory.backend,
             )
         state = DycoreState(**inputs)
         self._base.compute_func = ApplyPhysicsToDycore(
@@ -186,14 +188,14 @@ class TranslateFVUpdatePhys(ParallelPhysicsTranslate2Py):
             tendencies["u_dt"],
             tendencies["v_dt"],
         )
-        dims_u = [X_DIM, Y_INTERFACE_DIM, Z_DIM]
+        dims_u = [I_DIM, J_INTERFACE_DIM, K_DIM]
         u_quantity = self.grid.make_quantity(
             state.u,
             dims=dims_u,
             origin=self.grid.sizer.get_origin(dims_u),
             extent=self.grid.sizer.get_extent(dims_u),
         )
-        dims_v = [X_INTERFACE_DIM, Y_DIM, Z_DIM]
+        dims_v = [I_INTERFACE_DIM, J_DIM, K_DIM]
         v_quantity = self.grid.make_quantity(
             state.v,
             dims=dims_v,

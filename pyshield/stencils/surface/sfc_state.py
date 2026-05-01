@@ -5,7 +5,7 @@ import xarray as xr
 
 import ndsl.dsl.gt4py_utils as gt_utils
 from ndsl import GridSizer, Quantity, QuantityFactory, State
-from ndsl.constants import X_DIM, Y_DIM, Z_DIM
+from ndsl.constants import I_DIM, J_DIM, K_DIM
 from ndsl.dsl.typing import Bool, Float, Int
 from ndsl.restart._legacy_restart import open_restart
 from ndsl.typing import Communicator
@@ -16,7 +16,7 @@ class SurfaceState(State):
     tsfc: Quantity = field(
         metadata={
             "name": "surface_temperature",
-            "dims": [X_DIM, Y_DIM],
+            "dims": [I_DIM, J_DIM],
             "units": "K",
             "intent": "inout",
         }
@@ -25,7 +25,7 @@ class SurfaceState(State):
     stc: Quantity = field(
         metadata={
             "name": "soil_temperature_content",
-            "dims": [X_DIM, Y_DIM, Z_DIM],
+            "dims": [I_DIM, J_DIM, K_DIM],
             "units": "K",
             "intent": "inout",
         }
@@ -34,7 +34,7 @@ class SurfaceState(State):
     qsfc: Quantity = field(
         metadata={
             "name": "surface_specific_humidity",
-            "dims": [X_DIM, Y_DIM],
+            "dims": [I_DIM, J_DIM],
             "units": "kg/kg",
             "intent": "inout",
         }
@@ -43,7 +43,7 @@ class SurfaceState(State):
     snowd: Quantity = field(
         metadata={
             "name": "snow_depth",
-            "dims": [X_DIM, Y_DIM],
+            "dims": [I_DIM, J_DIM],
             "units": "mm",
             "intent": "inout",
         }
@@ -52,7 +52,7 @@ class SurfaceState(State):
     sncovr: Quantity = field(
         metadata={
             "name": "snow_cover_area_fraction",
-            "dims": [X_DIM, Y_DIM],
+            "dims": [I_DIM, J_DIM],
             "units": "",
             "intent": "inout",
         }
@@ -61,7 +61,7 @@ class SurfaceState(State):
     snoalb: Quantity = field(
         metadata={
             "name": "maximum_snow_albedo_in_fraction",
-            "dims": [X_DIM, Y_DIM],
+            "dims": [I_DIM, J_DIM],
             "units": "",
             "intent": "inout",
         }
@@ -70,7 +70,7 @@ class SurfaceState(State):
     albedo: Quantity = field(
         metadata={
             "name": "mean_albedo",
-            "dims": [X_DIM, Y_DIM],
+            "dims": [I_DIM, J_DIM],
             "units": "",
             "intent": "inout",
         }
@@ -79,7 +79,7 @@ class SurfaceState(State):
     alvsf: Quantity = field(
         metadata={
             "name": "mean_visible_albedo_with_strong_cosz_dependency",
-            "dims": [X_DIM, Y_DIM],
+            "dims": [I_DIM, J_DIM],
             "units": "",
             "intent": "inout",
         }
@@ -87,7 +87,7 @@ class SurfaceState(State):
     alnsf: Quantity = field(
         metadata={
             "name": "mean_near_ir_albedo_with_strong_cosz_dependency",
-            "dims": [X_DIM, Y_DIM],
+            "dims": [I_DIM, J_DIM],
             "units": "",
             "intent": "inout",
         }
@@ -95,7 +95,7 @@ class SurfaceState(State):
     alvwf: Quantity = field(
         metadata={
             "name": "mean_visible_albedo_with_weak_cosz_dependency",
-            "dims": [X_DIM, Y_DIM],
+            "dims": [I_DIM, J_DIM],
             "units": "",
             "intent": "inout",
         }
@@ -103,7 +103,7 @@ class SurfaceState(State):
     alnwf: Quantity = field(
         metadata={
             "name": "mean_near_ir_albedo_with_weak_cosz_dependency",
-            "dims": [X_DIM, Y_DIM],
+            "dims": [I_DIM, J_DIM],
             "units": "",
             "intent": "inout",
         }
@@ -112,7 +112,7 @@ class SurfaceState(State):
     zorl: Quantity = field(
         metadata={
             "name": "composite_surface_roughness",
-            "dims": [X_DIM, Y_DIM],
+            "dims": [I_DIM, J_DIM],
             "units": "cm",
             "intent": "in",
         }
@@ -121,7 +121,7 @@ class SurfaceState(State):
     ztrl: Quantity = field(
         metadata={
             "name": "t_and_q_surface_roughness",
-            "dims": [X_DIM, Y_DIM],
+            "dims": [I_DIM, J_DIM],
             "units": "cm",
             "intent": "in",
         }
@@ -130,7 +130,7 @@ class SurfaceState(State):
     hprim: Quantity = field(
         metadata={
             "name": "",
-            "dims": [X_DIM, Y_DIM],
+            "dims": [I_DIM, J_DIM],
             "units": "",
             "intent": "inout",
         }
@@ -139,7 +139,7 @@ class SurfaceState(State):
     wind: Quantity = field(
         metadata={
             "name": "surface_wind_speed",
-            "dims": [X_DIM, Y_DIM],
+            "dims": [I_DIM, J_DIM],
             "units": "m/s",
             "intent": "out",
         }
@@ -148,7 +148,7 @@ class SurfaceState(State):
     uustar: Quantity = field(
         metadata={
             "name": "boundary_layer_param",
-            "dims": [X_DIM, Y_DIM],
+            "dims": [I_DIM, J_DIM],
             "units": "",
             "intent": "out",
         }
@@ -157,7 +157,7 @@ class SurfaceState(State):
     islmsk: Quantity = field(
         metadata={
             "name": "ice_sea_land_mask",
-            "dims": [X_DIM, Y_DIM],
+            "dims": [I_DIM, J_DIM],
             "units": "",
             "intent": "in",
             "type": Int,
@@ -167,7 +167,7 @@ class SurfaceState(State):
     vegtype: Quantity = field(
         metadata={
             "name": "vegetation_type",
-            "dims": [X_DIM, Y_DIM],
+            "dims": [I_DIM, J_DIM],
             "units": "",
             "intent": "in",
             "type": Int,
@@ -177,7 +177,7 @@ class SurfaceState(State):
     vfrac: Quantity = field(
         metadata={
             "name": "vegetation_fraction",
-            "dims": [X_DIM, Y_DIM],
+            "dims": [I_DIM, J_DIM],
             "units": "",
             "intent": "in",
         }
@@ -186,7 +186,7 @@ class SurfaceState(State):
     shdmax: Quantity = field(
         metadata={
             "name": "max_fractional_green_vegetation_cover",
-            "dims": [X_DIM, Y_DIM],
+            "dims": [I_DIM, J_DIM],
             "units": "",
             "intent": "in",
         }
@@ -195,7 +195,7 @@ class SurfaceState(State):
     ffmm: Quantity = field(
         metadata={
             "name": "fm_PBL_parameter",
-            "dims": [X_DIM, Y_DIM],
+            "dims": [I_DIM, J_DIM],
             "units": "",
             "intent": "inout",
         }
@@ -204,7 +204,7 @@ class SurfaceState(State):
     ffhh: Quantity = field(
         metadata={
             "name": "fh_PBL_parameter",
-            "dims": [X_DIM, Y_DIM],
+            "dims": [I_DIM, J_DIM],
             "units": "",
             "intent": "inout",
         }
@@ -213,7 +213,7 @@ class SurfaceState(State):
     f10m: Quantity = field(
         metadata={
             "name": "sigma1_10m_wind_ratio",
-            "dims": [X_DIM, Y_DIM],
+            "dims": [I_DIM, J_DIM],
             "units": "",
             "intent": "inout",
         }
@@ -222,7 +222,7 @@ class SurfaceState(State):
     sfcemis: Quantity = field(
         metadata={
             "name": "sfc_lw_emissivity_fraction",
-            "dims": [X_DIM, Y_DIM],
+            "dims": [I_DIM, J_DIM],
             "units": "",
             "intent": "inout",
         }
@@ -231,7 +231,7 @@ class SurfaceState(State):
     srflag: Quantity = field(
         metadata={
             "name": "rain_snow_precipitation_flag",
-            "dims": [X_DIM, Y_DIM],
+            "dims": [I_DIM, J_DIM],
             "units": "",
             "intent": "inout",
             "type": Bool,
@@ -241,7 +241,7 @@ class SurfaceState(State):
     facsf: Quantity = field(
         metadata={
             "name": "fractional_coverage_with_strong_cosz_dependency",
-            "dims": [X_DIM, Y_DIM],
+            "dims": [I_DIM, J_DIM],
             "units": "",
             "intent": "inout",
         }
@@ -250,7 +250,7 @@ class SurfaceState(State):
     facwf: Quantity = field(
         metadata={
             "name": "fractional_coverage_with_weak_cosz_dependency",
-            "dims": [X_DIM, Y_DIM],
+            "dims": [I_DIM, J_DIM],
             "units": "",
             "intent": "inout",
         }
@@ -259,7 +259,7 @@ class SurfaceState(State):
     hice: Quantity = field(
         metadata={
             "name": "sea_ice_thickness",
-            "dims": [X_DIM, Y_DIM],
+            "dims": [I_DIM, J_DIM],
             "units": "unknown",
             "intent": "inout",
         }
@@ -268,7 +268,7 @@ class SurfaceState(State):
     fice: Quantity = field(
         metadata={
             "name": "ice_fraction_over_open_water_grid",
-            "dims": [X_DIM, Y_DIM],
+            "dims": [I_DIM, J_DIM],
             "units": "",
             "intent": "inout",
         }
@@ -277,7 +277,7 @@ class SurfaceState(State):
     tisfc: Quantity = field(
         metadata={
             "name": "surface_temperature_over_ice_fraction",
-            "dims": [X_DIM, Y_DIM],
+            "dims": [I_DIM, J_DIM],
             "units": "K",
             "intent": "inout",
         }
@@ -286,7 +286,7 @@ class SurfaceState(State):
     weasd: Quantity = field(
         metadata={
             "name": "water_equiv_accumulated_snow_depth",
-            "dims": [X_DIM, Y_DIM],
+            "dims": [I_DIM, J_DIM],
             "units": "kg/m**2",
             "intent": "inout",
         }
@@ -295,7 +295,7 @@ class SurfaceState(State):
     tprcp: Quantity = field(
         metadata={
             "name": "total_precip",
-            "dims": [X_DIM, Y_DIM],
+            "dims": [I_DIM, J_DIM],
             "units": "unknown",
             "intent": "out",
         }
@@ -304,7 +304,7 @@ class SurfaceState(State):
     u1: Quantity = field(
         metadata={
             "name": "lowest_level_x_wind",
-            "dims": [X_DIM, Y_DIM],
+            "dims": [I_DIM, J_DIM],
             "units": "m/s",
             "intent": "in",
         }
@@ -313,7 +313,7 @@ class SurfaceState(State):
     v1: Quantity = field(
         metadata={
             "name": "lowest_level_y_wind",
-            "dims": [X_DIM, Y_DIM],
+            "dims": [I_DIM, J_DIM],
             "units": "m/s",
             "intent": "in",
         }
@@ -322,7 +322,7 @@ class SurfaceState(State):
     qvapor: Quantity = field(
         metadata={
             "name": "lowest_level_specific_humidity",
-            "dims": [X_DIM, Y_DIM],
+            "dims": [I_DIM, J_DIM],
             "units": "kg/kg",
             "intent": "in",
         }
@@ -331,7 +331,7 @@ class SurfaceState(State):
     t1: Quantity = field(
         metadata={
             "name": "lowest_level_temperature",
-            "dims": [X_DIM, Y_DIM],
+            "dims": [I_DIM, J_DIM],
             "units": "K",
             "intent": "in",
         }
@@ -340,7 +340,7 @@ class SurfaceState(State):
     ps: Quantity = field(
         metadata={
             "name": "surface_pressure",
-            "dims": [X_DIM, Y_DIM],
+            "dims": [I_DIM, J_DIM],
             "units": "Pa",
             "intent": "in",
         }
@@ -349,7 +349,7 @@ class SurfaceState(State):
     phil: Quantity = field(
         metadata={
             "name": "layer_geopotential_height",
-            "dims": [X_DIM, Y_DIM],
+            "dims": [I_DIM, J_DIM],
             "units": "m",
             "intent": "in",
         }
@@ -358,7 +358,7 @@ class SurfaceState(State):
     prsl1: Quantity = field(
         metadata={
             "name": "",
-            "dims": [X_DIM, Y_DIM],
+            "dims": [I_DIM, J_DIM],
             "units": "",
             "intent": "in",
         }
@@ -367,7 +367,7 @@ class SurfaceState(State):
     prsik: Quantity = field(
         metadata={
             "name": "surface_layer_mean_pressure",
-            "dims": [X_DIM, Y_DIM],
+            "dims": [I_DIM, J_DIM],
             "units": "Pa",
             "intent": "in",
         }
@@ -376,7 +376,7 @@ class SurfaceState(State):
     prslk: Quantity = field(
         metadata={
             "name": "Exner_function",
-            "dims": [X_DIM, Y_DIM],
+            "dims": [I_DIM, J_DIM],
             "units": "",
             "intent": "in",
         }
@@ -385,7 +385,7 @@ class SurfaceState(State):
     rb: Quantity = field(
         metadata={
             "name": "bulk_Richardson_number",
-            "dims": [X_DIM, Y_DIM],
+            "dims": [I_DIM, J_DIM],
             "units": "",
             "intent": "out",
         }
@@ -394,7 +394,7 @@ class SurfaceState(State):
     stress: Quantity = field(
         metadata={
             "name": "surface_wind_stress",
-            "dims": [X_DIM, Y_DIM],
+            "dims": [I_DIM, J_DIM],
             "units": "Pa",
             "intent": "out",
         }
@@ -403,7 +403,7 @@ class SurfaceState(State):
     hflx: Quantity = field(
         metadata={
             "name": "sensible_heat_flux",
-            "dims": [X_DIM, Y_DIM],
+            "dims": [I_DIM, J_DIM],
             "units": "W/m**2",
             "intent": "out",
         }
@@ -412,7 +412,7 @@ class SurfaceState(State):
     evap: Quantity = field(
         metadata={
             "name": "evaporation_from_latent_heat_flux",
-            "dims": [X_DIM, Y_DIM],
+            "dims": [I_DIM, J_DIM],
             "units": "",
             "intent": "out",
         }
@@ -421,7 +421,7 @@ class SurfaceState(State):
     sfcdlw: Quantity = field(
         metadata={
             "name": "downward_longwave_surface_flux",
-            "dims": [X_DIM, Y_DIM],
+            "dims": [I_DIM, J_DIM],
             "units": "W/m**2",
             "intent": "in",
         }
@@ -430,7 +430,7 @@ class SurfaceState(State):
     sfcdsw: Quantity = field(
         metadata={
             "name": "downward_shortwave_surface_flux",
-            "dims": [X_DIM, Y_DIM],
+            "dims": [I_DIM, J_DIM],
             "units": "W/m**2",
             "intent": "in",
         }
@@ -439,7 +439,7 @@ class SurfaceState(State):
     sfcnsw: Quantity = field(
         metadata={
             "name": "net_shortwave_surface_flux",
-            "dims": [X_DIM, Y_DIM],
+            "dims": [I_DIM, J_DIM],
             "units": "W/m**2",
             "intent": "in",
         }
@@ -563,6 +563,7 @@ class SurfaceState(State):
                         _field.metadata["units"],
                         origin=sizer.get_origin(dims),
                         extent=sizer.get_extent(dims),
+                        backend=quantity_factory.backend,
                     )
                 else:
                     quantity = quantity_factory.zeros(

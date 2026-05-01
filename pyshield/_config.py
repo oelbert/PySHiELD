@@ -9,10 +9,10 @@ from dacite import Config, from_dict
 
 import pyshield.constants as physcons
 from ndsl import MetaEnumStr
-from ndsl.dsl.gt4py_utils import tracer_variables
 from ndsl.logging import ndsl_log
 from ndsl.dsl.typing import Float, set_4d_field_size
 from ndsl.utils import f90nml_as_dict
+from pyshield.tracer_workarounds import tracer_variables
 
 
 # TODO: This will become a TracerBundle when ready
@@ -68,9 +68,6 @@ class PhysicsConfig:
     nwat: int = DEFAULT_INT
     schemes: List = None
     ntracers: int = int(len(tracer_variables))
-    ntiw: int = DEFAULT_INT
-    ntcw: int = DEFAULT_INT
-    ntke: int = DEFAULT_INT
     do_qa: bool = DEFAULT_BOOL
     do_inline_mp: bool = False
     """Whether microphysics is inlined in the dycore"""

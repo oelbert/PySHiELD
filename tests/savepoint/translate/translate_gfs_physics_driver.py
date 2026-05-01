@@ -130,9 +130,7 @@ class TranslateGFSPhysicsDriver(TranslatePhysicsFortranData2Py):
             backend=self.stencil_factory.backend,
         )
 
-        quantity_factory = QuantityFactory.from_backend(
-            sizer, self.stencil_factory.backend
-        )
+        quantity_factory = QuantityFactory(sizer, backend=self.stencil_factory.backend)
         schemes = [PHYSICS_PACKAGES["GFS_microphysics"]]
         physics_state = PhysicsState(
             **inputs,

@@ -1,7 +1,7 @@
 from gt4py.cartesian.gtscript import PARALLEL, computation, interval
 
 from ndsl import QuantityFactory, StencilFactory, SubtileGridSizer
-from ndsl.constants import X_DIM, Y_DIM, Z_DIM
+from ndsl.constants import I_DIM, J_DIM, K_DIM
 from ndsl.dsl.typing import Float
 from ndsl.stencils.basic_operations import copy
 from pyshield._config import TRACER_DIM, FloatFieldTracer
@@ -25,12 +25,12 @@ class TridiT:
     ):
         idx = stencil_factory.grid_indexing
         self._cu = quantity_factory.zeros(
-            [X_DIM, Y_DIM, Z_DIM],
+            [I_DIM, J_DIM, K_DIM],
             units="unknown",
             dtype=Float,
         )
         self._rt = quantity_factory.zeros(
-            [X_DIM, Y_DIM, Z_DIM],
+            [I_DIM, J_DIM, K_DIM],
             units="unknown",
             dtype=Float,
         )
@@ -95,17 +95,17 @@ class Tridi2:
         )
 
         self._cu = quantity_factory.zeros(
-            [X_DIM, Y_DIM, Z_DIM],
+            [I_DIM, J_DIM, K_DIM],
             units="unknown",
             dtype=Float,
         )
         self._r1 = quantity_factory.zeros(
-            [X_DIM, Y_DIM, Z_DIM],
+            [I_DIM, J_DIM, K_DIM],
             units="unknown",
             dtype=Float,
         )
         self._r2 = quantity_factory.zeros(
-            [X_DIM, Y_DIM, Z_DIM, TRACER_DIM],
+            [I_DIM, J_DIM, K_DIM, TRACER_DIM],
             units="unknown",
             dtype=Float,
         )
@@ -168,17 +168,17 @@ class TridiN:
         )
 
         self._cu = quantity_factory.zeros(
-            [X_DIM, Y_DIM, Z_DIM],
+            [I_DIM, J_DIM, K_DIM],
             units="unknown",
             dtype=Float,
         )
         self._r1 = quantity_factory.zeros(
-            [X_DIM, Y_DIM, Z_DIM],
+            [I_DIM, J_DIM, K_DIM],
             units="unknown",
             dtype=Float,
         )
         self._r2 = quantity_factory.zeros(
-            [X_DIM, Y_DIM, Z_DIM, TRACER_DIM],
+            [I_DIM, J_DIM, K_DIM, TRACER_DIM],
             units="unknown",
             dtype=Float,
         )
@@ -230,9 +230,7 @@ class TranslateTridit(TranslatePhysicsFortranData2Py):
             backend=self.stencil_factory.backend,
         )
 
-        quantity_factory = QuantityFactory.from_backend(
-            sizer, self.stencil_factory.backend
-        )
+        quantity_factory = QuantityFactory(sizer, backend=self.stencil_factory.backend)
 
         self.make_storage_data_input_vars(inputs)
         compute_func = TridiT(self.stencil_factory, quantity_factory)
@@ -273,9 +271,7 @@ class TranslateTridi2(TranslatePhysicsFortranData2Py):
             layout=self.config.layout,
             backend=self.stencil_factory.backend,
         )
-        quantity_factory = QuantityFactory.from_backend(
-            sizer, self.stencil_factory.backend
-        )
+        quantity_factory = QuantityFactory(sizer, backend=self.stencil_factory.backend)
         compute_func = Tridi2(self.stencil_factory, quantity_factory)
 
         compute_func(**inputs)
@@ -315,10 +311,7 @@ class TranslateTridin(TranslatePhysicsFortranData2Py):
             layout=self.config.layout,
             backend=self.stencil_factory.backend,
         )
-        quantity_factory = QuantityFactory.from_backend(
-            sizer, self.stencil_factory.backend
-        )
-        config = self.config.pbl
+        quantity_factory = QuantityFactory(sizer, backend=self.stencil_factory.backend)
         compute_func = TridiN(self.stencil_factory, quantity_factory, 8)
 
         compute_func(**inputs)

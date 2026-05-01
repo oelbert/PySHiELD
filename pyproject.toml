@@ -14,7 +14,7 @@ classifiers = [
 ]
 dependencies = [
   "f90nml>=1.1.0",
-  "numpy==1.26.4",
+  "numpy>=2",
   "xarray",
   "pyrte-rrtmgp @ git+https://github.com/NOAA-GFDL/pyRTE-RRTMGP.git@main"
 ]
@@ -23,7 +23,7 @@ license = "Apache-2.0"
 license-files = ["LICENSE.md"]
 name = "pyshield"
 readme = "README.md"
-requires-python = ">=3.11.7, <3.13"
+requires-python = ">=3.11.7, <3.14"
 version = "0.2.0"
 
 [project.optional-dependencies]
@@ -35,18 +35,17 @@ dev = [
   "flake8-pyproject"
 ]
 extras = [
-  "pyshield[test]",
+  "pyshield[dev]",
   "pyshield[ndsl]",
   "pyshield[pyfv3]",
-  "pyshield[dev]"
+  "pyshield[test]"
 ]
-ndsl = ["ndsl @ git+https://github.com/NOAA-GFDL/NDSL.git@develop"]
-pyfv3 = ["pyfv3 @ git+https://github.com/NOAA-GFDL/PyFV3.git@develop"]
+ndsl = ["ndsl @ git+https://github.com/FlorianDeconinck/NDSL.git@feature/data_dimnesion_fields"]
+pyfv3 = ["pyfv3 @ git+https://github.com/FlorianDeconinck/pyFV3.git@feature/tracers_to_ddims_field"]
 test = [
+  "coverage",
   "pytest",
-  "pytest-subtests",
-  "serialbox",
-  "coverage"
+  "pytest-subtests"
 ]
 
 [project.urls]
@@ -88,13 +87,19 @@ sections = "FUTURE,STDLIB,THIRDPARTY,FIRSTPARTY,LOCALFOLDER"
 use_parentheses = true
 
 [tool.mypy]
-exclude = ["tests/conftest.py"]
 explicit_package_bases = true
 follow_imports = "normal"
 ignore_missing_imports = true
 namespace_packages = true
 strict_optional = false
 warn_unreachable = true
+
+[[tool.mypy.overrides]]
+ignore_errors = true
+module = [
+  # We currently can't type tracers correctly
+  "pyshield.stencils.*"
+]
 
 [tool.setuptools]
 include-package-data = true

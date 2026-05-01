@@ -5,25 +5,17 @@ import xarray as xr
 
 import ndsl.dsl.gt4py_utils as gt_utils
 from ndsl import GridSizer, Quantity, QuantityFactory
-from ndsl.constants import X_DIM, Y_DIM, Z_DIM
+from ndsl.constants import I_DIM, J_DIM, K_DIM
 from ndsl.dsl.typing import Float, Int
-from pyshield.stencils.shallow_convection._config import SC_TRACER_DIM
+from pyshield._config import TRACER_DIM
 
 
 @dataclass()
 class SAMFShalConvState:
-    q1: Quantity = field(
-        metadata={
-            "name": "specific_humidity",
-            "dims": [X_DIM, Y_DIM, Z_DIM],
-            "units": "kg/kg",
-            "intent": "inout",
-        }
-    )
     t1: Quantity = field(
         metadata={
             "name": "air_temperature",
-            "dims": [X_DIM, Y_DIM, Z_DIM],
+            "dims": [I_DIM, J_DIM, K_DIM],
             "units": "degK",
             "intent": "inout",
         }
@@ -31,7 +23,7 @@ class SAMFShalConvState:
     u1: Quantity = field(
         metadata={
             "name": "eastward_wind",
-            "dims": [X_DIM, Y_DIM, Z_DIM],
+            "dims": [I_DIM, J_DIM, K_DIM],
             "units": "m/s",
             "intent": "inout",
         }
@@ -39,24 +31,23 @@ class SAMFShalConvState:
     v1: Quantity = field(
         metadata={
             "name": "northward_wind",
-            "dims": [X_DIM, Y_DIM, Z_DIM],
+            "dims": [I_DIM, J_DIM, K_DIM],
             "units": "m/s",
             "intent": "inout",
         }
     )
     qtr: Quantity = field(
         metadata={
-            "name": "convected_tracers",
-            "dims": [X_DIM, Y_DIM, Z_DIM, SC_TRACER_DIM],
+            "name": "tracers",
+            "dims": [I_DIM, J_DIM, K_DIM, TRACER_DIM],
             "units": "kg/kg",
             "intent": "in",
         }
     )
-    # TODO: qtr currently is just every tracer except vapor. It should be simplified.
     dot: Quantity = field(
         metadata={
             "name": "layer_mean_vertical_velocity",
-            "dims": [X_DIM, Y_DIM, Z_DIM],
+            "dims": [I_DIM, J_DIM, K_DIM],
             "units": "Pa/s",
             "intent": "in",
         }
@@ -64,7 +55,7 @@ class SAMFShalConvState:
     hpbl: Quantity = field(
         metadata={
             "name": "pbl_height",
-            "dims": [X_DIM, Y_DIM],
+            "dims": [I_DIM, J_DIM],
             "units": "m",
             "intent": "in",
         }
@@ -72,7 +63,7 @@ class SAMFShalConvState:
     prslp: Quantity = field(
         metadata={
             "name": "mean_layer_pressure",
-            "dims": [X_DIM, Y_DIM, Z_DIM],
+            "dims": [I_DIM, J_DIM, K_DIM],
             "units": "Pa",
             "intent": "in",
         }
@@ -80,7 +71,7 @@ class SAMFShalConvState:
     phil: Quantity = field(
         metadata={
             "name": "layer_geopotential",
-            "dims": [X_DIM, Y_DIM, Z_DIM],
+            "dims": [I_DIM, J_DIM, K_DIM],
             "units": "m**2/s**2",
             "intent": "in",
         }
@@ -88,7 +79,7 @@ class SAMFShalConvState:
     delp: Quantity = field(
         metadata={
             "name": "pressure_thickness_of_atmospheric_layer",
-            "dims": [X_DIM, Y_DIM, Z_DIM],
+            "dims": [I_DIM, J_DIM, K_DIM],
             "units": "Pa",
             "intent": "in",
         }
@@ -96,7 +87,7 @@ class SAMFShalConvState:
     cnvw: Quantity = field(
         metadata={
             "name": "convective_cloud_water",
-            "dims": [X_DIM, Y_DIM, Z_DIM],
+            "dims": [I_DIM, J_DIM, K_DIM],
             "units": "kg/kg",
             "intent": "out",
         }
@@ -104,7 +95,7 @@ class SAMFShalConvState:
     cnvc: Quantity = field(
         metadata={
             "name": "convective_cloud_cover",
-            "dims": [X_DIM, Y_DIM, Z_DIM],
+            "dims": [I_DIM, J_DIM, K_DIM],
             "units": "",
             "intent": "out",
         }
@@ -112,7 +103,7 @@ class SAMFShalConvState:
     ud_mf: Quantity = field(
         metadata={
             "name": "updraft_mass_flux_times_timestep",
-            "dims": [X_DIM, Y_DIM, Z_DIM],
+            "dims": [I_DIM, J_DIM, K_DIM],
             "units": "kg/m**2",
             "intent": "out",
         }
@@ -120,7 +111,7 @@ class SAMFShalConvState:
     dt_mf: Quantity = field(
         metadata={
             "name": "ud_mf_at_cloud_top",
-            "dims": [X_DIM, Y_DIM, Z_DIM],
+            "dims": [I_DIM, J_DIM, K_DIM],
             "units": "kg/m**2",
             "intent": "out",
         }
@@ -128,7 +119,7 @@ class SAMFShalConvState:
     psp: Quantity = field(
         metadata={
             "name": "surface_pressure",
-            "dims": [X_DIM, Y_DIM],
+            "dims": [I_DIM, J_DIM],
             "units": "Pa",
             "intent": "in",
         }
@@ -136,7 +127,7 @@ class SAMFShalConvState:
     rn: Quantity = field(
         metadata={
             "name": "convective_rain",
-            "dims": [X_DIM, Y_DIM],
+            "dims": [I_DIM, J_DIM],
             "units": "m",
             "intent": "out",
         }
@@ -144,7 +135,7 @@ class SAMFShalConvState:
     kcnv: Quantity = field(
         metadata={
             "name": "flag_for_deep_convection",
-            "dims": [X_DIM, Y_DIM],
+            "dims": [I_DIM, J_DIM],
             "units": "",
             "intent": "inout",
             "dtype": Int,
@@ -153,7 +144,7 @@ class SAMFShalConvState:
     kbot: Quantity = field(
         metadata={
             "name": "index_for_cloud_base",
-            "dims": [X_DIM, Y_DIM],
+            "dims": [I_DIM, J_DIM],
             "units": "",
             "intent": "out",
             "dtype": Int,
@@ -162,7 +153,7 @@ class SAMFShalConvState:
     ktop: Quantity = field(
         metadata={
             "name": "index_for_cloud_top",
-            "dims": [X_DIM, Y_DIM],
+            "dims": [I_DIM, J_DIM],
             "units": "",
             "intent": "out",
             "dtype": Int,
@@ -171,7 +162,7 @@ class SAMFShalConvState:
     garea: Quantity = field(
         metadata={
             "name": "grid_area",
-            "dims": [X_DIM, Y_DIM],
+            "dims": [I_DIM, J_DIM],
             "units": "m**2",
             "intent": "in",
         }
@@ -180,7 +171,7 @@ class SAMFShalConvState:
     islimsk: Quantity = field(
         metadata={
             "name": "land_mask",
-            "dims": [X_DIM, Y_DIM],
+            "dims": [I_DIM, J_DIM],
             "units": "",
             "intent": "in",
             "dtype": Int,
@@ -222,6 +213,7 @@ class SAMFShalConvState:
                         _field.metadata["units"],
                         origin=sizer.get_origin(dims),
                         extent=sizer.get_extent(dims),
+                        backend=quantity_factory.backend,
                     )
                 else:
                     quantity = quantity_factory.zeros(dims, _field.metadata["units"])

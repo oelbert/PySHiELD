@@ -3,7 +3,7 @@ from typing import Tuple
 
 from dacite import Config, from_dict
 
-from ndsl.dsl.gt4py_utils import tracer_variables
+from pyshield.tracer_workarounds import tracer_variables
 
 
 DEFAULT_INT = 0
@@ -47,9 +47,9 @@ class PBLConfig:
     do_dk_hb19: bool = DEFAULT_BOOL
     """Flag to use HB19 background diffusion formula in satmedmf"""
     rlmn: float = 30.0
-    """Lower limit on aymptotic mixing length in satmedmf"""
+    """Lower limit on asymptotic mixing length in satmedmf"""
     rlmx: float = 300.0
-    """Upper limit on aymptotic mixing length in satmedmf"""
+    """Upper limit on asymptotic mixing length in satmedmf"""
     ntracers: int = int(len(tracer_variables))
     """Number of tracers"""
     ntiw: int = DEFAULT_INT

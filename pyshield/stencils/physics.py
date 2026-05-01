@@ -6,7 +6,7 @@ import ndsl.constants as constants
 import pyshield.constants as physcons
 from ndsl import QuantityFactory, StencilFactory, orchestrate
 from ndsl.comm import Comm
-from ndsl.constants import X_DIM, Y_DIM, Z_DIM, Z_INTERFACE_DIM
+from ndsl.constants import I_DIM, J_DIM, K_DIM, K_INTERFACE_DIM
 from ndsl.dsl.gt4py import BACKWARD, FORWARD, PARALLEL, computation, cos, exp
 from ndsl.dsl.gt4py import function as gtfunction
 from ndsl.dsl.gt4py import interval, log, sin
@@ -41,8 +41,6 @@ from pyshield.stencils.gfdl_cld_microphysics import (
 from pyshield.stencils.gfs_microphysics import GFSMicrophysics
 from pyshield.stencils.pbl import PBLConfig, SATMEDMFVDiffState, ScaleAwareTKEMoistEDMF
 from pyshield.stencils.shallow_convection import (
-    SC_TRACER_DIM,
-    FloatFieldShalConv,
     SAMFShalConvState,
     ScaleAwareMassFluxShallowConvection,
     ShallowConvectionConfig,
@@ -808,9 +806,10 @@ def update_pt_qvap_phi(
 
 
 def convective_tracers(
-    clw: FloatFieldShalConv,
+    clw: FloatFieldTracer,
     cnvc: FloatField,
     cnvw: FloatField,
+    qvapor: FloatField,
     qliquid: FloatField,
     qrain: FloatField,
     qice: FloatField,
@@ -818,36 +817,28 @@ def convective_tracers(
     qgraupel: FloatField,
     qo3mr: FloatField,
     qsgstke: FloatField,
+    qcld: FloatField,
     ktop: IntFieldIJ,
     kbot: IntFieldIJ,
 ):
-    from __externals__ import ntiw, ntcw, npz
+    from __externals__ import npz
     with computation(PARALLEL), interval(...):
-        clw[0, 0, 0][ntiw] = 0.0
-        clw[0, 0, 0][ntcw] = -999.9
+        clw[0, 0, 0][3] = 0.0  # ntiw
+        clw[0, 0, 0][1] = -999.9  # ntcw
 
         cnvc = 0.0
         cnvw = 0.0
 
-        ntr = 0
-        itr = 0
-        while ntr < 7:  # TODO: this shouldn't be hardcoded
-            if (ntr != ntcw) and (ntr != ntiw):
-                if itr == 0:
-                    clw[0, 0, 0][ntr] = qrain
-                elif itr == 1:
-                    clw[0, 0, 0][ntr] = qsnow
-                elif itr == 2:
-                    clw[0, 0, 0][ntr] = qgraupel
-                elif itr == 4:
-                    clw[0, 0, 0][ntr] = qo3mr
-                else:
-                    clw[0, 0, 0][ntr] = qsgstke
-                itr += 1
-            ntr += 1
-
-        # clw[0, 0, 0, ntiw] = qice  # index 0 in Fortran, only for MG microphysics
-        clw[0, 0, 0][ntcw] = qliquid  # index 1 in Fortran
+        # TODO: this shouldn't be hardcoded
+        clw[0, 0, 0][0] = qvapor
+        clw[0, 0, 0][2] = qrain
+        clw[0, 0, 0][4] = qsnow
+        clw[0, 0, 0][5] = qgraupel
+        clw[0, 0, 0][6] = qo3mr
+        clw[0, 0, 0][7] = qsgstke
+        clw[0, 0, 0][8] = qcld
+        # clw[0, 0, 0][3] = qice  # index 0 in Fortran, should be ntiw, only for MG microphysics
+        clw[0, 0, 0][1] = qliquid  # index 1 in Fortran, should be ntcw
 
     with computation(FORWARD), interval(0, 1):
         ktop = 1
@@ -875,11 +866,10 @@ def zero_deep_convection_terms(
 
 
 def fill_shalconv_state(
-    shalconv_q1: FloatField,
     shalconv_t1: FloatField,
     shalconv_u1: FloatField,
     shalconv_v1: FloatField,
-    shalconv_qtr: FloatFieldShalConv,
+    shalconv_qtr: FloatFieldTracer,
     shalconv_dot: FloatField,
     shalconv_hpbl: FloatFieldIJ,
     shalconv_prslp: FloatField,
@@ -896,11 +886,10 @@ def fill_shalconv_state(
     shalconv_kbot: FloatFieldIJ,
     shalconv_ktop: FloatFieldIJ,
     shalconv_islimsk: IntFieldIJ,
-    physics_q1: FloatField,
     physics_t1: FloatField,
     physics_u1: FloatField,
     physics_v1: FloatField,
-    physics_clw: FloatFieldShalConv,
+    physics_qtr: FloatFieldTracer,
     physics_dot: FloatField,
     physics_hpbl: FloatFieldIJ,
     physics_prslp: FloatField,
@@ -927,11 +916,9 @@ def fill_shalconv_state(
         shalconv_kcnv = 0  # no deep convection
         shalconv_islimsk = 0  # sea-only for now
     with computation(PARALLEL), interval(...):
-        shalconv_q1 = physics_q1
         shalconv_t1 = physics_t1
         shalconv_u1 = physics_u1
         shalconv_v1 = physics_v1
-        shalconv_qtr = physics_clw
         shalconv_dot = physics_dot
         shalconv_prslp = physics_prslp
         shalconv_phil = physics_phil
@@ -941,21 +928,22 @@ def fill_shalconv_state(
         shalconv_cnvw = physics_cnvw
         shalconv_cnvc = physics_cnvc
 
+        # TODO: These should not be hardcoded
+        shalconv_qtr[0, 0, 0][:] = physics_qtr[0, 0, 0][:]
+
 
 def results_from_shalconv(
     physics_t: FloatField,
     physics_u: FloatField,
     physics_v: FloatField,
-    physics_qvapor: FloatField,
-    physics_clw: FloatFieldShalConv,
+    physics_qtr: FloatFieldTracer,
     physics_rain1: FloatFieldIJ,
     physics_ud_mf: FloatField,
     physics_dt_mf: FloatField,
     shalconv_t1: FloatField,
     shalconv_u1: FloatField,
     shalconv_v1: FloatField,
-    shalconv_q1: FloatField,
-    shalconv_qtr: FloatFieldShalConv,
+    shalconv_qtr: FloatFieldTracer,
     shalconv_rain1: FloatFieldIJ,
     shalconv_ud_mf: FloatField,
     shalconv_dt_mf: FloatField,
@@ -966,14 +954,15 @@ def results_from_shalconv(
         physics_t = shalconv_t1
         physics_u = shalconv_u1
         physics_v = shalconv_v1
-        physics_qvapor = shalconv_q1
-        physics_clw = shalconv_qtr
         physics_ud_mf = shalconv_ud_mf
         physics_dt_mf = shalconv_dt_mf
+        physics_qtr[0, 0, 0][:] = shalconv_qtr[0, 0, 0][:]
+        if physics_qtr[0, 0, 0][1] <= -999.0:  # Should be ntcw, not hardcoded to 1
+            physics_qtr[0, 0, 0][1] = 0.0
 
 
-def tracers_from_convection(
-    clw: FloatFieldShalConv,
+def unpack_tracers(
+    qvapor: FloatField,
     qliquid: FloatField,
     qrain: FloatField,
     qice: FloatField,
@@ -981,29 +970,20 @@ def tracers_from_convection(
     qgraupel: FloatField,
     qo3mr: FloatField,
     qsgstke: FloatField,
+    qcld: FloatField,
+    clw: FloatFieldTracer,
 ):
-    from __externals__ import ntiw, ntcw
     with computation(PARALLEL), interval(...):
-        if clw[0, 0, 0][ntcw] <= -999.0:
-            clw[0, 0, 0][ntcw] = 0.0
-
-        ntr: np.int32 = 0
-        itr = 0
-        while ntr < 7:  # TODO: this shouldn't be hardcoded
-            if (ntr != ntcw) and (ntr != ntiw):
-                if itr == 0:
-                    qrain = clw[0, 0, 0][ntr]
-                elif itr == 1:
-                    qsnow = clw[0, 0, 0][ntr]
-                elif itr == 2:
-                    qgraupel = clw[0, 0, 0][ntr]
-                elif itr == 4:
-                    qo3mr = clw[0, 0, 0][ntr]
-                else:
-                    qsgstke = clw[0, 0, 0][ntr]
-                itr += 1
-            ntr += 1
-        qliquid = clw[0, 0, 0][ntcw]
+        # TODO: this shouldn't be hardcoded
+        qvapor = clw[0, 0, 0][0]
+        qrain = clw[0, 0, 0][2]
+        qsnow = clw[0, 0, 0][4]
+        qgraupel = clw[0, 0, 0][5]
+        qo3mr = clw[0, 0, 0][6]
+        qsgstke = clw[0, 0, 0][7]
+        qcld = clw[0, 0, 0][8]
+        qice = clw[0, 0, 0][3]  # index 0 in Fortran, should be ntiw,
+        qliquid = clw[0, 0, 0][1]  # index 1 in Fortran, should be ntcw
 
 
 def prepare_gfs_microphysics(
@@ -1263,9 +1243,7 @@ class Physics:
                 f"ntracers != 9 has not been implemented, got {self._ntracers}"
             )
         self.TRACER_DIM = TRACER_DIM
-        self.SC_TRACER_DIM = SC_TRACER_DIM
         self.quantity_factory = quantity_factory
-        # TODO SC_TRACER_DIM shouldn't be hardcoded
         self.quantity_factory.add_data_dimensions(
             {
                 self.TRACER_DIM: self._ntracers,
@@ -1298,10 +1276,10 @@ class Physics:
         self._hydro_delp = namelist.hydro_delp
 
         self._level_flip = self.quantity_factory.zeros(
-            dims=[Z_INTERFACE_DIM], units="", dtype=Int
+            dims=[K_INTERFACE_DIM], units="", dtype=Int
         )
         self._layer_flip = self.quantity_factory.zeros(
-            dims=[Z_DIM], units="", dtype=Int
+            dims=[K_DIM], units="", dtype=Int
         )
         for k in range(npz):
             self._level_flip.data[k] = npz - 1 - 2 * k
@@ -1310,13 +1288,13 @@ class Physics:
 
         def make_quantity():
             return self.quantity_factory.zeros(
-                dims=[X_DIM, Y_DIM, Z_DIM], units="unknown"
+                dims=[I_DIM, J_DIM, K_DIM], units="unknown"
             )
 
         def make_quantity_2d():
-            return quantity_factory.zeros(dims=[X_DIM, Y_DIM], units="unknown")
+            return quantity_factory.zeros(dims=[I_DIM, J_DIM], units="unknown")
 
-        self._rain1 = quantity_factory.zeros(dims=[X_DIM, Y_DIM], units="unknown")
+        self._rain1 = quantity_factory.zeros(dims=[I_DIM, J_DIM], units="unknown")
         self._dm3d = make_quantity()
         self._del_gz = make_quantity()
         self._u1 = make_quantity()
@@ -1326,10 +1304,10 @@ class Physics:
         self._prsl1 = make_quantity()
         self._delp1 = make_quantity()
         self._prsi1 = quantity_factory.zeros(
-            dims=[X_DIM, Y_DIM, Z_INTERFACE_DIM], units="unknown"
+            dims=[I_DIM, J_DIM, K_INTERFACE_DIM], units="unknown"
         )
         self._prsik1 = quantity_factory.zeros(
-            dims=[X_DIM, Y_DIM, Z_INTERFACE_DIM], units="unknown"
+            dims=[I_DIM, J_DIM, K_INTERFACE_DIM], units="unknown"
         )
         self._prslk1 = make_quantity()
         self._qvapor1 = make_quantity()
@@ -1343,7 +1321,7 @@ class Physics:
         self._qcld1 = make_quantity()
         self._phil1 = make_quantity()
         self._phii1 = quantity_factory.zeros(
-            dims=[X_DIM, Y_DIM, Z_INTERFACE_DIM], units="unknown"
+            dims=[I_DIM, J_DIM, K_INTERFACE_DIM], units="unknown"
         )
         # Convective terms:
         self._cld1d = make_quantity_2d()
@@ -1363,7 +1341,7 @@ class Physics:
         self._f10m = make_quantity_2d()
         self._emis = make_quantity_2d()
         self._srflg = self.quantity_factory.zeros(
-            dims=[X_DIM, Y_DIM], units="unknown", dtype=Bool
+            dims=[I_DIM, J_DIM], units="unknown", dtype=Bool
         )
         self._hice = make_quantity_2d()
         self._fice = make_quantity_2d()
@@ -1453,17 +1431,12 @@ class Physics:
         )
         self._flip_fields = stencil_factory.from_dims_halo(
             func=flip_fields,
-            compute_dims=[X_DIM, Y_DIM, Z_INTERFACE_DIM],
+            compute_dims=[I_DIM, J_DIM, K_INTERFACE_DIM],
         )
 
         self._update_pt_qvap_phi = stencil_factory.from_dims_halo(
             func=update_pt_qvap_phi,
-            compute_dims=[X_DIM, Y_DIM, Z_INTERFACE_DIM],
-        )
-
-        self._zero_deep_convection = stencil_factory.from_dims_halo(
-            func=zero_deep_convection_terms,
-            compute_dims=[X_DIM, Y_DIM, Z_DIM],
+            compute_dims=[I_DIM, J_DIM, K_INTERFACE_DIM],
         )
 
         if self._hydro_delp:
@@ -1505,7 +1478,7 @@ class Physics:
             sigma = calc_sigma(grid_data.ak.data, grid_data.bk.data, 0)
             self._copy_to_radiation = stencil_factory.from_dims_halo(
                 func=copy_to_radiation,
-                compute_dims=[X_DIM, Y_DIM, Z_INTERFACE_DIM],
+                compute_dims=[I_DIM, J_DIM, K_INTERFACE_DIM],
             )
             self._copy_from_radiation = stencil_factory.from_origin_domain(
                 func=copy_from_radiation,
@@ -1556,12 +1529,12 @@ class Physics:
         self._dtdt = make_quantity()
         self._dtdtc = make_quantity()
         self._dqdt = self.quantity_factory.zeros(
-            [X_DIM, Y_DIM, Z_DIM, self.TRACER_DIM],
+            [I_DIM, J_DIM, K_DIM, self.TRACER_DIM],
             units="unknown",
             dtype=Float,
         )
         self._qgrs = self.quantity_factory.zeros(
-            [X_DIM, Y_DIM, Z_DIM, self.TRACER_DIM],
+            [I_DIM, J_DIM, K_DIM, self.TRACER_DIM],
             units="unknown",
             dtype=Float,
         )
@@ -1580,7 +1553,7 @@ class Physics:
             self._satm_edmf = True
             self._fill_pbl_state = stencil_factory.from_dims_halo(
                 func=fill_pbl_state,
-                compute_dims=[X_DIM, Y_DIM, Z_INTERFACE_DIM],
+                compute_dims=[I_DIM, J_DIM, K_INTERFACE_DIM],
                 externals={"levs": nz},
             )
             self._pbl = ScaleAwareTKEMoistEDMF(
@@ -1591,7 +1564,7 @@ class Physics:
             )
             self._results_from_pbl = stencil_factory.from_dims_halo(
                 func=results_from_pbl,
-                compute_dims=[X_DIM, Y_DIM, Z_INTERFACE_DIM],
+                compute_dims=[I_DIM, J_DIM, K_INTERFACE_DIM],
             )
         else:
             self._satm_edmf = False
@@ -1601,43 +1574,16 @@ class Physics:
             raise NotImplementedError("Deep Convection has not been implemented")
         else:
             self._deep_convection = False
+            self._zero_deep_convection = stencil_factory.from_dims_halo(
+                func=zero_deep_convection_terms,
+                compute_dims=[I_DIM, J_DIM, K_DIM],
+            )
 
         # Setup shallow convection
         if "SAMF_SHALCONV" in schemes:
             if sc_config is None:
                 raise ValueError("Shallow convection enabled but no config specified")
             self._samf_shalconv = True
-            self.quantity_factory.add_data_dimensions(
-                {
-                    self.SC_TRACER_DIM: sc_config.nsamftrac + 2,
-                }
-            )
-
-            # TODO: these should be defined if deep convection is active too:
-            self._clw = quantity_factory.zeros(
-                [X_DIM, Y_DIM, Z_DIM, self.SC_TRACER_DIM],
-                units="unknown",
-                dtype=Float,
-            )
-            self._convective_tracers = stencil_factory.from_origin_domain(
-                func=convective_tracers,
-                origin=grid_indexing.origin_compute(),
-                domain=grid_indexing.domain_compute(),
-                externals={
-                    "ntcw": int(namelist.ntcw),
-                    "ntiw": int(namelist.ntiw),
-                    "npz": int(npz),
-                }
-            )
-            self._tracers_from_convection = stencil_factory.from_origin_domain(
-                func=tracers_from_convection,
-                origin=grid_indexing.origin_compute(),
-                domain=grid_indexing.domain_compute(),
-                externals={
-                    "ntcw": int(namelist.ntcw),
-                    "ntiw": int(namelist.ntiw),
-                }
-            )
 
             self._fill_shalconv_state = stencil_factory.from_origin_domain(
                 func=fill_shalconv_state,
@@ -1657,6 +1603,26 @@ class Physics:
             )
         else:
             self._samf_shalconv = False
+        
+        if self._deep_convection or self._samf_shalconv:
+            self._clw = quantity_factory.zeros(
+                [I_DIM, J_DIM, K_DIM, self.TRACER_DIM],
+                units="unknown",
+                dtype=Float,
+            )
+            self._convective_tracers = stencil_factory.from_origin_domain(
+                func=convective_tracers,
+                origin=grid_indexing.origin_compute(),
+                domain=grid_indexing.domain_compute(),
+                externals={
+                    "npz": int(npz),
+                }
+            )
+            self._unpack_tracers = stencil_factory.from_origin_domain(
+                func=unpack_tracers,
+                origin=grid_indexing.origin_compute(),
+                domain=grid_indexing.domain_compute(),
+            )
 
         # Setup microphysics
         if "GFS_microphysics" in schemes:
@@ -2136,6 +2102,7 @@ class Physics:
                 self._clw,
                 self._cnvc,
                 self._cnvw,
+                self._qvapor1,
                 self._qliquid1,
                 self._qrain1,
                 self._qice1,
@@ -2143,6 +2110,7 @@ class Physics:
                 self._qgraupel1,
                 self._qo3mr1,
                 self._qsgs_tke1,
+                self._qcld1,
                 self._ktop,
                 self._kbot,
             )
@@ -2165,7 +2133,6 @@ class Physics:
         # Shallow convection:
         if self._samf_shalconv:
             self._fill_shalconv_state(
-                self.shalconv_state.q1,
                 self.shalconv_state.t1,
                 self.shalconv_state.u1,
                 self.shalconv_state.v1,
@@ -2186,11 +2153,9 @@ class Physics:
                 self.shalconv_state.kbot,
                 self.shalconv_state.ktop,
                 self.shalconv_state.islimsk,
-                self._qvapor1,
                 self._t1,
                 self._u1,
                 self._v1,
-                self._qliquid1,
                 self._clw,
                 self._w1,
                 physics_state.hpbl,
@@ -2214,7 +2179,6 @@ class Physics:
                 self._t1,
                 self._u1,
                 self._v1,
-                self._qvapor1,
                 self._clw,
                 self._rain1,
                 self._ud_mf,
@@ -2222,7 +2186,6 @@ class Physics:
                 self.shalconv_state.t1,
                 self.shalconv_state.u1,
                 self.shalconv_state.v1,
-                self.shalconv_state.q1,
                 self.shalconv_state.qtr,
                 self.shalconv_state.rn,
                 self.shalconv_state.ud_mf,
@@ -2230,8 +2193,8 @@ class Physics:
             )
 
         if self._samf_shalconv or self._deep_convection:
-            self._tracers_from_convection(
-                self._clw,
+            self._unpack_tracers(
+                self._qvapor1,
                 self._qliquid1,
                 self._qrain1,
                 self._qice1,
@@ -2239,6 +2202,8 @@ class Physics:
                 self._qgraupel1,
                 self._qo3mr1,
                 self._qsgs_tke1,
+                self._qcld1,
+                self._clw,
             )
 
         self._flip_fields(
