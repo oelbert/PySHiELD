@@ -800,10 +800,11 @@ def update_pt_qvap_phi(
     layer_flip: IntFieldK,
     level_flip: IntFieldK,
 ):
-    t1 = t[0, 0, layer_flip]
-    q1 = q[0, 0, layer_flip]
-    phil1 = phil[0, 0, layer_flip]
-    phii1 = phii[0, 0, level_flip]
+    with computation(PARALLEL), interval(...):
+        t1 = t[0, 0, layer_flip]
+        q1 = q[0, 0, layer_flip]
+        phil1 = phil[0, 0, layer_flip]
+        phii1 = phii[0, 0, level_flip]
 
 
 def convective_tracers(
@@ -817,13 +818,13 @@ def convective_tracers(
     qgraupel: FloatField,
     qo3mr: FloatField,
     qsgstke: FloatField,
-    ktop: FloatFieldIJ,
-    kbot: FloatFieldIJ,
+    ktop: IntFieldIJ,
+    kbot: IntFieldIJ,
 ):
     from __externals__ import ntiw, ntcw, npz
     with computation(PARALLEL), interval(...):
-        clw[0, 0, 0, ntiw] = 0.0
-        clw[0, 0, 0, ntcw] = -999.9
+        clw[0, 0, 0][ntiw] = 0.0
+        clw[0, 0, 0][ntcw] = -999.9
 
         cnvc = 0.0
         cnvw = 0.0
@@ -833,23 +834,24 @@ def convective_tracers(
         while ntr < 7:  # TODO: this shouldn't be hardcoded
             if (ntr != ntcw) and (ntr != ntiw):
                 if itr == 0:
-                    clw[0, 0, 0, ntr] = qrain
+                    clw[0, 0, 0][ntr] = qrain
                 elif itr == 1:
-                    clw[0, 0, 0, ntr] = qsnow
+                    clw[0, 0, 0][ntr] = qsnow
                 elif itr == 2:
-                    clw[0, 0, 0, ntr] = qgraupel
+                    clw[0, 0, 0][ntr] = qgraupel
                 elif itr == 4:
-                    clw[0, 0, 0, ntr] = qo3mr
+                    clw[0, 0, 0][ntr] = qo3mr
                 else:
-                    clw[0, 0, 0, ntr] = qsgstke
+                    clw[0, 0, 0][ntr] = qsgstke
                 itr += 1
             ntr += 1
 
+        # clw[0, 0, 0, ntiw] = qice  # index 0 in Fortran, only for MG microphysics
+        clw[0, 0, 0][ntcw] = qliquid  # index 1 in Fortran
+
+    with computation(FORWARD), interval(0, 1):
         ktop = 1
         kbot = npz
-
-        # clw[0, 0, 0, ntiw] = qice  # index 0 in Fortran, only for MG microphysics
-        clw[0, 0, 0, ntcw] = qliquid  # index 1 in Fortran
 
 
 def zero_deep_convection_terms(
@@ -982,26 +984,26 @@ def tracers_from_convection(
 ):
     from __externals__ import ntiw, ntcw
     with computation(PARALLEL), interval(...):
-        if clw[0, 0, 0, ntcw] <= -999.0:
-            clw[0, 0, 0, ntcw] = 0.0
+        if clw[0, 0, 0][ntcw] <= -999.0:
+            clw[0, 0, 0][ntcw] = 0.0
 
-        ntr = 0
+        ntr: np.int32 = 0
         itr = 0
         while ntr < 7:  # TODO: this shouldn't be hardcoded
             if (ntr != ntcw) and (ntr != ntiw):
                 if itr == 0:
-                    qrain = clw[0, 0, 0, ntr]
+                    qrain = clw[0, 0, 0][ntr]
                 elif itr == 1:
-                    qsnow = clw[0, 0, 0, ntr]
+                    qsnow = clw[0, 0, 0][ntr]
                 elif itr == 2:
-                    qgraupel = clw[0, 0, 0, ntr]
+                    qgraupel = clw[0, 0, 0][ntr]
                 elif itr == 4:
-                    qo3mr = clw[0, 0, 0, ntr]
+                    qo3mr = clw[0, 0, 0][ntr]
                 else:
-                    qsgstke = clw[0, 0, 0, ntr]
+                    qsgstke = clw[0, 0, 0][ntr]
                 itr += 1
             ntr += 1
-        qliquid = clw[0, 0, 0, ntcw]
+        qliquid = clw[0, 0, 0][ntcw]
 
 
 def prepare_gfs_microphysics(
@@ -1622,9 +1624,9 @@ class Physics:
                 origin=grid_indexing.origin_compute(),
                 domain=grid_indexing.domain_compute(),
                 externals={
-                    "ntcw": namelist.ntcw,
-                    "ntiw": namelist.ntiw,
-                    "npz": npz,
+                    "ntcw": int(namelist.ntcw),
+                    "ntiw": int(namelist.ntiw),
+                    "npz": int(npz),
                 }
             )
             self._tracers_from_convection = stencil_factory.from_origin_domain(
@@ -1632,8 +1634,8 @@ class Physics:
                 origin=grid_indexing.origin_compute(),
                 domain=grid_indexing.domain_compute(),
                 externals={
-                    "ntcw": namelist.ntcw,
-                    "ntiw": namelist.ntiw,
+                    "ntcw": int(namelist.ntcw),
+                    "ntiw": int(namelist.ntiw),
                 }
             )
 
