@@ -26,6 +26,7 @@ from ndsl.stencils.basic_operations import copy
 from pyshield._config import (
     PHYSICS_PACKAGES,
     TRACER_DIM,
+    OZONE_DIM,
     FloatFieldTracer,
     PhysicsConfig,
 )
@@ -46,6 +47,7 @@ from pyshield.stencils.shallow_convection import (
     ShallowConvectionConfig,
 )
 from pyshield.stencils.surface import SurfaceConfig, SurfaceLayer, SurfaceState
+import pyshield.stencils.ozone as oz
 
 
 def calc_sigma(ak: np.ndarray, bk: np.ndarray, k_toa: int):
@@ -820,6 +822,7 @@ def convective_tracers(
     qcld: FloatField,
     ktop: IntFieldIJ,
     kbot: IntFieldIJ,
+    kcnv: IntFieldIJ,
 ):
     from __externals__ import npz
     with computation(PARALLEL), interval(...):
@@ -843,6 +846,7 @@ def convective_tracers(
     with computation(FORWARD), interval(0, 1):
         ktop = 1
         kbot = npz
+        kcnv = 0
 
 
 def zero_deep_convection_terms(
@@ -883,8 +887,8 @@ def fill_shalconv_state(
     shalconv_dt_mf: FloatField,
     shalconv_cnvw: FloatField,
     shalconv_cnvc: FloatField,
-    shalconv_kbot: FloatFieldIJ,
-    shalconv_ktop: FloatFieldIJ,
+    shalconv_kbot: IntFieldIJ,
+    shalconv_ktop: IntFieldIJ,
     shalconv_islimsk: IntFieldIJ,
     physics_t1: FloatField,
     physics_u1: FloatField,
@@ -896,14 +900,15 @@ def fill_shalconv_state(
     physics_phil: FloatField,
     physics_delp: FloatField,
     physics_psp: FloatFieldIJ,
+    physics_kcnv: IntFieldIJ,
     physics_garea: FloatFieldIJ,
     physics_rain1: FloatFieldIJ,
     physics_ud_mf: FloatField,
     physics_dt_mf: FloatField,
     physics_cnvw: FloatField,
     physics_cnvc: FloatField,
-    physics_kbot: FloatFieldIJ,
-    physics_ktop: FloatFieldIJ,
+    physics_kbot: IntFieldIJ,
+    physics_ktop: IntFieldIJ,
 ):
     with computation(FORWARD), interval(0, 1):
         shalconv_hpbl = physics_hpbl
@@ -913,7 +918,7 @@ def fill_shalconv_state(
         shalconv_kbot = physics_kbot
         shalconv_ktop = physics_ktop
         # These will be filled in as they're enabled by previous schemes
-        shalconv_kcnv = 0  # no deep convection
+        shalconv_kcnv = physics_kcnv
         shalconv_islimsk = 0  # sea-only for now
     with computation(PARALLEL), interval(...):
         shalconv_t1 = physics_t1
@@ -929,7 +934,7 @@ def fill_shalconv_state(
         shalconv_cnvc = physics_cnvc
 
         # TODO: These should not be hardcoded
-        shalconv_qtr[0, 0, 0][:] = physics_qtr[0, 0, 0][:]
+        shalconv_qtr[0, 0, 0] = physics_qtr[0, 0, 0]
 
 
 def results_from_shalconv(
@@ -956,7 +961,7 @@ def results_from_shalconv(
         physics_v = shalconv_v1
         physics_ud_mf = shalconv_ud_mf
         physics_dt_mf = shalconv_dt_mf
-        physics_qtr[0, 0, 0][:] = shalconv_qtr[0, 0, 0][:]
+        physics_qtr[0, 0, 0] = shalconv_qtr[0, 0, 0]
         if physics_qtr[0, 0, 0][1] <= -999.0:  # Should be ntcw, not hardcoded to 1
             physics_qtr[0, 0, 0][1] = 0.0
 
@@ -1218,7 +1223,7 @@ class Physics:
         namelist: PhysicsConfig,
         rad_config: RTE_RRTMGPConfig = None,
         pre_radiation=False,
-        sfc_config: SurfaceConfig = None,
+        surface_config: SurfaceConfig = None,
         pbl_config: PBLConfig = None,
         sc_config: ShallowConvectionConfig = None,
         gfdl_cld_mp_config: GFDLCloudMPConfig = None,
@@ -1242,15 +1247,23 @@ class Physics:
             raise NotImplementedError(
                 f"ntracers != 9 has not been implemented, got {self._ntracers}"
             )
+
+        # Setup ozone physics:
+        self._levozp, self._oz_coeff, self._ozlat, oz_pres, self._oztime, self._ozplin = oz.read_o3_data(1, "ozprd.nc")
+        self._jindx1, self._jindx2, self._ddy = oz.setindexoz(grid_data.lat.field[:], self._ozlat)
+
         self.TRACER_DIM = TRACER_DIM
+        self.OZONE_DIM = OZONE_DIM
         self.quantity_factory = quantity_factory
         self.quantity_factory.add_data_dimensions(
             {
                 self.TRACER_DIM: self._ntracers,
+                self.OZONE_DIM: self._oz_coeff,
             }
         )
 
         grid_indexing = stencil_factory.grid_indexing
+        ny = grid_indexing.domain[1]
         nz = grid_indexing.domain[2]
         npz = nz + 1
         self._setup_statein()
@@ -1281,18 +1294,25 @@ class Physics:
         self._layer_flip = self.quantity_factory.zeros(
             dims=[K_DIM], units="", dtype=Int
         )
+        self._k_val = quantity_factory.zeros(
+            [K_DIM],
+            units="unknown",
+            dtype=Int,
+        )
+            
         for k in range(npz):
-            self._level_flip.data[k] = npz - 1 - 2 * k
+            self._k_val[k] = k
+            self._level_flip[k] = npz - 1 - 2 * k
             if k < nz:
-                self._layer_flip.data[k] = nz - 1 - 2 * k
+                self._layer_flip[k] = nz - 1 - 2 * k
 
         def make_quantity():
             return self.quantity_factory.zeros(
                 dims=[I_DIM, J_DIM, K_DIM], units="unknown"
             )
 
-        def make_quantity_2d():
-            return quantity_factory.zeros(dims=[I_DIM, J_DIM], units="unknown")
+        def make_quantity_2d(type=Float):
+            return quantity_factory.zeros([I_DIM, J_DIM], units="unknown", dtype=type)
 
         self._rain1 = quantity_factory.zeros(dims=[I_DIM, J_DIM], units="unknown")
         self._dm3d = make_quantity()
@@ -1326,8 +1346,9 @@ class Physics:
         # Convective terms:
         self._cld1d = make_quantity_2d()
         self._rain1 = make_quantity_2d()
-        self._ktop = make_quantity_2d()
-        self._kbot = make_quantity_2d()
+        self._ktop = make_quantity_2d(Int)
+        self._kbot = make_quantity_2d(Int)
+        self._kcnv = make_quantity_2d(Int)
         self._ud_mf = make_quantity()
         self._dd_mf = make_quantity()
         self._dt_mf = make_quantity()
@@ -1475,7 +1496,7 @@ class Physics:
                     "You must specify a radiation configuration to use RTE-RRTMGP"
                 )
             self._rterrtmgp = True
-            sigma = calc_sigma(grid_data.ak.data, grid_data.bk.data, 0)
+            sigma = calc_sigma(grid_data.ak[:], grid_data.bk[:], 0)
             self._copy_to_radiation = stencil_factory.from_dims_halo(
                 func=copy_to_radiation,
                 compute_dims=[I_DIM, J_DIM, K_INTERFACE_DIM],
@@ -1501,7 +1522,7 @@ class Physics:
 
         # Setup surface schemes
         if "SFC_layer" in schemes:
-            if sfc_config is None:
+            if surface_config is None:
                 raise ValueError(
                     "Specify a surface configuration to use surface parameterizations"
                 )
@@ -1514,7 +1535,7 @@ class Physics:
             self._sfc = SurfaceLayer(
                 stencil_factory,
                 quantity_factory,
-                sfc_config,
+                surface_config,
             )
             self._update_from_sfc = stencil_factory.from_origin_domain(
                 func=update_from_sfc,
@@ -1677,11 +1698,85 @@ class Physics:
             ndsl_log.info("No microphysics selected")
             self._microphysics = None
 
+        self._ozi = make_quantity()
+        self._kmin = make_quantity_2d(Int)
+        self._kmax = make_quantity_2d(Int)
+        self._oz_pres_qty = self.quantity_factory.zeros(
+            dims=[K_INTERFACE_DIM], units="", dtype=Float
+        )
+        self._oz_pres_qty[:self._levozp] = oz_pres
+        self._prod = self.quantity_factory.zeros(
+            [I_DIM, J_DIM, K_DIM, self.OZONE_DIM],
+            units="unknown",
+            dtype=Float,
+        )
+        self._ozp = self.quantity_factory.zeros(
+            [I_DIM, J_DIM, K_DIM, self.OZONE_DIM],
+            units="unknown",
+            dtype=Float,
+        )
+        self._prdout = self.quantity_factory.zeros(
+            [I_DIM, J_DIM, K_DIM, self.OZONE_DIM],
+            units="unknown",
+            dtype=Float,
+        )
+
+        # initialize ozone forcing data
+        self._prdout.field[:, :, :self._levozp, :] = oz.ozinterpolate(
+            datetime.fromisoformat("2000-03-20T00:00:30Z"),
+            self._jindx1,
+            self._jindx2,
+            self._ddy,
+            self._oztime,
+            self._oz_coeff,
+            self._levozp,
+            self._ozplin,
+        )
+
+        if self._oz_coeff > 4:
+            self._ozphys_2015 = stencil_factory.from_dims_halo(
+                    func=oz.ozphys_2015,
+                    externals={
+                        "dtp": self._dt_phys,
+                        "ldiag3d": namelist.ldiag3d,
+                        "pl_coeff": self._oz_coeff,
+                        "ko3": self._levozp,
+                    },
+                    compute_dims=[I_DIM, J_DIM, K_DIM],
+                )
+        else:
+            self._ozphys = stencil_factory.from_dims_halo(
+                    func=oz.ozphys,
+                    externals={
+                        "dtp": self._dt_phys,
+                        "ldiag3d": namelist.ldiag3d,
+                        "pl_coeff": self._oz_coeff,
+                        "ko3": self._levozp,
+                    },
+                    compute_dims=[I_DIM, J_DIM, K_INTERFACE_DIM],
+                )
+
     def _setup_statein(self):
         self._NQ = 8  # state.nq_tot - spec.config.dnats
         self._dnats = 1  # spec.config.dnats
         self._nwat = 6  # spec.config.nwat
         self._p00 = 1.0e5
+
+    def _time_vary_step(self, physics_state: PhysicsState, date: datetime.datetime):
+        """
+        Method to update time varying fields from external data
+        """
+        # TODO: Do we want to put solar calculations here too?
+        self._prdout.field[:, :, :self._levozp, :] = oz.ozinterpolate(
+            date,
+            self._jindx1,
+            self._jindx2,
+            self._ddy,
+            self._oztime,
+            self._oz_coeff,
+            self._levozp,
+            self._ozplin,
+        )
 
     def __call__(
         self,
@@ -1696,7 +1791,11 @@ class Physics:
         do_radiation = (self._nsteps % self._nsswr == 0) or (
             self._nsteps % self._nslwr == 0
         )
-        
+
+        # TODO: date will become an arg once it's patched into Pace
+        if date is not None:
+            self._time_vary_step(physics_state, date)
+
         self._atmos_phys_driver_statein(
             physics_state.prsik,
             physics_state.phii,
@@ -2040,6 +2139,35 @@ class Physics:
 
             self._pbl(self.pbl_state)
 
+            # Update ocean goes here if do_ocean
+            # Orograpgic GWD goes here
+            # Rayleigh Damping goes here if ral_ts > 0 and not lsiea
+            # Idea convective adjustment goes here if lsidea
+
+            self._copy_stencil(physics_state.qo3mr, self._ozi)
+
+            if self._oz_coeff > 4:
+                self._ozphys_2015(
+                    self._ozi,
+                    physics_state.qo3mr,
+                    physics_state.pt,
+                    self._oz_pres_qty,
+                    physics_state.prsl,
+                    self._prdout,
+                    self._prod,
+                    physics_state.delp,
+                    self._ozp,
+                    self._colo3,
+                    self._coloz,
+                    self._kmin,
+                    self._kmax,
+                    self._k_val,
+                )
+            else:
+                self._ozphys()
+
+            # O3 and H2O physics goes here
+
             self._results_from_pbl(
                 self._qvapor1,
                 self._qliquid1,
@@ -2061,9 +2189,6 @@ class Physics:
                 self.pbl_state.hpbl,
                 timestep,
             )
-        # Slab ocean goes here
-        # Orograpgic GWD goes here
-        # O3 and H2O physics goes here
 
         self._update_pt_qvap_phi(
             physics_state.pt,
@@ -2113,6 +2238,7 @@ class Physics:
                 self._qcld1,
                 self._ktop,
                 self._kbot,
+                self._kcnv,
             )
 
         if self._deep_convection:
@@ -2130,6 +2256,7 @@ class Physics:
             )
 
         # Convective GWD goes here
+
         # Shallow convection:
         if self._samf_shalconv:
             self._fill_shalconv_state(
@@ -2163,6 +2290,7 @@ class Physics:
                 self._phil1,
                 self._delp1,
                 physics_state.pgr,
+                self._kcnv,
                 self._area,
                 self._rain1,
                 self._ud_mf,
@@ -2205,6 +2333,7 @@ class Physics:
                 self._qcld1,
                 self._clw,
             )
+        # moist convective adjustment goes here if moist_adj
 
         self._flip_fields(
             self._u1,
@@ -2253,6 +2382,7 @@ class Physics:
 
         # Microphysics:
         if self._microphysics:
+            # Fast saturation adjustment goes here if do_sat_adj
             if self._microphysics == "GFS":
                 self._prepare_gfs_microphysics(
                     physics_state.dz,
@@ -2315,6 +2445,8 @@ class Physics:
                     timestep,
                 )
             elif self._microphysics == "GFDL_CLoud":
+                # Zero values if do_inline_mp
+                # else:
                 self._prepare_gfdl_cld_microphysics(
                     self.microphyics_state.delp,
                     self.microphyics_state.delz,
@@ -2405,4 +2537,7 @@ class Physics:
                 )
         else:
             ndsl_log.info("No microphysics selected, skipping...")
+
+        # Rain/snow determination goes here
+
         self._nsteps += 1

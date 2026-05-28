@@ -260,7 +260,7 @@ class Static1:
         )
 
         for k in range(grid_indexing.domain[2]):
-            self._k_val.data[:, :, k] = k
+            self._k_val[:, :, k] = k
 
         self._heo_kb = make_quantity_2D()
         self._drag = make_quantity()
@@ -628,7 +628,7 @@ class Static2:
         )
 
         for k in range(grid_indexing.domain[2]):
-            self._k_val.data[:, :, k] = k
+            self._k_val[:, :, k] = k
 
         self._heo_kb = make_quantity_2D()
         self._drag = make_quantity()
@@ -1067,7 +1067,7 @@ class UpdateKB9:
         )
 
         for k in range(grid_indexing.domain[2]):
-            self._k_val.data[:, :, k] = k
+            self._k_val[:, :, k] = k
 
         self._heo_kb = make_quantity_2D()
         self._drag = make_quantity()
@@ -1649,7 +1649,7 @@ class Static10:
         )
 
         for k in range(grid_indexing.domain[2]):
-            self._k_val.data[:, :, k] = k
+            self._k_val[:, :, k] = k
 
         self._heo_kb = make_quantity_2D()
         self._drag = make_quantity()
@@ -3034,7 +3034,7 @@ class FeedbackCtrl:
             dtype=Int,
         )
         for k in range(grid_indexing.domain[2]):
-            self._k_val.data[:, :, k] = k
+            self._k_val[:, :, k] = k
 
         self._feedback_control_update_mass_flux = stencil_factory.from_dims_halo(
             func=feedback_control_update_mass_flux,
@@ -3149,7 +3149,7 @@ class SC13:
             dtype=Int,
         )
         for k in range(grid_indexing.domain[2]):
-            self._k_val.data[:, :, k] = k
+            self._k_val[:, :, k] = k
         self._stencil_static13 = stencil_factory.from_dims_halo(
             func=stencil_static13,
             compute_dims=[I_DIM, J_DIM, K_DIM],
@@ -3199,7 +3199,7 @@ class CompTendencies:
             dtype=Int,
         )
         for k in range(grid_indexing.domain[2]):
-            self._k_val.data[:, :, k] = k
+            self._k_val[:, :, k] = k
         self._comp_tendencies = stencil_factory.from_dims_halo(
             func=comp_tendencies,
             externals={"dt2": self._dt2},

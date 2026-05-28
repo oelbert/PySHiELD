@@ -218,7 +218,7 @@ def test_pyshield_runs(restart_path: Path, backend: Backend):
         gfs_cloud_overlap=False,
     )
 
-    sfc_config = SurfaceConfig(dt_atmos=dt)
+    surface_config = SurfaceConfig(dt_atmos=dt)
 
     pbl_config = PBLConfig(
         dt_atmos=dt,
@@ -270,7 +270,7 @@ def test_pyshield_runs(restart_path: Path, backend: Backend):
         config,
         pbl_config=pbl_config,
         gfdl_cld_mp_config=mp_config,
-        sfc_config=sfc_config,
+        surface_config=surface_config,
         sc_config=sc_conf,
         rad_config=radconf,
     )

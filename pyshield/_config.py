@@ -15,8 +15,10 @@ from ndsl.utils import f90nml_as_dict
 from pyshield.tracer_workarounds import tracer_variables
 
 
-# TODO: This will become a TracerBundle when ready
+# TODO: This will become a TracerBundle when ready, should not be hardcoded
 FloatFieldTracer = set_4d_field_size(9, Float)
+# TODO: This should be read from the ozone input data instead of hardcoded
+FloatFieldOzone = set_4d_field_size(6, Float)
 
 DEFAULT_INT = 0
 DEFAULT_FLOAT = 0.0
@@ -25,6 +27,7 @@ DEFAULT_BOOL = False
 DEFAULT_FLOAT = Float(0.0)
 DEFAULT_SCHEMES = ["GFS_microphysics"]
 TRACER_DIM = "n_tracers"
+OZONE_DIM = "n_ozone"
 DEFAULT_PHYS_NML_GROUPS = (
     "main_nml",
     "coupler_nml",
@@ -207,6 +210,8 @@ class PhysicsConfig:
     """maximum temperature for prescribed SSTs"""
     min_sst: float = float(physcons.TICE)
     """minimum temperature for prescribed SSTs"""
+    ldiag3d: bool = False
+    """Flag for 3d diagnostics"""
 
     def __post_init__(self):
         if self.schemes is None:
@@ -216,6 +221,8 @@ class PhysicsConfig:
             if scheme not in PHYSICS_PACKAGES:
                 raise NotImplementedError(f"{scheme} physics scheme not implemented")
             package_schemes.append(PHYSICS_PACKAGES[scheme])
+        if self.ldiag3d:
+            raise NotImplementedError("ldiag3d not implemented")
         self.schemes = package_schemes
         self.ntiw = tracer_variables.index("qice")
         self.ntcw = tracer_variables.index("qliquid")

@@ -268,7 +268,7 @@ class SediMelt:
         )
 
         for k in range(self._idx.domain[2] + 1):
-            self._k_val.data[:, :, k] = k
+            self._k_val[:, :, k] = k
 
         self._sedi_melt_ice = stencil_factory.from_origin_domain(
             func=sedi_melt,

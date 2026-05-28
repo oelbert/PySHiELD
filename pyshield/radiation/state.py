@@ -324,13 +324,13 @@ class RTE_RRTMGPState:
     def xr_dataset(self):
         data_vars = {}
         for name, field_info in self.__dataclass_fields__.items():
-            if name not in ["quantity_factory", "np_like"]:
+            if name not in ["quantity_factory"]:
                 if issubclass(field_info.type, Quantity):
                     dims = [
                         f"{dim_name}_{name}" for dim_name in field_info.metadata["dims"]
                     ]
                     data_vars[name] = xr.DataArray(
-                        gt_utils.asarray(getattr(self, name).data),
+                        gt_utils.asarray(getattr(self, name)[:]),
                         dims=dims,
                         attrs={
                             "long_name": field_info.metadata["name"],
@@ -352,7 +352,7 @@ class RTE_RRTMGPState:
         # data_vars = {}
         ndsl_log.info("writing radiation state to xarray")
         for name, field_info in self.__dataclass_fields__.items():
-            if name not in ["quantity_factory", "np_like"]:
+            if name not in ["quantity_factory"]:
                 if field_info.metadata["intent"] != "out":
                     if issubclass(field_info.type, Quantity):  # type: ignore[arg-type]
                         dims = []
@@ -397,7 +397,7 @@ class RTE_RRTMGPState:
                                 )
                             )
                         rtedata[name][:] = gt_utils.asarray(
-                            getattr(self, name).data
+                            getattr(self, name)[:]
                         )[tuple(slice_list)].reshape(newshape)
 
     def to_rterrtmgp_xr(self) -> xr.Dataset:
@@ -412,7 +412,7 @@ class RTE_RRTMGPState:
         data_vars = {}
         ndsl_log.info("writing radiation state to xarray")
         for name, field_info in self.__dataclass_fields__.items():
-            if name not in ["quantity_factory", "np_like"]:
+            if name not in ["quantity_factory"]:
                 if field_info.metadata["intent"] != "out":
                     if issubclass(field_info.type, Quantity):
                         dims = []
@@ -422,16 +422,16 @@ class RTE_RRTMGPState:
                         for dim_name in field_info.metadata["dims"]:
                             # dims.append(f"{dim_name}_{name}")
                             if dim_name == "k_interface":
-                                slice_list.append(self._np.s_[:])
+                                slice_list.append(np.s_[:])
                                 nz = self._nz + 1
                                 dims.append("level")
                             elif dim_name == "k":
-                                slice_list.append(self._np.s_[:-1])
+                                slice_list.append(np.s_[:-1])
                                 dims.append("layer")
                             elif "interface" in dim_name:
-                                slice_list.append(self._np.s_[3:-3])
+                                slice_list.append(np.s_[3:-3])
                             else:
-                                slice_list.append(self._np.s_[3:-4])
+                                slice_list.append(np.s_[3:-4])
                         # We have to reshape to get the max 2D shape rterrtmgp expects:
                         if ndims == 3:  # x-y-z array:
                             newshape = (-1, nz)
@@ -450,7 +450,7 @@ class RTE_RRTMGPState:
                             )
                         # ndsl_log.info(f"{name} has shape {newshape}")
                         data_vars[name] = xr.DataArray(
-                            gt_utils.asarray(getattr(self, name).data)[
+                            gt_utils.asarray(getattr(self, name)[:])[
                                 tuple(slice_list)
                             ].reshape(newshape),
                             dims=dims,

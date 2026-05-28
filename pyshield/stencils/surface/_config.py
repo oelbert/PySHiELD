@@ -1,5 +1,6 @@
 import dataclasses
 from typing import Sequence, Tuple
+import pyshield.constants as physcons
 
 from dacite import Config, from_dict
 
@@ -12,6 +13,15 @@ DEFAULT_SCHEMES = ["GFS_microphysics"]
 
 @dataclasses.dataclass
 class SurfaceConfig:
+    sst_profile: int = DEFAULT_INT
+    """which profile to enforce"""
+    # 0: constant sst
+    # 1: cosine profile in SHiELD
+    # 2: from equation (1) of Neale and Hoskins
+    max_sst: float = 293.95
+    """maximum temperature for prescribed SSTs"""
+    min_sst: float = float(physcons.TICE)
+    """minimum temperature for prescribed SSTs"""
     do_z0_hwrf15: bool = DEFAULT_BOOL
     """flag to use z0 scheme from 2015 HWRF"""
     do_z0_hwrf17: bool = DEFAULT_BOOL
