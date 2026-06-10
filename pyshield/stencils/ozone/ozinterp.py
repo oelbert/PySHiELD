@@ -46,7 +46,7 @@ def setindexoz(dlat: np.ndarray, oz_lat: np.ndarray) -> tuple[np.ndarray, np.nda
         jindx1[j, k] = max(jindx2[j, k]-1, 0)
         jindx2[j, k] = min(jindx2[j, k], len(oz_lat))
         if jindx2[j, k] != jindx1[j, k]:
-            ddy[j, k] = (dlat[j] - oz_lat[jindx1[j, k]]) / (
+            ddy[j, k] = (dlat[j, k] - oz_lat[jindx1[j, k]]) / (
                 oz_lat[jindx2[j, k]] - oz_lat[jindx1[j, k]]
             )
         else:
@@ -67,13 +67,13 @@ def ozinterpolate(
     """
     Interpolate ozone onto model levels at a given time in-place onto ozplout
     """
-    jdoy = model_time.strftime("%j")  # day of year 1-365
+    jdoy = int(model_time.strftime("%j"))  # day of year 1-365
     rjday = jdoy + (model_time.hour / 24.)
     if rjday < oz_time[0]:
         rjday += 365.
 
     n2 = len(oz_time)
-    for j in range(1, oz_time - 1):
+    for j in range(1, len(oz_time) - 1):
         if rjday < oz_time[j]:
             n2 = j
             break
@@ -88,8 +88,8 @@ def ozinterpolate(
                 j2 = jindx2[j, k]
                 tem = 1.0 - ddy[j, k]
                 ozplout[j, k, ll, nc] = tx1 * (
-                    tem * ozplin[j1, ll, nc, n1] + ddy[j, k] * ozplin[j2, ll, nc, n1]
+                    tem * ozplin[n1, nc, ll, j1] + ddy[j, k] * ozplin[n1, nc, ll, j2]
                 ) + tx2 * (
-                    tem * ozplin[j1, ll, nc, n2] + ddy[j, k] * ozplin[j2, ll, nc, n2]
+                    tem * ozplin[n2, nc, ll, j1] + ddy[j, k] * ozplin[n2, nc, ll, j2]
                 )
     return ozplout

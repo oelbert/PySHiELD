@@ -76,23 +76,31 @@ def ozphys(
         kval = -k_index
         k_offset_limit = ko3 - k_index
         while kval < k_offset_limit:
-            if pmin < po3[0, 0, kval]:
-                kmax = kval
-            if pmax < po3[0, 0, kval]:
-                kmin = kval
+            kmax = kval if pmin < po3[kval] else kmax
+            kmin = kval if pmax < po3[kval] else kmin
             kval += 1
         k2 = kmin
         while k2 < kmax:
-            temp = 1.0 / (po3[0, 0, k2] - po3[0, 0, k2+1])
-            if wk1 < po3[0, 0, k2] and wk1 >= po3[0, 0, k2+1]:
-                wk2 = (wk1 - po3[0, 0, k2+1]) * temp
+            temp = 1.0 / (po3[k2] - po3[k2+1])
+            if wk1 < po3[k2] and wk1 >= po3[k2+1]:
+                wk2 = (wk1 - po3[k2+1]) * temp
                 wk3 = 1.0 - wk2
-                prod = wk2 * prdout[0, 0, k2] + wk3 * prdout[0, 0, k2+1]
+                coeff = 0
+                while coeff < pl_coeff:
+                    prod[0, 0, 0][coeff] = wk2 * prdout[0, 0, k2][coeff] + wk3 * prdout[0, 0, k2+1][coeff]
+                    coeff += 1
+            k2 += 1
 
-        if wk1 >= po3[0, 0, k_offset_limit]:
-            prod = prdout[0, 0, k_offset_limit]
-        if wk1 >= po3[0, 0, -k_index]:
-            prod = prdout[0, 0, -k_index]
+        if wk1 >= po3[k_offset_limit]:
+            coeff = 0
+            while coeff < pl_coeff:
+                prod[0, 0, 0][coeff] = prdout[0, 0, k_offset_limit][coeff]
+                coeff += 1
+        if wk1 >= po3[-k_index]:
+            coeff = 0
+            while coeff < pl_coeff:
+                prod[0, 0, 0][coeff] = prdout[0, 0, -k_index][coeff]
+                coeff += 1
 
         if pl_coeff == 2:
             ozib = ozi
@@ -154,23 +162,32 @@ def ozphys_2015(
             kval = -k_index
             k_offset_limit = ko3 - k_index
             while kval < k_offset_limit:
-                if pmin < po3[0, 0, kval]:
-                    kmax = kval
-                if pmax < po3[0, 0, kval]:
-                    kmin = kval
+                kmax = kval if pmin < po3[kval] else kmax
+                kmin = kval if pmax < po3[kval] else kmin
                 kval += 1
             k2 = kmin
             while k2 < kmax:
-                temp = 1.0 / (po3[0, 0, k2] - po3[0, 0, k2+1])
-                if wk1 < po3[0, 0, k2] and wk1 >= po3[0, 0, k2+1]:
-                    wk2 = (wk1 - po3[0, 0, k2+1]) * temp
+                temp = 1.0 / (po3[k2] - po3[k2+1])
+                if (wk1 < po3[k2]) and (wk1 >= po3[k2+1]):
+                    wk2 = (wk1 - po3[k2+1]) * temp
                     wk3 = 1.0 - wk2
-                    prod = wk2 * prdout[0, 0, k2] + wk3 * prdout[0, 0, k2+1]
-
-            if wk1 >= po3[0, 0, k_offset_limit]:
-                prod = prdout[0, 0, k_offset_limit]
-            if wk1 >= po3[0, 0, -k_index]:
-                prod = prdout[0, 0, -k_index]
+                    coeff = 0
+                    while coeff < pl_coeff:
+                        prod[0, 0, 0][coeff] = wk2 * prdout[0, 0, k2][coeff] + wk3 * prdout[0, 0, k2+1][coeff]
+                        coeff += 1
+                else:
+                    wk3 = -1
+                k2 += 1
+            if wk1 >= po3[k_offset_limit]:
+                coeff = 0
+                while coeff < pl_coeff:
+                    prod[0, 0, 0][coeff] = prdout[0, 0, k_offset_limit][coeff]
+                    coeff += 1
+            if wk1 >= po3[-k_index]:
+                coeff = 0
+                while coeff < pl_coeff:
+                    prod[0, 0, 0][coeff] = prdout[0, 0, -k_index][coeff]
+                    coeff += 1
             colo3[0, 0, 0] = colo3[0, 0, 1] + ozi * delp / constants.GRAV
             coloz[0, 0, 0] = coloz[0, 0, 1] + prod[0, 0, 0][5] * delp / constants.GRAV
             prod[0, 0, 0][1] = min(prod[0, 0, 0][1], 0.0)

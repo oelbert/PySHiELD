@@ -1,4 +1,4 @@
-import datetime
+import datetime as dt
 
 import numpy as np
 
@@ -1249,8 +1249,10 @@ class Physics:
             )
 
         # Setup ozone physics:
-        self._levozp, self._oz_coeff, self._ozlat, oz_pres, self._oztime, self._ozplin = oz.read_o3_data(1, "ozprd.nc")
-        self._jindx1, self._jindx2, self._ddy = oz.setindexoz(grid_data.lat.field[:], self._ozlat)
+        ozdatfile = "ozprd.nc"
+        # TODO: ozdatfile should not be hardcoded
+        self._levozp, self._oz_coeff, self._ozlat, oz_pres, self._oztime, self._ozplin = oz.read_o3_data(1, ozdatfile)
+        self._jindx1, self._jindx2, self._ddy = oz.setindexoz(grid_data.lat_agrid.field[:], self._ozlat)
 
         self.TRACER_DIM = TRACER_DIM
         self.OZONE_DIM = OZONE_DIM
@@ -1258,7 +1260,7 @@ class Physics:
         self.quantity_factory.add_data_dimensions(
             {
                 self.TRACER_DIM: self._ntracers,
-                self.OZONE_DIM: self._oz_coeff,
+                self.OZONE_DIM: len(self._oz_coeff),
             }
         )
 
@@ -1299,7 +1301,7 @@ class Physics:
             units="unknown",
             dtype=Int,
         )
-            
+
         for k in range(npz):
             self._k_val[k] = k
             self._level_flip[k] = npz - 1 - 2 * k
@@ -1723,23 +1725,23 @@ class Physics:
 
         # initialize ozone forcing data
         self._prdout.field[:, :, :self._levozp, :] = oz.ozinterpolate(
-            datetime.fromisoformat("2000-03-20T00:00:30Z"),
+            dt.datetime.fromisoformat("2000-03-20T00:00:30Z"),
             self._jindx1,
             self._jindx2,
             self._ddy,
             self._oztime,
-            self._oz_coeff,
+            len(self._oz_coeff),
             self._levozp,
             self._ozplin,
         )
 
-        if self._oz_coeff > 4:
+        if len(self._oz_coeff) > 4:
             self._ozphys_2015 = stencil_factory.from_dims_halo(
                     func=oz.ozphys_2015,
                     externals={
-                        "dtp": self._dt_phys,
+                        "dt_phys": self._dt_phys,
                         "ldiag3d": namelist.ldiag3d,
-                        "pl_coeff": self._oz_coeff,
+                        "pl_coeff": len(self._oz_coeff),
                         "ko3": self._levozp,
                     },
                     compute_dims=[I_DIM, J_DIM, K_DIM],
@@ -1748,9 +1750,9 @@ class Physics:
             self._ozphys = stencil_factory.from_dims_halo(
                     func=oz.ozphys,
                     externals={
-                        "dtp": self._dt_phys,
+                        "dt_phys": self._dt_phys,
                         "ldiag3d": namelist.ldiag3d,
-                        "pl_coeff": self._oz_coeff,
+                        "pl_coeff": len(self._oz_coeff),
                         "ko3": self._levozp,
                     },
                     compute_dims=[I_DIM, J_DIM, K_INTERFACE_DIM],
@@ -1762,7 +1764,7 @@ class Physics:
         self._nwat = 6  # spec.config.nwat
         self._p00 = 1.0e5
 
-    def _time_vary_step(self, physics_state: PhysicsState, date: datetime.datetime):
+    def _time_vary_step(self, physics_state: PhysicsState, date: dt.datetime):
         """
         Method to update time varying fields from external data
         """
@@ -1773,7 +1775,7 @@ class Physics:
             self._jindx2,
             self._ddy,
             self._oztime,
-            self._oz_coeff,
+            len(self._oz_coeff),
             self._levozp,
             self._ozplin,
         )
@@ -1784,7 +1786,7 @@ class Physics:
         timestep: float = 0.0,
         radiation_state: RTE_RRTMGPState = None,
         surface_state: SurfaceState = None,
-        date: datetime.datetime = None,
+        date: dt.datetime = None,
     ):
         if timestep == 0.0:
             timestep = self._dt_phys
@@ -2146,7 +2148,8 @@ class Physics:
 
             self._copy_stencil(physics_state.qo3mr, self._ozi)
 
-            if self._oz_coeff > 4:
+            breakpoint()
+            if len(self._oz_coeff) > 4:
                 self._ozphys_2015(
                     self._ozi,
                     physics_state.qo3mr,
@@ -2164,9 +2167,23 @@ class Physics:
                     self._k_val,
                 )
             else:
-                self._ozphys()
+                self._ozphys(
+                    self._ozi,
+                    physics_state.qo3mr,
+                    physics_state.pt,
+                    self._oz_pres_qty,
+                    physics_state.prsl,
+                    self._prdout,
+                    self._prod,
+                    physics_state.delp,
+                    self._ozp,
+                    self._colo3,
+                    self._kmin,
+                    self._kmax,
+                    self._k_val,
+                )
 
-            # O3 and H2O physics goes here
+            # H2O physics goes here
 
             self._results_from_pbl(
                 self._qvapor1,
