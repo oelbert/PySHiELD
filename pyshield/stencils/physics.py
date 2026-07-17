@@ -23,6 +23,7 @@ from ndsl.dsl.typing import (
 from ndsl.grid import GridData
 from ndsl.logging import ndsl_log
 from ndsl.stencils.basic_operations import copy
+from pyfv3.stencils.fv_phys import GrayRadiationConfig, GrayRadSolo
 from pyshield._config import (
     PHYSICS_PACKAGES,
     TRACER_DIM,
@@ -1222,6 +1223,7 @@ class Physics:
         grid_data: GridData,
         namelist: PhysicsConfig,
         rad_config: RTE_RRTMGPConfig = None,
+        gray_rad_config: GrayRadiationConfig = None,  # TODO gotta sanitize typehints
         pre_radiation=False,
         surface_config: SurfaceConfig = None,
         pbl_config: PBLConfig = None,
@@ -1493,6 +1495,10 @@ class Physics:
 
         # Setup radiation
         if "RTE_RRTMGP" in schemes:
+            if "FV_GRAY_RAD" in schemes:
+                raise ValueError(
+                    f"Multiple radiation schemes: {schemes}"
+                )  # TODO: We should consider a ConfigurationError exception for this
             if not rad_config:
                 raise ValueError(
                     "You must specify a radiation configuration to use RTE-RRTMGP"
@@ -1521,6 +1527,18 @@ class Physics:
             )
         else:
             self._rterrtmgp = False
+
+        if "FV_GRAY_RAD" in schemes:
+            if not gray_rad_config:
+                raise ValueError(
+                    "You must specify a gray radiation configuration to"
+                )
+            self._gray_rad_solo = GrayRadSolo(
+                stencil_factory,
+                quantity_factory,
+                grid_data,
+                gray_rad_config
+            )
 
         # Setup surface schemes
         if "SFC_layer" in schemes:
@@ -1701,6 +1719,8 @@ class Physics:
             self._microphysics = None
 
         self._ozi = make_quantity()
+        self._colo3 = make_quantity()
+        self._coloz = make_quantity()
         self._kmin = make_quantity_2d(Int)
         self._kmax = make_quantity_2d(Int)
         self._oz_pres_qty = self.quantity_factory.zeros(
@@ -2146,19 +2166,19 @@ class Physics:
             # Rayleigh Damping goes here if ral_ts > 0 and not lsiea
             # Idea convective adjustment goes here if lsidea
 
-            self._copy_stencil(physics_state.qo3mr, self._ozi)
+            self._copy_stencil(self._qo3mr1, self._ozi)
 
             breakpoint()
             if len(self._oz_coeff) > 4:
                 self._ozphys_2015(
                     self._ozi,
-                    physics_state.qo3mr,
-                    physics_state.pt,
+                    self._qo3mr1,
+                    self._t1,
                     self._oz_pres_qty,
-                    physics_state.prsl,
+                    self._prsl1,
                     self._prdout,
                     self._prod,
-                    physics_state.delp,
+                    self._delp1,
                     self._ozp,
                     self._colo3,
                     self._coloz,
@@ -2169,13 +2189,13 @@ class Physics:
             else:
                 self._ozphys(
                     self._ozi,
-                    physics_state.qo3mr,
-                    physics_state.pt,
+                    self._qo3mr1,
+                    self._t1,
                     self._oz_pres_qty,
-                    physics_state.prsl,
+                    self._prsl1,
                     self._prdout,
                     self._prod,
-                    physics_state.delp,
+                    self._delp1,
                     self._ozp,
                     self._colo3,
                     self._kmin,

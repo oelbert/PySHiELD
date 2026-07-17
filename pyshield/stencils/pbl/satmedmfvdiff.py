@@ -690,7 +690,10 @@ def compute_prandtl_num_exchange_coeff(
     with computation(PARALLEL), interval(...):
         ptem = 0.0
         if k_val[0, 0, 0] < kpbl[0, 0]:
-            tem = phih[0, 0] / phim[0, 0]
+            if phim == 0.0 and phih == 0.0:
+                tem = 1.0
+            else:
+                tem = phih[0, 0] / phim[0, 0]
             ptem = (
                 -3.0
                 * (max(zi[0, 0, 1] - pbl_constants.SFCFRAC * hpbl[0, 0], 0.0) ** 2.0)

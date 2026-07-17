@@ -48,6 +48,7 @@ class PHYSICS_PACKAGES(Enum, metaclass=MetaEnumStr):
     SATM_EDMF = "SATM_EDMF"
     SFC_layer = "SFC_layer"
     RTE_RRTMGP = "RTE_RRTMGP"
+    FV_GRAY_RAD = "FV_GRAY_RAD"
 
 
 @dataclasses.dataclass

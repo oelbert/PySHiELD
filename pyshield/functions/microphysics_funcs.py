@@ -345,9 +345,9 @@ def fall_speed(log_10, qg, qi, ql, qs, tk, den):
 def compute_rain_fspeed(no_fall, qrz, den):
     from __externals__ import const_vr, vr_fac, vr_max
 
+    r1 = 0.0
     if no_fall == 1:
         vtrz = VF_MIN
-        r1 = 0.0
 
     else:
         # Fall speed of rain

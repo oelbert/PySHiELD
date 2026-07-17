@@ -8,7 +8,6 @@ from dacite import Config, from_dict
 DEFAULT_FLOAT = 0.0
 DEFAULT_INT = 0
 DEFAULT_BOOL = False
-DEFAULT_SCHEMES = ["GFS_microphysics"]
 
 
 @dataclasses.dataclass

@@ -81,9 +81,21 @@ class RTE_RRTMGPConfig:
     sollat: Float = 0.0
     nstp: Int = 6
     ivflip: Int = 1
+    """
+    Flag for top-down or bottom-up k-indexing.
+        0: k=0 at TOA
+        1: k=0 at surface
+    """
     lcnorm: bool = False
     lcrick: bool = False
     gfs_cloud_overlap: bool = False
+    # TODO: this should be typehinted stronger
+    calc_t: str = "am5"
+    """
+    How to interpolate level temperature.
+        gfs: Linear in T, weighted by logP as in the gfs physics
+        am5: Linear in T, weighted by P*delp as in AM5
+    """
 
     def __post_init__(self):
         if self.ioznflg == 0:

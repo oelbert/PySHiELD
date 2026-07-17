@@ -93,6 +93,9 @@ def calc_tlvl_am5(
     plvl: FloatField,
     tlyr: FloatField,
     tskin: FloatFieldIJ,
+    qvapor: FloatField,
+    tvly: FloatField,
+    tsfa: FloatFieldIJ,
     tlvl: FloatField,
 ):
     """
@@ -101,14 +104,48 @@ def calc_tlvl_am5(
     """
     with computation(FORWARD):
         with interval(0, 1):
+            tsfa = tlyr
             tlvl = tlyr
+            tvly = tlyr * (1.0 + constants.ZVIR * qvapor)
         with interval(1, -1):
             tlvl = (
                 (plyr[0, 0, -1] * tlyr[0, 0, -1] * (plvl - plyr))
                 + (plyr * tlyr * (plyr[0, 0, -1] - plvl))
             ) / (plvl * (plyr[0, 0, -1] - plyr))
+            tvly = tlyr * (1.0 + constants.ZVIR * qvapor)
         with interval(-1, None):
             tlvl = tskin
+
+def calc_tlvl_am5_bottomup(
+    plyr: FloatField,
+    plvl: FloatField,
+    tlyr: FloatField,
+    tskin: FloatFieldIJ,
+    qvapor: FloatField,
+    tvly: FloatField,
+    tsfa: FloatFieldIJ,
+    tlvl: FloatField,
+):
+    """
+    Calculates interface(level) temperatures needed for radiation as in the am5 physics
+    Assumes k=0 at the surface
+    """
+    with computation(FORWARD):
+        with interval(0, 1):
+            tsfa = tlyr
+            tlvl = tskin
+            qvapor = max(QME6, qvapor)
+            tvly = tlyr * (1.0 + constants.ZVIR * qvapor)
+
+        with interval(1, -1):
+            tvly = tlyr * (1.0 + constants.ZVIR * qvapor)
+            tlvl = (
+                (plyr * tlyr * (plvl - plyr[0, 0, -1]))
+                + (plyr[0, 0, -1] * tlyr[0, 0, -1] * (plyr - plvl))
+            ) / (plvl * (plyr - plyr[0, 0, -1]))
+
+        with interval(-1, None):
+            tlvl = tlyr[0, 0, -1]
 
 
 def calc_net_flux_and_heating(
@@ -357,10 +394,24 @@ class RTE_RRTMGPDriver:
             var_mapping=self._var_mapping,
         )
 
-        self._calc_tlvl = stencil_factory.from_dims_halo(
-            func=calc_tlvl_gfs,
-            compute_dims=[I_DIM, J_DIM, K_INTERFACE_DIM],
-        )
+        if config.calc_t == "gfs":
+            self._calc_tlvl = stencil_factory.from_dims_halo(
+                func=calc_tlvl_gfs,
+                compute_dims=[I_DIM, J_DIM, K_INTERFACE_DIM],
+            )
+        elif config.calc_t == "am5":
+            if config.ivflip == 0:
+                self._calc_tlvl = stencil_factory.from_dims_halo(
+                    func=calc_tlvl_am5,
+                    compute_dims=[I_DIM, J_DIM, K_INTERFACE_DIM],
+                )
+            else:
+                self._calc_tlvl = stencil_factory.from_dims_halo(
+                    func=calc_tlvl_am5_bottomup,
+                    compute_dims=[I_DIM, J_DIM, K_INTERFACE_DIM],
+                )
+        else:
+            raise ValueError(f"Unrecognized temperature calculation: {config.calc_t}")
         if config.icmphys == 4:
             self._cldscheme = 4
             self._progcld4 = stencil_factory.from_origin_domain(
