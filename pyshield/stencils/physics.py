@@ -395,6 +395,30 @@ def copy_from_radiation(
         # htrsw_noflip = 0.0
         # htrlw_noflip = 0.0
 
+def pre_gray_rad(
+    prsi: FloatField,
+    peln: FloatField,
+    t_dt: FloatField,
+    olr: FloatFieldIJ,
+    lwu: FloatFieldIJ,
+    lwd: FloatFieldIJ,
+    sw_surf: FloatFieldIJ,
+):
+    with computation(PARALLEL), interval(...):
+        t_dt = 0.0
+        peln = log(prsi)
+    with computation(FORWARD), interval(0, 1):
+        olr = 0.0
+        lwu = 0.0
+        lwd = 0.0
+        sw_surf = 0.0
+
+def post_gray_rad(
+    t_out: FloatField,
+    pt: FloatField,
+):
+    with computation(PARALLEL), interval(...):
+        pt = t_out
 
 def interpolate_radiation(
     latitude: FloatFieldIJ,
@@ -1529,16 +1553,35 @@ class Physics:
             self._rterrtmgp = False
 
         if "FV_GRAY_RAD" in schemes:
+            self._gray_rad = True
             if not gray_rad_config:
                 raise ValueError(
                     "You must specify a gray radiation configuration to"
                 )
+            self._peln = make_quantity()
+            self._t_dt = make_quantity()
+            self._olr = make_quantity_2d()
+            self._lwu = make_quantity_2d()
+            self._lwd = make_quantity_2d()
+            self._sw_surf = make_quantity_2d()
+            self._t_out = make_quantity()
+
+            self._pre_gray_rad = stencil_factory.from_dims_halo(
+                func=pre_gray_rad,
+                compute_dims=[I_DIM, J_DIM, K_INTERFACE_DIM],
+            )
             self._gray_rad_solo = GrayRadSolo(
                 stencil_factory,
                 quantity_factory,
                 grid_data,
                 gray_rad_config
             )
+            self._post_gray_rad = stencil_factory.from_dims_halo(
+                func=post_gray_rad,
+                compute_dims=[I_DIM, J_DIM, K_INTERFACE_DIM],
+            )
+        else:
+            self._gray_rad = False
 
         # Setup surface schemes
         if "SFC_layer" in schemes:
@@ -2031,6 +2074,44 @@ class Physics:
                 self._radiation.sdec,
                 self._radiation.cdec,
             )
+        if self._gray_rad:
+            if do_radiation:
+                if not surface_state:
+                    raise ValueError("You must pass a surface state to run radiation")
+                self._pre_gray_rad(
+                    physics_state.prsi,
+                    self._peln,
+                    self._t_dt,
+                    self._olr,
+                    self._lwu,
+                    self._lwd,
+                    self._sw_surf,
+                )
+
+                self._gray_rad_solo(
+                    physics_state.pt,
+                    physics_state.qliquid,
+                    physics_state.qice,
+                    physics_state.qcld,
+                    physics_state.delp,
+                    physics_state.prsi,
+                    self._peln,
+                    physics_state.pgr,
+                    physics_state.delz,
+                    self._t_dt,
+                    surface_state.tsfc,
+                    self._olr,
+                    self._lwu,
+                    self._lwd,
+                    self._sw_surf,
+                    self._t_out,
+                )
+
+                self._post_gray_rad(
+                    self._t_out,
+                    physics_state.pt,
+                )
+
         # Do physics schemes here.
         # First the surface parameterizations:
         if self._sfc_layer:
