@@ -2249,7 +2249,6 @@ class Physics:
 
             self._copy_stencil(self._qo3mr1, self._ozi)
 
-            breakpoint()
             if len(self._oz_coeff) > 4:
                 self._ozphys_2015(
                     self._ozi,
