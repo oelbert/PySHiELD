@@ -72,7 +72,7 @@ def ozinterpolate(
     if rjday < oz_time[0]:
         rjday += 365.
 
-    n2 = len(oz_time)
+    n2 = len(oz_time) - 1
     for j in range(1, len(oz_time) - 1):
         if rjday < oz_time[j]:
             n2 = j
