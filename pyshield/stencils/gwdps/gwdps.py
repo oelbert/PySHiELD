@@ -3,7 +3,7 @@ import numpy as np
 import ndsl.constants as constants
 import pyshield.stencils.gwdps.constants as gwdpscons
 from ndsl.constants import X_DIM, Y_DIM, Z_DIM
-from ndsl.dsl.gt4py import BACKWARD, FORWARD, PARALLEL, computation, exp, interval, sqrt
+from ndsl.dsl.gt4py import BACKWARD, FORWARD, PARALLEL, atan, computation, cos, exp, interval, sin, sqrt, max, min
 
 # from pace.dsl.dace.orchestration import orchestrate
 from ndsl.dsl.stencil import StencilFactory
@@ -17,10 +17,513 @@ from ndsl.dsl.typing import (
     Int,
     IntField,
     IntFieldIJ,
+    IntFieldK,
 )
 from ndsl.initialization.allocator import QuantityFactory
 from pyshield.stencils.gwdps._config import OrographicGravityWaveDragConfig
 from pyshield.stencils.gwdps.state import OrographicGravityWaveDragState
+
+
+def init_columns(
+    dusfc: FloatFieldIJ,
+    dvsfc: FloatFieldIJ,
+    db: FloatField,
+    ang: FloatField,
+    uds: FloatField,
+):
+    with computation(FORWARD), interval(0, 1):
+        dusfc = 0.0
+        dvsfc = 0.0
+
+    with computation(PARALLEL), interval(...):
+        db = 0.0
+        ang = 0.0
+        uds = 0.0
+
+
+def find_mountain_blocking_points(
+    ipt: BoolFieldIJ,
+    npt: IntFieldIJ,
+    rdxzb: FloatField,
+    elvmax: FloatFieldIJ,
+    hprime: FloatFieldIJ,
+):
+    from __externals__ import nmtvr
+    with computation(FORWARD), interval(0, 1):
+        ipt = False
+        npt = 0
+        if hprime > gwdpscons.gwdpscons.HPMIN:
+            if nmtvr == 14:  # mb present
+                if elvmax > gwdpscons.HMINMT:
+                    ipt = True
+                    npt = 1
+                else:
+                    ipt = False
+        else:
+            ipt = False
+    with computation(PARALLEL), interval(...):
+        rdxzb = 0.0
+
+# if np.sum(npt[:] == 0):
+#     return
+
+# if nmtvr == 14:
+
+# kmll = kmm1
+# domain[2] = kmll
+# cdmb = Float(4.0 * 192.0 / float(lonr))
+# if cdmbgwd[0] >= 0:
+#     cdmb = cdmb * cdmbgwd[0]
+def mountain_blocking(
+    ipt: BoolFieldIJ,
+    iwklm: IntFieldIJ,
+    idxzb: IntFieldIJ,
+    kreflm: IntFieldIJ,
+    elvmax: FloatFieldIJ,
+    hprime: FloatFieldIJ,
+    phil: FloatField,
+    phii: FloatField,
+    wk: FloatFieldIJ,
+    vtj: FloatField,
+    u1: FloatField,
+    v1: FloatField,
+    t1: FloatField,
+    q1: FloatField,
+    vtk: FloatField,
+    prsi: FloatField,
+    prsl: FloatField,
+    prslk: FloatField,
+    bnv2lm: FloatField,
+    ro: FloatField,
+    prsi_wk: FloatFieldIJ,
+    prsl_wk: FloatFieldIJ,
+    delks: FloatFieldIJ,
+    delks1: FloatFieldIJ,
+    ubar: FloatFieldIJ,
+    vbar: FloatFieldIJ,
+    roll: FloatFieldIJ,
+    pe: FloatFieldIJ,
+    ek: FloatFieldIJ,
+    bnv2bar: FloatFieldIJ,
+    delp: FloatField,
+    theta: FloatFieldIJ,
+    ang: FloatField,
+    uds: FloatField,
+    up: FloatFieldIJ,
+    zbk: FloatFieldIJ,
+    phil_zb: FloatFieldIJ,
+    gamma: FloatFieldIJ,
+    db: FloatField,
+    sigma: FloatFieldIJ,
+    k_index: IntFieldK,
+):
+    from __externals__ import cdmb
+    with computation(FORWARD), interval(0, 1):
+        if ipt:
+            # --- iwklm is the level above the height of the of the mountain.
+            # --- idxzb is the level of the dividing streamline.
+            # INITIALIZE DIVIDING STREAMLINE (DS) CONTROL VECTOR
+
+            iwklm = 2
+            idxzb = 0
+            kreflm = 0
+
+            # > --- Subgrid Mountain Blocking Section
+            #
+            # ..............................
+            # ..............................
+            #
+            #  (*j*)  11/03:  test upper limit on KMLL=km - 1
+            #      then do not need hncrit -- test with large hncrit first.
+            # KMLL  = km / 2 # maximum mtnlm height : # of vertical levels / 2
+
+            # --- No mtn should be as high as KMLL (so we do not have to start at
+            # --- the top of the model but could do calc for all levels).
+            elvmax = min(
+                elvmax + gwdpscons.SIGFAC * hprime, gwdpscons.HNCRIT
+            )
+
+    with computation(PARALLEL), interval(0, -1):  # for k in range(kmll):
+        if ipt:
+            # --- interpolate to max mtn height for index, iwklm[mm] wk[gz]
+            # --- ELVMAX is limited to hncrit because to hi res topo30 orog.
+            pkp1log = phil[0, 0, 1] / constants.GRAV
+            pklog = phil / constants.GRAV
+            if (elvmax <= pkp1log) and (elvmax >= pklog):
+                wk = (
+                    constants.GRAV
+                    * elvmax
+                    / (phil[0, 0, 1] - phil)
+                )
+                iwklm = max(iwklm, k_index + 1)
+                prsi_wk = prsi[0, 0, 1]
+                prsl_wk: prsl[0, 0, 1]
+            # ---        find at prsl levels large scale environment variables
+            # ---        these cover all possible mtn max heights
+            vtj = t1 * (1.0 + gwdpscons.FV * q1)
+            vtk = vtj / prslk
+
+            # DENSITY Kg/M**3
+            ro = gwdpscons.RDI * prsl / vtj
+
+    # klevm1 = kmll - 1
+    with computation(PARALLEL), interval(0, -2):  # for k in range(klevm1):
+        if ipt:
+            rdz = constants.GRAV / (phil[0, 0, 1] - phil)
+            # Brunt-Vaisala Frequency
+            # > - Compute Brunt-Vaisala Frequency \f$N\f$.
+            bnv2lm = (
+                (constants.GRAV + constants.GRAV)
+                * rdz
+                * (vtk[0, 0, 1] - vtk)
+                / (vtk[0, 0, 1] + vtk)
+            )
+            bnv2lm = max(bnv2lm, gwdpscons.BNV2MIN)
+
+    with computation(FORWARD), interval(0, 1):
+        if ipt:
+            delks = 1.0 / (prsi - prsi_wk)
+            delks1 = 1.0 / (prsl - prsl_wk)
+            ubar = 0.0
+            vbar = 0.0
+            roll = 0.0
+            pe = 0.0
+            ek = 0.0
+            bnv2bar = (
+                (prsl - prsl[0, 0, 1]) * delks1 * bnv2lm
+            )
+
+    # --- find the dividing stream line height
+    # --- starting from the level above the max mtn downward
+    # --- iwklm[mm] is the k-index of mtn elvmax elevation
+    # > - Find the dividing streamline height starting from the level above
+    # the maximum mountain height and processing downward.
+    with computation(BACKWARD), interval(0, -2):  # for ktrial in range(kmll - 1, -1, -1):
+        if ipt:
+            if (k_index < iwklm) and (kreflm == 0):
+                kreflm = k_index
+
+    # --- in the layer kreflm[mm] to 1 find PE (which needs N, ELVMAX)
+    # ---  make averages, guess dividing stream (DS) line layer.
+    # ---  This is not used in the first cut except for testing and
+    # --- is the vert ave of quantities from the surface to mtn top.
+    with computation(FORWARD), interval(0, -2):
+        if k_index <= kreflm:
+            rdelks = delp * delks
+            ubar = ubar + rdelks * u1  # trial Mean U below
+            vbar = vbar + rdelks * v1  # trial Mean V below
+            # trial Mean ro below:
+            roll = roll + rdelks * ro
+            rdelks = (prsl - prsl[0, 0, 1]) * delks1
+            bnv2bar = bnv2bar + bnv2lm * rdelks
+            # --- these vert ave are for diags, testing and GWD to follow (*j*).
+
+    # --- integrate to get PE in the trial layer.
+    # --- Need the first layer where PE>EK - as soon as
+    # --- idxzb is not 0 we have a hit and Zb is found.
+    with computation(BACKWARD), interval(...):
+        if k_index <= iwklm:
+            phiang = atan(v1, u1) * gwdpscons.RAD_TO_DEG
+            ang = theta - phiang
+            ang = (
+                ang - 180.0 if (ang > 90.0) else ang
+            )
+            ang = (
+                ang + 180.0 if (ang < -90.0) else ang
+            )
+            ang = ang * gwdpscons.DEG_TO_RAD
+
+            # > - Compute wind speed UDS
+            # # \f[
+            # #     UDS=\max(\sqrt{u1^2+v1^2},minwnd)
+            # # \f]
+            # #  where \f$ minwnd=0.1 \f$, \f$u1\f$ and \f$v1\f$ are zonal and
+            # #  meridional wind components of model layer wind.
+            uds = max(
+                sqrt(u1 * u1 + v1 * v1),
+                gwdpscons.MINWIND,
+            )
+            # --- Test to see if we found Zb previously
+            if idxzb == 0:
+                pe = pe + bnv2lm * (
+                    constants.GRAV * elvmax - phil
+                ) * (phii[0, 0, 1] - phii) / (
+                    constants.GRAV * constants.GRAVG
+                )
+
+                # --- KE
+                # --- Wind projected on the line perpendicular
+                #         to mtn range, U(Zb(K)).
+                # --- kenetic energy is at the layer Zb
+                # --- THETA ranges from -+90deg |_
+                #         to the mtn "largest topo variations"
+                up = uds * cos(ang)
+                ek = 0.5 * up * up
+
+                # --- Dividing Stream lime  is found when PE =exceeds EK.
+                if pe >= ek:
+                    idxzb = k_index
+                    rdxzb = k_index
+            # --- Then mtn blocked flow is between Zb=k(idxzb[i, j]) and surface
+
+            # > - The dividing streamline height (idxzb), of a subgrid scale
+            # #  obstable, is found by comparing the potential (PE) and kinetic
+            # #  energies (EK) of the upstream large scale wind and subgrid
+            # #  scale air parcel movements. the dividing streamline is found
+            # #  when \f$PE\geq EK\f$. Mountain-blocked flow is defined to
+            # #  exist between the surface and the dividing streamline height
+            # #  (\f$h_d\f$), which can be found by solving an integral
+            # #  equation for \f$h_d\f$:
+            # # \f[
+            # #  \frac{U^{2}(h_{d})}{2}=\int_{h_{d}}^{H} N^{2}(z)(H-z)dz
+            # # \f]
+            # #  where \f$H\f$ is the maximum subgrid scale elevation within the
+            # #  grid box of actual orography, \f$h\f$, obtained from the
+            # #  GTOPO30 dataset from the U.S. Geological Survey.
+
+    with computation(FORWARD), interval(0, 1):
+        if ipt:
+            # --- Calc if N constant in layers (Zb guess) - a diagnostic only.
+            zbk = (
+                elvmax - sqrt(ubar * ubar + vbar * vbar) / bnv2bar
+            )
+            zlen = 0.0
+
+    # --- The drag for mtn blocked flow
+    with computation(BACKWARD), interval(...):
+        if idxzb >= 0:
+            if k_index == idxzb:
+                phil_zb = phil
+            if k_index <= idxzb:
+                if phil_zb > phil:
+                    # > - Calculate \f$ZLEN\f$, which sums up a number of
+                    # #  contributions of elliptic obstables.
+                    # # \f[
+                    # #     ZLEN=\sqrt{[\frac{h_{d}-z}{z+h'}]}
+                    # # \f]
+                    # #  where \f$z\f$ is the height, \f$h'\f$ is the orographic
+                    # #  standard deviation (HPRIME).
+                    zlen = sqrt(
+                        (phil_zb - phil)
+                        / (phil + constants.GRAV * hprime)
+                    )
+                    # --- lm eq 14:
+                    # > - Calculate the drag coefficient to vary with the aspect
+                    # #  ratio of the obstable as seen by the incident flow
+                    # #  (see eq.14 in Lott and Miller (1997)
+                    # #  \cite lott_and_miller_1997)
+                    # # \f[
+                    # #  R=\frac{\cos^{2}\psi+\gamma\sin^{2}\psi}
+                    # #      {\gamma\cos^{2}\psi+\sin^{2}\psi}
+                    # # \f]
+                    # #  where \f$\psi\f$, which is derived from THETA, is the
+                    # #  angle between the incident flow direction and the
+                    # #  normal ridge direcion. \f$\gamma\f$ is the orographic
+                    # #  anisotropy (GAMMA).
+                    r = (
+                        cos(ang) ** 2
+                        + gamma * sin(ang) ** 2
+                    )
+                    if abs(r) < 1.0e-20:
+                        db = 0.0
+                    else:
+                        r = (
+                            gamma * cos(ang) ** 2
+                            + sin(ang) ** 2
+                        ) / r
+                        # --- (negitive of db -- see sign at tendency)
+                        # > - In each model layer below the dividing
+                        # #  streamlines, a drag from the blocked flow is
+                        # #  exerted by the obstacle on the large scale flow.
+                        # #  The drag per unit area and per unit height is
+                        # #  written (eq.15 in Lott and Miller (1997)
+                        # #  \cite lott_and_miller_1997):
+                        # # \f[
+                        # #  D_{b}(z)=-C_{d}\max(2-\frac{1}{R},0)\rho
+                        # #      \frac{\sigma}{2h'}ZLEN
+                        # #      \max(\cos\psi,\gamma\sin\psi)\frac{UDS}{2}
+                        # # \f]
+                        # #  where \f$C_{d}\f$ is a specified constant,
+                        # #  \f$\sigma\f$ is the orographic slope.
+                        dbtmp = (
+                            0.25
+                            * cdmb * max(2.0 - r, 0.0) * sigma * max(
+                                np.cos(ang),
+                                gamma * sin(ang),
+                            )
+                            * zlen
+                            / hprime
+                        )
+                        db = dbtmp * uds
+        # .............................
+        # .............................
+        #  end  mtn blocking section
+
+# if # nmtvr != 14:
+def no_mountain_blocking(
+    idxzb: IntFieldIJ,
+    rdxzb: FloatFieldIJ,
+):
+    with computation(FORWARD), interval(0, 1):
+        idxzb = 0
+        rdxzb = 0.0
+
+# .............................
+# .............................
+
+# > --- Orographic Gravity Wave Drag Section
+kmpbl = km / 2  # maximum pbl height : # of vertical levels / 2
+
+#  Scale cleff between IM=384*2 and 192*2 for T126/T170 and T62
+if lonr > 0:
+    # cleff = 1.0E-5 * np.sqrt(FLOAT(lonr)/384.0)  # this is inverse of CLEFF!
+    # cleff = 1.0E-5 * np.sqrt(FLOAT(lonr)/192.0)  # this is inverse of CLEFF!
+    # cleff = 0.5E-5 * np.sqrt(FLOAT(lonr)/192.0)  # this is inverse of CLEFF!
+    # cleff = 1.0E-5 * np.sqrt(FLOAT(lonr)/192)/float(lonr/192)
+    # cleff = 1.0E-5 / np.sqrt(FLOAT(lonr)/192.0)  # this is inverse of CLEFF!
+    cleff = 0.5e-5 / np.sqrt(float(lonr) / 192.0)  # this is inverse of CLEFF!
+    # hmhj for ndsl
+    # jw    cleff = 0.1E-5 / np.sqrt(FLOAT(lonr)/192.0) !  this is inverse of CLEFF!
+    #       cleff = 2.0E-5 * np.sqrt(FLOAT(lonr)/192.0) !  this is inverse of CLEFF!
+    #       cleff = 2.5E-5 * np.sqrt(FLOAT(lonr)/192.0) !  this is inverse of CLEFF!
+cleff = cleff * cdmbgwd[1] if cdmbgwd[1] >= 0.0 else cleff
+
+kbps = 1
+kmps = km
+
+def start_orographic_gwd_and_find_indices(
+    u1: FloatField,
+    v1: FloatField,
+    t1: FloatField,
+    q1: FloatField,
+    prsi: FloatField,
+    prsi0: FloatFieldIJ,
+    prsl: FloatField,
+    prslk: FloatField,
+    phil: FloatField,
+    ipt: BoolFieldIJ,
+    vtj: FloatField,
+    vtk: FloatField,
+    taup: FloatField,
+    ro: FloatField,
+    ri_n: FloatField,
+    bnv2: FloatField,
+    delks: FloatField,
+    delks1: FloatFieldIJ,
+    ubar: FloatFieldIJ,
+    vbar: FloatFieldIJ,
+    roll: FloatFieldIJ,
+    bnv2bar: FloatFieldIJ,
+    iwk: IntFieldIJ,
+    kref: IntFieldIJ,
+    kpbl: IntFieldIJ,
+    k_index: IntFieldK,
+):
+    from __externals__ import kmpbl
+    with computation(PARALLEL), interval(...):
+        if ipt:
+            vtj = t1 * (1.0 + gwdpscons.FV * q1)
+            vtk = vtj / prslk
+            # DENSITY TONS/M**3:
+            ro = gwdpscons.RDI * prsl / vtj
+            taup = 0.0
+
+    with computation(FORWARD), interval(0, -1):
+        if ipt:
+            ti = 2.0 / (t1 + t1[0, 0, 1])
+            tem = ti / (prsl - prsl[0, 0, 1])
+            rdz = constants.GRAV / (phil[0, 0, 1] - phil)
+            tem1 = u1 - u1[0, 0, 1]
+            tem2 = v1 - v1[0, 0, 1]
+            dw2 = tem1 * tem1 + tem2 * tem2
+            shr2 = max(dw2, gwdpscons.DW2MIN) * rdz * rdz
+            bvf2 = (
+                constants.GRAV
+                * (gwdpscons.GOCP + rdz * (vtj[0, 0, 1] - vtj))
+                * ti
+            )
+            ri_n = max(bvf2 / shr2, gwdpscons.RIMIN)  # Richardson number
+            # Brunt-Vaisala Frequency
+            # tem       = GR2 * (PRSL[i, j, k]+PRSL[i, j, k+1]) * tem
+            # bnv2[i,j,k]=tem*(VTK[i,j,k+1]-VTK[i,j,k])/(VTK[i,j,k+1]+VTK[i,j,k])
+            bnv2 = (
+                (constants.GRAV + constants.GRAV)
+                * rdz
+                * (vtk[0, 0, 1] - vtk)
+                / (vtk[0, 0, 1] + vtk)
+            )
+            bnv2 = max(bnv2, gwdpscons.BNV2MIN)
+
+    # Finding the first interface index above 50 hPa level
+    with computation(FORWARD):
+        with interval(0, 1):
+            if ipt:
+                iwk = 2
+                prsi0 = prsi
+        with interval(1, kmpbl):
+            if ipt:
+                tem = prsi0 - prsi
+                iwk = k_index if tem < gwdpscons.DPMIN else iwk
+
+    with computation(FORWARD), interval(0, 1):
+        if ipt:
+            kref = max(iwk, kpbl + 1)  # reference level
+            delks = 1.0 / (prsi - prsi[0, 0, kref])
+            delks1 = 1.0 / (prsl - prsl[0, 0, kref])
+            ubar = 0.0
+            vbar = 0.0
+            roll = 0.0
+
+            bnv2bar = (
+                (prsl - prsl[0, 0, 1]) * delks1 * bnv2
+            )
+
+kbps = max(kbps, max(kref[:]))
+kmps = min(kmps, min(kref[:]))
+kbpsp1 = kbps + 1
+kbpsm1 = kbps - 1
+
+def means_below_kref(
+    u1: FloatField,
+    v1: FloatField,
+    prsl: FloatField,
+    delp: FloatField,
+    delks: FloatFieldIJ,
+    delks1: FloatFieldIJ,
+    ubar: FloatFieldIJ,
+    vbar: FloatFieldIJ,
+    bnv2bar: FloatFieldIJ,
+    bnv2: FloatField,
+    kref: IntFieldIJ,
+    ro: FloatField,
+    roll: FloatFieldIJ,
+    ipt: BoolFieldIJ,
+    k_index: IntFieldK,
+):
+    from __externals__ import kbps
+    with computation(PARALLEL), interval(0, kbps):
+        if ipt:
+            if k_index < kref:
+                rdelks = delp * delks
+                ubar = ubar + rdelks * u1  # Mean U below kref
+                vbar = vbar + rdelks * v1  # Mean V below kref
+                # Mean ro below kref:
+                roll = roll + rdelks * ro
+                rdelks = (prsl - prsl[0, 0, 1]) * delks1
+                bnv2bar = bnv2bar + bnv2 * rdelks
+
+def find_low_level_properties(
+    ubar: FloatFieldIJ,
+    vbar: FloatFieldIJ,
+    ipt: BoolFieldIJ,
+):
+    with computation(FORWARD), interval(0, 1):
+        if ipt:
+            wdir = atan(ubar, vbar) + gwdpscons.PI
+            idir = Int(gwdpscons.FDIR * wdir) % gwdpscons.MDIR
+            nwd = gwdpscons.NWDIR[idir]
+            oa[i, j] = (1 - 2 * int((nwd - 1) / 4)) * oa4[i, j][nwd - 1 % 4]
+            clx[i, j] = clx4[i, j][nwd - 1 % 4]
 
 
 def gwps_py(
@@ -831,36 +1334,6 @@ def gwps_py(
         dvsfc[i, j] = tem * dvsfc[i, j]
 
     return
-
-
-def init_columns(
-    dusfc: FloatFieldIJ,
-    dvsfc: FloatFieldIJ,
-    rdxzb: FloatFieldIJ,
-    ipt: IntFieldIJ,
-    npt: FloatFieldIJ,
-    db: FloatField,
-    ang: FloatField,
-    uds: FloatField,
-    elvmax: FloatFieldIJ,
-    hprime: FloatFieldIJ,
-):
-    from __externals__ import nmtvr
-
-    with computation(FORWARD), interval(0, 1):
-        dusfc = 0.0
-        dvsfc = 0.0
-        if nmtvr == 14:
-            rdxzb = 0.0
-            ipt = 0
-            npt = 0
-            if (elvmax > gwdpscons.HMINMT) and (hprime > gwdpscons.HPMIN):
-                npt += 1
-
-    with computation(PARALLEL), interval(...):
-        db = 0.0
-        ang = 0.0
-        uds = 0.0
 
 
 class OrographicGravityWaveDrag:

@@ -212,7 +212,7 @@ def gwps_reshape(
 
         for i, j in np.ndindex((ix, iy)):
             if ipt[i, j] is True:
-                for k in range(kreflm[i, j]):
+                for k in range(kreflm[i, j + 1]):
                     rdelks = delp[i, j, k] * delks[i, j]
                     ubar[i, j] = ubar[i, j] + rdelks * u1[i, j, k]  # trial Mean U below
                     vbar[i, j] = vbar[i, j] + rdelks * v1[i, j, k]  # trial Mean V below
@@ -228,7 +228,7 @@ def gwps_reshape(
 
         for i, j in np.ndindex((ix, iy)):
             if ipt[i, j] is True:
-                for k in range(iwklm[i, j] - 1, -1, -1):
+                for k in range(iwklm[i, j], -1, -1):
                     phiang = np.atan2(v1[i, j, k], u1[i, j, k]) * gwdpscons.RAD_TO_DEG
                     ang[i, j, k] = theta[i, j] - phiang
                     ang[i, j, k] = (
@@ -301,7 +301,7 @@ def gwps_reshape(
             if ipt[i, j] is True:
                 zlen = 0.0
                 if idxzb[i, j] > 0:
-                    for k in range(idxzb[i, j] - 1, -1, -1):
+                    for k in range(idxzb[i, j], -1, -1):
                         if phil[i, j, idxzb[i, j]] > phil[i, j, k]:
                             # > - Calculate \f$ZLEN\f$, which sums up a number of
                             # #  contributions of elliptic obstables.
@@ -310,7 +310,7 @@ def gwps_reshape(
                             # # \f]
                             # #  where \f$z\f$ is the height, \f$h'\f$ is the orographic
                             # #  standard deviation (HPRIME).
-                            ZLEN = np.sqrt(
+                            zlen = np.sqrt(
                                 (phil[i, j, idxzb[i, j]] - phil[i, j, k])
                                 / (phil[i, j, k] + constants.GRAV * hprime[i, j])
                             )
@@ -383,9 +383,10 @@ def gwps_reshape(
         if npt == 0:
             return  # No gwd/mb calculation done!
 
-        for m in range(npt):
-            idxzb[i, j] = 0
-            rdxzb[i, j] = 0.0
+        for i in range(ix):
+            for j in range(iy):
+                idxzb[i, j] = 0
+                rdxzb[i, j] = 0.0
 
     # .............................
     # .............................
