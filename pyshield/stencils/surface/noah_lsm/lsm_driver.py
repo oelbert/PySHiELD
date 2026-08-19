@@ -14,7 +14,6 @@ from ndsl.dsl.typing import (
     Float,
     FloatField,
     FloatFieldIJ,
-    FloatFieldK,
     Int,
     IntFieldIJ,
     IntFieldK,
@@ -224,7 +223,10 @@ def snow_new(sfctmp, sn_new, snowh, sndens):
     newsnc = sn_new * 100.0
     tempc = sfctmp - constants.TICE0
 
-    # calculating new snowfall density
+    # calculating new snowfall density depending on temperature
+    # equation from gottlib l. 'a general runoff model for
+    # snowcovered and glacierized basin', 6th nordic hydrological
+    # conference, vemadolen, sweden, 1980, 172-177pp.
     if tempc <= -15.0:
         dsnew = 0.05
     else:
@@ -332,27 +334,29 @@ def init_lsm(
             snowc = 0.0
             snohf = 0.0
 
-            q0 = max(q1[0, 0, 0][0], 1.0e-8)
-            theta1 = t1 * prslki
+            q0 = max(q1[0, 0, 0][0], 1.0e-8)  # q1=specific humidity at level 1 (kg/kg)
+            theta1 = t1 * prslki  # adiabatic temp at level 1 (k)
             rho = prsl1 / (constants.RDGAS * t1 * (1.0 + constants.ZVIR * q0))
-            qs1 = fpvs(t1)
+            qs1 = fpvs(t1)  # qs1=sat. humidity at level 1 (kg/kg)
             qs1 = max(constants.EPS * qs1 / (prsl1 + (constants.EPS - 1) * qs1), 1.0e-8)
 
             q0 = min(qs1, q0)
 
             # noah: prepare variables to run noah lsm
             # configuration information
-            couple = 1
+            # ------------------------------#
+            # ice     - sea-ice flag (=1: sea-ice, =0: land)
             ice = 0
 
             # forcing data
-            prcp = constants.RHO_H2O * tprcp / dt
-            dqsdt2 = qs1 * physcons.A23M4 / (t1 - physcons.A4) ** 2
+            prcp = constants.RHO_H2O * tprcp / dt  # precip rate (kg m-2 s-1)
+            # slope of sat specific humidity curve at t=sfctmp (kg kg-1 k-1):
+            dqsdt2 = qs1 * physcons.A23M4 / (t1 - physcons.A4) ** 2.0
 
             # history variables
-            cmc = canopy * 0.001
-            snowh = snwdph * 0.001
-            sneqv = weasd * 0.001
+            cmc = canopy * 0.001  # canopy moisture content (m)
+            snowh = snwdph * 0.001  # actual snow depth (m)
+            sneqv = weasd * 0.001  # liquid water-equivalent snow depth (m)
             sfctmp = t1
 
             if (sneqv != 0.0) and (snowh == 0.0):
@@ -599,21 +603,29 @@ def sflx_1(
             # initialization
             shdfac0 = shdfac
 
-            if ivegsrc == 2 and vegtype == 12:
-                ice = -1
+            if ivegsrc == 2:
+                if vegtype == 12:
+                    ice = -1
+                    shdfac = 0.0
+
+            if ivegsrc == 1:
+                if vegtype == 14:
+                    ice = -1
+                    shdfac = 0.0
+
+            if ice == 1:
+                # set green vegetation fraction (shdfac) = 0.
+                # set sea-ice layers of equal thickness and sum to 3 meters
                 shdfac = 0.0
 
-            if ivegsrc == 1 and vegtype == 14:
-                ice = -1
-                shdfac = 0.0
-
-            if ivegsrc == 1 and vegtype == 12:
-                rsmin = 400.0 * (1 - shdfac0) + 40.0 * shdfac0
-                shdfac = shdfac0
-                smcmax = 0.45 * (1 - shdfac0) + smcmax * shdfac0
-                smcref = 0.42 * (1 - shdfac0) + smcref * shdfac0
-                smcwlt = 0.40 * (1 - shdfac0) + smcwlt * shdfac0
-                smcdry = 0.40 * (1 - shdfac0) + smcdry * shdfac0
+            if ivegsrc == 1:
+                if vegtype == 12:
+                    rsmin = 400.0 * (1 - shdfac0) + 40.0 * shdfac0
+                    shdfac = shdfac0
+                    smcmax = 0.45 * (1 - shdfac0) + smcmax * shdfac0
+                    smcref = 0.42 * (1 - shdfac0) + smcref * shdfac0
+                    smcwlt = 0.40 * (1 - shdfac0) + smcwlt * shdfac0
+                    smcdry = 0.40 * (1 - shdfac0) + smcdry * shdfac0
 
             if bexpp < 0.0:
                 bexp = bexp * max(1.0 + bexpp, 0.0)
@@ -623,6 +635,7 @@ def sflx_1(
             xlai = xlai * (1.0 + xlaip)
             xlai = max(xlai, 0.75)
 
+            # initialize precipitation logicals.
             snowng = False
             frzgra = False
 
@@ -630,13 +643,15 @@ def sflx_1(
             # lower bound (0.01 m for sea-ice, 0.10 m for glacial-ice), then
             # set at lower bound and store the source increment in subsurface
             # runoff/baseflow (runoff2).
-            if (ice == 1) and (sneqv < 0.01):
-                sneqv = 0.01
-                snowh = 0.10
-            elif (ice == -1) and (sneqv < 0.10):
-                # TODO: check if it is called
-                sneqv = 0.10
-                snowh = 1.00
+            if ice == 1:
+                if sneqv < 0.01:
+                    sneqv = 0.01
+                    snowh = 0.10
+            elif ice == -1:
+                if sneqv < 0.10:
+                    # TODO: check if it is called
+                    sneqv = 0.10
+                    snowh = 1.00
 
     with computation(PARALLEL), interval(...):
         if lsm_mask:
@@ -646,6 +661,7 @@ def sflx_1(
                 smc = 1.0
                 sh2o = 1.0
                 if ice == 1:
+                    # set sea-ice layers of equal thickness and sum to 3 meters
                     zsoil = -3.0 * (k_mask + 1.0) / nsoil
 
     with computation(FORWARD), interval(0, 1):
@@ -678,19 +694,18 @@ def sflx_1(
             # prcp rate from kg m-2 s-1 to a liquid equiv snow depth in meters)
             # and add it to the existing snowpack.
 
-            # snowfall
-            if snowng:
-                sn_new = ffrozp * prcp * dt * 0.001
-                sneqv = sneqv + sn_new
-                prcp1 = (1.0 - ffrozp) * prcp
-
-            # freezing rain
-            if frzgra:
-                sn_new = prcp * dt * 0.001
-                sneqv = sneqv + sn_new
-                prcp1 = 0.0
-
             if snowng or frzgra:
+                # snowfall
+                if snowng:
+                    sn_new = ffrozp * prcp * dt * 0.001
+                    sneqv = sneqv + sn_new
+                    prcp1 = (1.0 - ffrozp) * prcp
+
+                # freezing rain
+                if frzgra:
+                    sn_new = prcp * dt * 0.001
+                    sneqv = sneqv + sn_new
+                    prcp1 = 0.0
 
                 # update snow density based on new snowfall, using old and new
                 # snow.  update snow thermal conductivity
@@ -705,6 +720,7 @@ def sflx_1(
 
             # determine snowcover fraction and albedo fraction over land.
             if ice != 0:
+                # snow cover, albedo over sea-ice, glacial-ice
                 sncovr = 1.0
                 albedo = 0.65  # albedo over sea-ice, glacial- ice
 
@@ -1005,27 +1021,31 @@ def finalize_outputs(
 ):
     with computation(FORWARD), interval(0, 1):
         if lsm_mask:
-            stm *= 1000.0
+            stm *= 1000.0  # unit conversion (from m to kg m-2)
             snohf = flx1 + flx2 + flx3
 
             smcwlt2 = smcwlt
             smcref2 = smcref
 
-            wet1 = smc / smcmax
+            wet1 = smc / smcmax  # Sarah Lu added 09/09/2010 (for GOCART)
 
+            # unit conversion (from m s-1 to mm s-1 and kg m-2 s-1)
             runoff = runoff1 * 1000.0
             drain = runoff2 * 1000.0
 
+            # unit conversion (from m to mm)
             canopy = cmc * 1000.0
             snwdph = snowh * 1000.0
             weasd = sneqv * 1000.0
             sncovr1 = snowc
+            # outside sflx, roughness uses cm as unit (update after snow's effect)
             z0rl = z0 * 100.0
             t1 = sfctmp
 
             # compute qsurf
             rch = rho * constants.CP_AIR * ch * wind
             qsurf = q1[0, 0, 0][0] + evap / (physcons.HOCP * rch)
+
             tem = 1.0 / rho
             hflx = hflx * tem / constants.CP_AIR
             evap = evap * tem / constants.HLV
@@ -1037,15 +1057,16 @@ def finalize_outputs(
             stc = stc_old
             slc = slc_old
     with computation(FORWARD), interval(0, 1):
-        if land and flag_guess:
-            weasd = weasd_old
-            snwdph = snwdph_old
-            tskin = tskin_old
-            canopy = canopy_old
-            tprcp = tprcp_old
-            srflag = srflag_old
-        elif land:
-            tskin = tsurf
+        if land:
+            if flag_guess:
+                weasd = weasd_old
+                snwdph = snwdph_old
+                tskin = tskin_old
+                canopy = canopy_old
+                tprcp = tprcp_old
+                srflag = srflag_old
+            else:
+                tskin = tsurf
 
 
 class NoahLSM:
@@ -1080,6 +1101,9 @@ class NoahLSM:
         ), f"pertvegf[0] > 0 not implemented, got {config.pertvegf[0]}"
         assert config.ivegsrc == 1, f"ivegsrc !=1 not implemented, got {config.ivegsrc}"
         assert config.isot == 1, f"isot != 1 not implemented, got {config.isot}"
+
+        # TODO: make this a config setting?
+        self._couple = 1  # ! run noah lsm in 'couple' mode
 
         def make_quantity() -> Quantity:
             return quantity_factory.zeros(
