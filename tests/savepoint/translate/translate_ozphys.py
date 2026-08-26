@@ -1,11 +1,10 @@
 from ndsl import QuantityFactory, StencilFactory, SubtileGridSizer
 from ndsl.constants import I_DIM, J_DIM, K_DIM
+from ndsl.dsl.typing import Float, Int
+from pyshield._config import OZONE_DIM
 from pyshield.stencils.ozone import ozphys_2015
 from tests.savepoint.translate.translate_physics import TranslatePhysicsFortranData2Py
-from ndsl.dsl.typing import (
-    Float,
-    Int,
-)
+
 
 class OzPhys:
     def __init__(
@@ -40,7 +39,7 @@ class OzPhys:
         self._kmax = make_quantity_2d(Int)
 
         self._prod = self.quantity_factory.zeros(
-            [I_DIM, J_DIM, K_DIM, self.OZONE_DIM],
+            [I_DIM, J_DIM, K_DIM, OZONE_DIM],
             units="unknown",
             dtype=Float,
         )
@@ -86,6 +85,7 @@ class OzPhys:
             self._k_val,
         )
 
+
 class TranslateOZPhys15(TranslatePhysicsFortranData2Py):
     def __init__(self, grid, config, stencil_factory):
         super().__init__(grid, config, stencil_factory)
@@ -123,11 +123,19 @@ class TranslateOZPhys15(TranslatePhysicsFortranData2Py):
 
         self.make_storage_data_input_vars(inputs)
 
+        oz_coeff = inputs.pop("ozcoef")
+
+        quantity_factory.add_data_dimensions(
+            {
+                OZONE_DIM: len(oz_coeff),
+            }
+        )
+
         compute_func = OzPhys(
             self.stencil_factory,
             quantity_factory,
-            inputs.pop("ozcoef"),
-            levozp,
+            oz_coeff,
+            inputs.pop("levozp"),
             inputs.pop("delt"),
             self.config.npz,
         )
