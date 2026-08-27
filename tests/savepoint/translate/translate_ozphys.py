@@ -38,7 +38,7 @@ class OzPhys:
         self._kmin = make_quantity_2d(Int)
         self._kmax = make_quantity_2d(Int)
 
-        self._prod = self.quantity_factory.zeros(
+        self._prod = quantity_factory.zeros(
             [I_DIM, J_DIM, K_DIM, OZONE_DIM],
             units="unknown",
             dtype=Float,
@@ -124,7 +124,6 @@ class TranslateOZPhys15(TranslatePhysicsFortranData2Py):
         self.make_storage_data_input_vars(inputs)
 
         oz_coeff = inputs.pop("ozcoef")
-
         quantity_factory.add_data_dimensions(
             {
                 OZONE_DIM: len(oz_coeff),
