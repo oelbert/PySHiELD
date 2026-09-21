@@ -4,7 +4,7 @@ from numpy import ndarray, zeros
 
 import ndsl.constants as constants
 import pyshield.constants as physcons
-from ndsl.constants import X_DIM, Y_DIM, Z_DIM
+from ndsl.constants import I_DIM, J_DIM, K_DIM
 
 # from pace.dsl.dace.orchestration import orchestrate
 from ndsl.dsl.stencil import StencilFactory
@@ -1166,14 +1166,14 @@ class NoahLSM:
 
         def make_quantity() -> Quantity:
             return quantity_factory.zeros(
-                [X_DIM, Y_DIM, Z_DIM],
+                [I_DIM, J_DIM, K_DIM],
                 units="unknown",
                 dtype=Float,
             )
 
         def make_quantity_2d() -> Quantity:
             return quantity_factory.zeros(
-                [X_DIM, Y_DIM],
+                [I_DIM, J_DIM],
                 units="unknown",
                 dtype=Float,
             )
@@ -1187,7 +1187,7 @@ class NoahLSM:
         for k in range(domain[2]):
             kmask[k] = k
         self._k_mask = quantity_factory.from_compute_array(
-            kmask, dims=[Z_DIM], units=""
+            kmask, dims=[K_DIM], units=""
         )
 
         (
@@ -1221,95 +1221,95 @@ class NoahLSM:
 
         self._vegtype = quantity_factory.from_array(
             veg_data,
-            dims=[X_DIM, Y_DIM],
+            dims=[I_DIM, J_DIM],
             units="",
         )
         self._soiltype = quantity_factory.from_array(
             soil_data,
-            dims=[X_DIM, Y_DIM],
+            dims=[I_DIM, J_DIM],
             units="",
         )
         self._slopetype = quantity_factory.from_array(
             slope_data,
-            dims=[X_DIM, Y_DIM],
+            dims=[I_DIM, J_DIM],
             units="",
         )
         self._land = quantity_factory.from_array(
             land,
-            dims=[X_DIM, Y_DIM],
+            dims=[I_DIM, J_DIM],
             units="",
         )
         self._ice = quantity_factory.from_array(
             ice,
-            dims=[X_DIM, Y_DIM],
+            dims=[I_DIM, J_DIM],
             units="",
         )
-        self._nroot = quantity_factory.from_array(nroot, dims=[X_DIM, Y_DIM], units="")
-        self._zroot = quantity_factory.from_array(zroot, dims=[X_DIM, Y_DIM], units="")
+        self._nroot = quantity_factory.from_array(nroot, dims=[I_DIM, J_DIM], units="")
+        self._zroot = quantity_factory.from_array(zroot, dims=[I_DIM, J_DIM], units="")
         self._sldpth = quantity_factory.from_array(
-            sldpth, dims=[X_DIM, Y_DIM, Z_DIM], units="m"
+            sldpth, dims=[I_DIM, J_DIM, K_DIM], units="m"
         )
-        self._snup = quantity_factory.from_array(snup, dims=[X_DIM, Y_DIM], units="")
-        self._rsmin = quantity_factory.from_array(rsmin, dims=[X_DIM, Y_DIM], units="")
-        self._rgl = quantity_factory.from_array(rgl, dims=[X_DIM, Y_DIM], units="")
-        self._hs = quantity_factory.from_array(hs, dims=[X_DIM, Y_DIM], units="")
-        self._xlai = quantity_factory.from_array(xlai, dims=[X_DIM, Y_DIM], units="")
-        self._bexp = quantity_factory.from_array(bexp, dims=[X_DIM, Y_DIM], units="")
-        self._dksat = quantity_factory.from_array(dksat, dims=[X_DIM, Y_DIM], units="")
-        self._dwsat = quantity_factory.from_array(dwsat, dims=[X_DIM, Y_DIM], units="")
-        self._f1 = quantity_factory.from_array(f1, dims=[X_DIM, Y_DIM], units="")
-        self._kdt = quantity_factory.from_array(kdt, dims=[X_DIM, Y_DIM], units="")
+        self._snup = quantity_factory.from_array(snup, dims=[I_DIM, J_DIM], units="")
+        self._rsmin = quantity_factory.from_array(rsmin, dims=[I_DIM, J_DIM], units="")
+        self._rgl = quantity_factory.from_array(rgl, dims=[I_DIM, J_DIM], units="")
+        self._hs = quantity_factory.from_array(hs, dims=[I_DIM, J_DIM], units="")
+        self._xlai = quantity_factory.from_array(xlai, dims=[I_DIM, J_DIM], units="")
+        self._bexp = quantity_factory.from_array(bexp, dims=[I_DIM, J_DIM], units="")
+        self._dksat = quantity_factory.from_array(dksat, dims=[I_DIM, J_DIM], units="")
+        self._dwsat = quantity_factory.from_array(dwsat, dims=[I_DIM, J_DIM], units="")
+        self._f1 = quantity_factory.from_array(f1, dims=[I_DIM, J_DIM], units="")
+        self._kdt = quantity_factory.from_array(kdt, dims=[I_DIM, J_DIM], units="")
         self._psisat = quantity_factory.from_array(
-            psisat, dims=[X_DIM, Y_DIM], units=""
+            psisat, dims=[I_DIM, J_DIM], units=""
         )
         self._quartz = quantity_factory.from_array(
-            quartz, dims=[X_DIM, Y_DIM], units=""
+            quartz, dims=[I_DIM, J_DIM], units=""
         )
         self._smcdry = quantity_factory.from_array(
-            smcdry, dims=[X_DIM, Y_DIM], units=""
+            smcdry, dims=[I_DIM, J_DIM], units=""
         )
         self._smcmax = quantity_factory.from_array(
-            smcmax, dims=[X_DIM, Y_DIM], units=""
+            smcmax, dims=[I_DIM, J_DIM], units=""
         )
         self._smcref = quantity_factory.from_array(
-            smcref, dims=[X_DIM, Y_DIM], units=""
+            smcref, dims=[I_DIM, J_DIM], units=""
         )
         self._smcwlt = quantity_factory.from_array(
-            smcwlt, dims=[X_DIM, Y_DIM], units=""
+            smcwlt, dims=[I_DIM, J_DIM], units=""
         )
         self._shdfac = quantity_factory.from_array(
-            shdfac, dims=[X_DIM, Y_DIM], units=""
+            shdfac, dims=[I_DIM, J_DIM], units=""
         )
-        self._frzx = quantity_factory.from_array(frzx, dims=[X_DIM, Y_DIM], units="")
+        self._frzx = quantity_factory.from_array(frzx, dims=[I_DIM, J_DIM], units="")
         self._rtdis = quantity_factory.from_array(
-            rtdis, dims=[X_DIM, Y_DIM, Z_DIM], units=""
+            rtdis, dims=[I_DIM, J_DIM, K_DIM], units=""
         )
         self._zsoil = make_quantity()
         for k in range(config.lsoil):
             self._zsoil.data[:, :, k] = zsoil[k]
 
-        self._slope = quantity_factory.from_array(slope, dims=[X_DIM, Y_DIM], units="")
+        self._slope = quantity_factory.from_array(slope, dims=[I_DIM, J_DIM], units="")
 
         self._lsm_mask = quantity_factory.zeros(
-            dims=[X_DIM, Y_DIM],
+            dims=[I_DIM, J_DIM],
             units="",
             dtype=Bool,
         )
 
         self._snopac_mask = quantity_factory.zeros(
-            dims=[X_DIM, Y_DIM],
+            dims=[I_DIM, J_DIM],
             units="",
             dtype=Bool,
         )
 
         self._nopac_mask = quantity_factory.zeros(
-            dims=[X_DIM, Y_DIM],
+            dims=[I_DIM, J_DIM],
             units="",
             dtype=Bool,
         )
 
         self._snowng = quantity_factory.zeros(
-            dims=[X_DIM, Y_DIM],
+            dims=[I_DIM, J_DIM],
             units="",
             dtype=Bool,
         )

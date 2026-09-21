@@ -2,7 +2,7 @@ from gt4py.cartesian import gtscript
 from gt4py.cartesian.gtscript import FORWARD, computation, interval
 
 import pyshield.constants as physcons
-from ndsl.constants import X_DIM, Y_DIM, Z_DIM
+from ndsl.constants import I_DIM, J_DIM, K_DIM
 
 # from pace.dsl.dace.orchestration import orchestrate
 from ndsl.dsl.stencil import StencilFactory
@@ -223,19 +223,19 @@ class EvapoTranspiration:
         grid_indexing = stencil_factory.grid_indexing
 
         self._transp_mask = quantity_factory.zeros(
-            dims=[X_DIM, Y_DIM],
+            dims=[I_DIM, J_DIM],
             units="",
             dtype=Bool,
         )
 
         self._gx = quantity_factory.zeros(
-            dims=[X_DIM, Y_DIM, Z_DIM],
+            dims=[I_DIM, J_DIM, K_DIM],
             units="",
             dtype=Float,
         )
 
         self._sgx = quantity_factory.zeros(
-            dims=[X_DIM, Y_DIM],
+            dims=[I_DIM, J_DIM],
             units="",
             dtype=Float,
         )

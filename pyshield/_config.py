@@ -83,7 +83,6 @@ class SurfaceConfig:
     wind_th_hwrf: float = DEFAULT_FLOAT
     lsoil: int = 4
     isot: int = DEFAULT_INT
-    ivegsrc: int = DEFAULT_INT
     lheatstrg: bool = DEFAULT_BOOL
     pertvegf: List[float] = dataclasses.field(
         default_factory=lambda: [-999.0, -999.0, -999.0, -999.0, -999.0]

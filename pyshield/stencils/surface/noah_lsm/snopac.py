@@ -3,7 +3,7 @@ from gt4py.cartesian.gtscript import FORWARD, PARALLEL, computation, exp, interv
 
 import ndsl.constants as constants
 import pyshield.constants as physcons
-from ndsl.constants import X_DIM, Y_DIM, Z_DIM
+from ndsl.constants import I_DIM, J_DIM, K_DIM
 
 # from pace.dsl.dace.orchestration import orchestrate
 from ndsl.dsl.stencil import StencilFactory
@@ -406,13 +406,13 @@ class SNOPAC:
 
         def make_quantity_2d() -> Quantity:
             return quantity_factory.zeros(
-                [X_DIM, Y_DIM],
+                [I_DIM, J_DIM],
                 units="unknown",
                 dtype=Float,
             )
 
         self._et1 = quantity_factory.zeros(
-            [X_DIM, Y_DIM, Z_DIM],
+            [I_DIM, J_DIM, K_DIM],
             units="unknown",
             dtype=Float,
         )
@@ -436,7 +436,7 @@ class SNOPAC:
         self._evapo_mask = make_quantity_2d()
 
         self._evapo_mask = quantity_factory.zeros(
-            dims=[X_DIM, Y_DIM],
+            dims=[I_DIM, J_DIM],
             units="",
             dtype=Bool,
         )

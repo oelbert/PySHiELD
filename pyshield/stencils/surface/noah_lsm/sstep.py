@@ -1,7 +1,7 @@
 from gt4py.cartesian.gtscript import FORWARD, PARALLEL, computation, interval
 
 import pyshield.constants as physcons
-from ndsl.constants import X_DIM, Y_DIM, Z_DIM
+from ndsl.constants import I_DIM, J_DIM, K_DIM
 
 # from pace.dsl.dace.orchestration import orchestrate
 from ndsl.dsl.stencil import StencilFactory
@@ -85,13 +85,13 @@ class SoilCanopyMoisture:
         grid_indexing = stencil_factory.grid_indexing
 
         self._delta = quantity_factory.zeros(
-            [X_DIM, Y_DIM, Z_DIM],
+            [I_DIM, J_DIM, K_DIM],
             units="unknown",
             dtype=Float,
         )
 
         self._p = quantity_factory.zeros(
-            [X_DIM, Y_DIM, Z_DIM],
+            [I_DIM, J_DIM, K_DIM],
             units="unknown",
             dtype=Float,
         )
