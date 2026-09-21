@@ -1,8 +1,6 @@
 import ndsl.constants as constants
-
-# from pace.dsl.dace.orchestration import orchestrate
 from ndsl import Quantity, QuantityFactory, StencilFactory
-from ndsl.constants import X_DIM, Y_DIM
+from ndsl.constants import I_DIM, J_DIM
 from ndsl.dsl.gt4py import FORWARD, computation, interval
 from ndsl.dsl.typing import (
     Bool,
@@ -89,16 +87,16 @@ def update_guess_and_soil_0(
     stsoil: FloatField,
     stc0: FloatFieldIJ,
     stc1: FloatFieldIJ,
-    slmsk: IntFieldIJ,
+    islmsk: IntFieldIJ,
 ):
     with computation(FORWARD):
         with interval(0, 1):
             if (iteration == 0) and (wind < 2.0):
                 flag_guess[0, 0] = True
-            if slmsk > 0:
+            if islmsk > 0:
                 stc0 = stsoil[0, 0, 0]
         with interval(1, 2):
-            if slmsk > 0:
+            if islmsk > 0:
                 stc1 = stsoil[0, 0, 0]
 
 
@@ -165,7 +163,7 @@ class SurfaceLayer:
 
         def make_quantity_2d() -> Quantity:
             return quantity_factory.zeros(
-                [X_DIM, Y_DIM],
+                [I_DIM, J_DIM],
                 units="unknown",
                 dtype=Float,
             )
@@ -201,13 +199,13 @@ class SurfaceLayer:
         self._prsl1 = make_quantity_2d()
 
         self._flag_guess = quantity_factory.zeros(
-            [X_DIM, Y_DIM],
+            [I_DIM, J_DIM],
             units="None",
             dtype=Bool,
         )
 
         self._flag_iter = quantity_factory.ones(
-            [X_DIM, Y_DIM],
+            [I_DIM, J_DIM],
             units="None",
             dtype=Bool,
         )
@@ -318,7 +316,7 @@ class SurfaceLayer:
                 state.wind,
                 self._fm10,
                 self._fh2,
-                state.slmsk,
+                state.islmsk,
                 state.vegtype,
                 self._flag_iter,
             )
@@ -330,7 +328,7 @@ class SurfaceLayer:
                 state.stc,
                 self._stc0,
                 self._stc1,
-                state.slmsk,
+                state.islmsk,
             )
 
             self._sfc_ocean(
@@ -352,7 +350,7 @@ class SurfaceLayer:
                 state.evap,
                 state.hflx,
                 self._ep1d,
-                state.slmsk,
+                state.islmsk,
                 self._flag_iter,
             )
 
@@ -372,7 +370,7 @@ class SurfaceLayer:
                 self._cdq,
                 self._prsl1,
                 self._work3,
-                state.slmsk,
+                state.islmsk,
                 self._flag_iter,
                 state.hice,
                 state.fice,
@@ -401,7 +399,7 @@ class SurfaceLayer:
                 state.stc,
                 self._stc0,
                 self._stc1,
-                state.slmsk,
+                state.islmsk,
             )
 
         self._post_loop(

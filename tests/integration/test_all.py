@@ -1,3 +1,4 @@
+import datetime
 from pathlib import Path
 
 import numpy as np
@@ -8,6 +9,7 @@ import ndsl.constants as constants
 import pyshield.constants as physcons
 from ndsl import NullComm, Quantity, QuantityFactory, StencilFactory, TileCommunicator
 from ndsl.boilerplate import get_factories_single_tile
+from ndsl.config import Backend, backend_python
 from ndsl.grid import (
     AngleGridData,
     ContravariantGridData,
@@ -17,6 +19,7 @@ from ndsl.grid import (
     VerticalGridData,
 )
 from pyshield import PHYSICS_PACKAGES, Physics, PhysicsConfig, PhysicsState
+from pyshield.radiation import RTE_RRTMGPConfig, RTE_RRTMGPState
 from pyshield.stencils.gfdl_cld_microphysics import GFDLCloudMPConfig
 from pyshield.stencils.pbl import PBLConfig
 from pyshield.stencils.shallow_convection import ShallowConvectionConfig
@@ -30,7 +33,7 @@ def setup_infrastructure(
     nzsoil: int,
     nhalo: int,
     etafile: Path,
-    backend: str = "numpy",
+    backend: Backend = backend_python,
 ):
     stencil_factory, quantity_factory = get_factories_single_tile(
         nx=nx, ny=ny, nz=nz, nhalo=nhalo, backend=backend
@@ -70,7 +73,7 @@ def states_from_fortran_restarts(
     quantity_factory: QuantityFactory,
     qf_sfc: QuantityFactory,
     stencil_factory: StencilFactory,
-    schemes: PHYSICS_PACKAGES,
+    schemes: list[PHYSICS_PACKAGES],
 ):
     pk0inv = (1.0 / physcons.P00) ** constants.KAPPA
     dycore_data = xr.open_dataset(dycore_datafile)
@@ -79,17 +82,16 @@ def states_from_fortran_restarts(
     sfc_data = xr.open_dataset(sfc_datafile)
     state = PhysicsState.init_zeros(quantity_factory, schemes)
     sstate = SurfaceState.init_zeros(qf_sfc)
+    radstate = RTE_RRTMGPState.init_zeros(quantity_factory)
     buff_3d = np.zeros_like(state.prsi.field)
     npz = buff_3d.shape[2]
     for k in range(npz):
         if k == 0:
-            buff_3d[:, :, k] = ak.data[0]
+            buff_3d[:, :, k] = ak[0]
         else:
-            buff_3d[:, :, k] = (
-                buff_3d[:, :, k - 1] + dycore_data.delp.data[0, k - 1, :, :]
-            )
-    state.delz.field[:, :, :] = dycore_data.DZ.data[0, :, :, :].transpose(2, 1, 0)
-    state.phii.field[:, :, -1] = dycore_data.phis.data[0, :, :].transpose()
+            buff_3d[:, :, k] = buff_3d[:, :, k - 1] + dycore_data.delp[0, k - 1, :, :]
+    state.delz.field[:, :, :] = dycore_data.DZ[0, :, :, :].transpose(2, 1, 0)
+    state.phii.field[:, :, -1] = dycore_data.phis[0, :, :].transpose()
     for k in range(npz - 2, -1, -1):
         state.phii.field[:, :, k] = state.phii.field[:, :, k + 1] + (
             state.delz.field[:, :, k] * constants.GRAV
@@ -98,52 +100,52 @@ def states_from_fortran_restarts(
         state.phii.field[:, :, :-1] + state.phii.field[:, :, 1:]
     )
     state.prsi.field[:] = buff_3d[:, :, :]
-    state.delp.field[:] = dycore_data.delp.data[0, :, :, :].transpose(2, 1, 0)
+    state.delp.field[:] = dycore_data.delp[0, :, :, :].transpose(2, 1, 0)
     state.prsik.field[:] = np.log(state.prsi.field[:])
-    state.prsik.field[:, :, 0] = (ak.data[0] / physcons.P00) ** constants.KAPPA
+    state.prsik.field[:, :, 0] = (ak[0] / physcons.P00) ** constants.KAPPA
     state.prsik.field[:, :, -1] = (
         np.exp(constants.KAPPA * state.prsik.field[:, :, -1]) * pk0inv
     )
     state.prslk.field[:] = np.exp(
         constants.KAPPA * np.log(state.delp.field[:] / physcons.P00)
     )
-    state.pt.field[:] = dycore_data.T.data[0, :, :, :].transpose(2, 1, 0)
-    state.qvapor.field[:] = tracer_data.sphum.data[0, :, :, :].transpose(2, 1, 0)
-    state.qliquid.view[:] = tracer_data.liq_wat.data[0, :, :, :].transpose(2, 1, 0)
-    state.qice.view[:] = tracer_data.ice_wat.data[0, :, :, :].transpose(2, 1, 0)
-    state.qcld.view[:] = tracer_data.cld_amt.data[0, :, :, :].transpose(2, 1, 0)
-    state.qo3mr.view[:] = tracer_data.o3mr.data[0, :, :, :].transpose(2, 1, 0)
-    state.delz.field[:] = dycore_data.DZ.data[0, :, :, :].transpose(2, 1, 0)
+    state.pt.field[:] = dycore_data.T[0, :, :, :].transpose(2, 1, 0)
+    state.qvapor.field[:] = tracer_data.sphum[0, :, :, :].transpose(2, 1, 0)
+    state.qliquid.view[:] = tracer_data.liq_wat[0, :, :, :].transpose(2, 1, 0)
+    state.qice.view[:] = tracer_data.ice_wat[0, :, :, :].transpose(2, 1, 0)
+    state.qcld.view[:] = tracer_data.cld_amt[0, :, :, :].transpose(2, 1, 0)
+    state.qo3mr.view[:] = tracer_data.o3mr[0, :, :, :].transpose(2, 1, 0)
+    state.delz.field[:] = dycore_data.DZ[0, :, :, :].transpose(2, 1, 0)
 
-    sstate.tsfc.field[:] = sfc_data.tsea.data[0, :, :].transpose()
-    sstate.slmsk.field[:] = sfc_data.slmsk.data[0, :, :].transpose()
-    sstate.zorl.field[:] = sfc_data.zorl.data[0, :, :].transpose()
-    sstate.vegtype.field[:] = sfc_data.vtype.data[0, :, :].transpose()
-    sstate.uustar.field[:] = sfc_data.uustar.data[0, :, :].transpose()
+    sstate.tsfc.field[:] = sfc_data.tsea[0, :, :].transpose()
+    sstate.islmsk.field[:] = sfc_data.slmsk[0, :, :].transpose()
+    sstate.zorl.field[:] = sfc_data.zorl[0, :, :].transpose()
+    sstate.vegtype.field[:] = sfc_data.vtype[0, :, :].transpose()
+    sstate.uustar.field[:] = sfc_data.uustar[0, :, :].transpose()
     sstate.sfcemis.field[:] = 0.98
-    sstate.vfrac.field[:] = sfc_data.vfrac.data[0, :, :].transpose()
-    sstate.shdmax.field[:] = sfc_data.shdmax.data[0, :, :].transpose()
-    sstate.snowd.field[:] = sfc_data.snwdph.data[0, :, :].transpose()
-    sstate.ffhh.field[:] = sfc_data.ffhh.data[0, :, :].transpose()
-    sstate.ffmm.field[:] = sfc_data.ffmm.data[0, :, :].transpose()
+    sstate.vfrac.field[:] = sfc_data.vfrac[0, :, :].transpose()
+    sstate.shdmax.field[:] = sfc_data.shdmax[0, :, :].transpose()
+    sstate.snowd.field[:] = sfc_data.snwdph[0, :, :].transpose()
+    sstate.ffhh.field[:] = sfc_data.ffhh[0, :, :].transpose()
+    sstate.ffmm.field[:] = sfc_data.ffmm[0, :, :].transpose()
     sstate.wind.field[:] = np.sqrt(
         state.ua.field[:, :, -1] ** 2.0 + state.va.field[:, :, -1] ** 2.0
     )
-    sstate.stc.field[:] = sfc_data.stc.data[0, :, :, :].transpose(2, 1, 0)
-    sstate.srflag.field[:] = sfc_data.srflag.data[0, :, :].transpose()
-    sstate.hice.field[:] = sfc_data.hice.data[0, :, :].transpose()
-    sstate.fice.field[:] = sfc_data.fice.data[0, :, :].transpose()
-    sstate.tisfc.field[:] = sfc_data.tisfc.data[0, :, :].transpose()
-    sstate.tprcp.field[:] = sfc_data.tprcp.data[0, :, :].transpose()
-    sstate.weasd.field[:] = sfc_data.sheleg.data[0, :, :].transpose()
+    sstate.stc.field[:] = sfc_data.stc[0, :, :, :].transpose(2, 1, 0)
+    sstate.srflag.field[:] = sfc_data.srflag[0, :, :].transpose()
+    sstate.hice.field[:] = sfc_data.hice[0, :, :].transpose()
+    sstate.fice.field[:] = sfc_data.fice[0, :, :].transpose()
+    sstate.tisfc.field[:] = sfc_data.tisfc[0, :, :].transpose()
+    sstate.tprcp.field[:] = sfc_data.tprcp[0, :, :].transpose()
+    sstate.weasd.field[:] = sfc_data.sheleg[0, :, :].transpose()
 
-    return state, sstate
+    return state, sstate, radstate
 
 
 # TODO: parameterize over schemes
 @pytest.mark.parametrize("restart_path", [Path("test_data/RESTART/")])
-@pytest.mark.parametrize("backend", ["numpy"])
-def test_pyshield_runs(restart_path: Path, backend: str):
+@pytest.mark.parametrize("backend", [Backend("st:numpy:cpu:IJK")])
+def test_pyshield_runs(restart_path: Path, backend: Backend):
     dycore_path = restart_path.joinpath("fv_core.res.tile1.nc")
     physics_path = restart_path.joinpath("phy_data.tile1.nc")
     sfc_path = restart_path.joinpath("sfc_data.tile1.nc")
@@ -160,7 +162,9 @@ def test_pyshield_runs(restart_path: Path, backend: str):
         nx=nx, ny=ny, nz=nz, nzsoil=4, nhalo=3, etafile=etafile, backend=backend
     )
 
-    state, sstate = states_from_fortran_restarts(
+    date = datetime.datetime(2020, 1, 1, 12, tzinfo=datetime.timezone.utc)
+
+    state, sstate, radstate = states_from_fortran_restarts(
         dycore_path,
         physics_path,
         tracer_path,
@@ -178,7 +182,38 @@ def test_pyshield_runs(restart_path: Path, backend: str):
         npy=ny + 1,
         npz=nz + 1,
         nwat=6,
-        schemes=["SATM_EDMF", "GFDL_cloud_microphysics", "SFC_layer", "SAMF_SHALCONV"],
+        schemes=[
+            "SATM_EDMF",
+            "GFDL_cloud_microphysics",
+            "SFC_layer",
+            "SAMF_SHALCONV",
+            "RTE_RRTMGP",
+        ],
+    )
+
+    radconf = RTE_RRTMGPConfig(
+        deltsw=3600.0,
+        delt_rad=3600.0,
+        date=date,
+        fhswr=1.0,
+        fhlwr=1.0,
+        isolar=10,
+        icmphys=4,
+        ico2flg=0,
+        ioznflg=1,
+        ictmflg=-1,
+        ialbflg=-1,
+        iemsflg=0,
+        ldisable_radiation_quasi_sea_ice=False,
+        solar_constant_file=Path("global_solarconstant_noaa_an.txt"),
+        input_dir=Path(restart_path.joinpath("test_data/")),
+        aerosol_file=Path(restart_path.joinpath("test_data/")),
+        sollat=0.0,
+        nstp=6,
+        ivflip=1,
+        lcnorm=False,
+        lcrick=False,
+        gfs_cloud_overlap=False,
     )
 
     sfc_config = SurfaceConfig(dt_atmos=dt)
@@ -235,5 +270,12 @@ def test_pyshield_runs(restart_path: Path, backend: str):
         gfdl_cld_mp_config=mp_config,
         sfc_config=sfc_config,
         sc_config=sc_conf,
+        rad_config=radconf,
     )
-    physics_driver(state, config.dt_atmos, surface_state=sstate)
+    physics_driver(
+        state,
+        timestep=config.dt_atmos,
+        surface_state=sstate,
+        radiation_state=radstate,
+        date=date,
+    )

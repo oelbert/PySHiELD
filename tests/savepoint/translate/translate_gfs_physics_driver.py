@@ -83,6 +83,13 @@ class TranslateGFSPhysicsDriver(TranslatePhysicsFortranData2Py):
         self.stencil_factory = stencil_factory
         self.grid_indexing = self.stencil_factory.grid_indexing
 
+        # This test wasn't running (on CI) for a long time because it was misconfigured.
+        # Now it's properly configured and temporarily skipped (i.e. still not running
+        # as before). Issue https://github.com/NOAA-GFDL/PySHiELD/issues/66 exists to
+        # re-enable and fix this test. To unskip, just delete the following line (and
+        # this comment).
+        self.skip_test = True
+
     def compute(self, inputs):
         self.make_storage_data_input_vars(inputs)
         storage = utils.make_storage_from_shape(
@@ -120,11 +127,10 @@ class TranslateGFSPhysicsDriver(TranslatePhysicsFortranData2Py):
             nz=self.config.npz,
             n_halo=3,
             layout=self.config.layout,
+            backend=self.stencil_factory.backend,
         )
 
-        quantity_factory = QuantityFactory.from_backend(
-            sizer, self.stencil_factory.backend
-        )
+        quantity_factory = QuantityFactory(sizer, backend=self.stencil_factory.backend)
         schemes = [PHYSICS_PACKAGES["GFS_microphysics"]]
         physics_state = PhysicsState(
             **inputs,

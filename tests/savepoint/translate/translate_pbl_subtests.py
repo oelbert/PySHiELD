@@ -1,8 +1,6 @@
-from gt4py.cartesian.gtscript import FORWARD, computation, interval
-
-import pyshield.constants as physcons
 from ndsl import QuantityFactory, StencilFactory, SubtileGridSizer
-from ndsl.constants import X_DIM, Y_DIM, Z_DIM
+from ndsl.constants import I_DIM, J_DIM, K_DIM
+from ndsl.dsl.gt4py import FORWARD, computation, interval
 from ndsl.dsl.typing import (
     Bool,
     BoolFieldIJ,
@@ -12,9 +10,10 @@ from ndsl.dsl.typing import (
     Int,
     IntFieldIJ,
 )
-from ndsl.stencils.basic_operations import copy_defn
+from ndsl.stencils import copy
 from pyshield._config import TRACER_DIM, FloatFieldTracer
 from pyshield.stencils.pbl import PBLConfig
+from pyshield.stencils.pbl import constants as pbl_constants
 from pyshield.stencils.pbl.mfpblt import PBLMassFlux
 from pyshield.stencils.pbl.mfscu import StratocumulusMassFlux
 from pyshield.stencils.pbl.satmedmfvdiff import (
@@ -83,28 +82,28 @@ class InitTurb:
         self._kmpbl = idx.domain[2] // 2 + 1
         self._kmscu = idx.domain[2] // 2 + 1
         self._ptop = quantity_factory.zeros(
-            [X_DIM, Y_DIM],
+            [I_DIM, J_DIM],
             units="Pa",
             dtype=Float,
         )
         self._pbot = quantity_factory.zeros(
-            [X_DIM, Y_DIM],
+            [I_DIM, J_DIM],
             units="Pa",
             dtype=Float,
         )
         self._k_mask = quantity_factory.zeros(
-            [X_DIM, Y_DIM, Z_DIM],
+            [I_DIM, J_DIM, K_DIM],
             units="unknown",
             dtype=Int,
         )
         self._tem1 = quantity_factory.zeros(
-            [X_DIM, Y_DIM, Z_DIM],
+            [I_DIM, J_DIM, K_DIM],
             units="unknown",
             dtype=Float,
         )
 
         for k in range(idx.domain[2]):
-            self._k_mask.data[:, :, k] = k
+            self._k_mask[:, :, k] = k
 
         self._init_turbulence = stencil_factory.from_origin_domain(
             func=init_turbulence,
@@ -326,16 +325,16 @@ class MRFScheme:
             domain=idx.domain_compute(),
         )
         self._k_mask = quantity_factory.zeros(
-            [X_DIM, Y_DIM, Z_DIM],
+            [I_DIM, J_DIM, K_DIM],
             units="unknown",
             dtype=Int,
         )
 
         for k in range(idx.domain[2]):
-            self._k_mask.data[:, :, k] = k
+            self._k_mask[:, :, k] = k
 
         self._thlvx_0 = quantity_factory.zeros(
-            [X_DIM, Y_DIM],
+            [I_DIM, J_DIM],
             units="unknown",
             dtype=Float,
         )
@@ -431,16 +430,16 @@ class ThermalPBL:
         self._kmpbl = idx.domain[2] // 2 + 1
         self._kmscu = idx.domain[2] // 2 + 1
         self._k_mask = quantity_factory.zeros(
-            [X_DIM, Y_DIM, Z_DIM],
+            [I_DIM, J_DIM, K_DIM],
             units="unknown",
             dtype=Int,
         )
 
         for k in range(idx.domain[2]):
-            self._k_mask.data[:, :, k] = k
+            self._k_mask[:, :, k] = k
 
         self._thlvx_0 = quantity_factory.zeros(
-            [X_DIM, Y_DIM],
+            [I_DIM, J_DIM],
             units="unknown",
             dtype=Float,
         )
@@ -525,13 +524,13 @@ class Stratocumulus:
         self._kmpbl = idx.domain[2] // 2 + 1
         self._kmscu = idx.domain[2] // 2 + 1
         self._k_mask = quantity_factory.zeros(
-            [X_DIM, Y_DIM, Z_DIM],
+            [I_DIM, J_DIM, K_DIM],
             units="unknown",
             dtype=Int,
         )
 
         for k in range(idx.domain[2]):
-            self._k_mask.data[:, :, k] = k
+            self._k_mask[:, :, k] = k
 
         self._stratocumulus = stencil_factory.from_origin_domain(
             func=stratocumulus,
@@ -578,29 +577,29 @@ class PBLAML:
         self._kmscu = idx.domain[2] // 2 + 1
 
         self._lev = quantity_factory.zeros(
-            [X_DIM, Y_DIM],
+            [I_DIM, J_DIM],
             units="unknown",
             dtype=Int,
         )
 
         self._k_mask = quantity_factory.zeros(
-            [X_DIM, Y_DIM, Z_DIM],
+            [I_DIM, J_DIM, K_DIM],
             units="unknown",
             dtype=Int,
         )
         self._ptem = quantity_factory.zeros(
-            [X_DIM, Y_DIM, Z_DIM],
+            [I_DIM, J_DIM, K_DIM],
             units="unknown",
             dtype=Float,
         )
         self._mlenflg = quantity_factory.zeros(
-            [X_DIM, Y_DIM, Z_DIM],
+            [I_DIM, J_DIM, K_DIM],
             units="unknown",
             dtype=Bool,
         )
 
         for k in range(idx.domain[2]):
-            self._k_mask.data[:, :, k] = k
+            self._k_mask[:, :, k] = k
 
         self._compute_asymptotic_mixing_length = stencil_factory.from_origin_domain(
             func=compute_asymptotic_mixing_length,
@@ -663,31 +662,31 @@ class TKETridiag:
         self._dt_atmos = config.dt_atmos
         self._ntke = config.ntracers - 1
         self._k_mask = quantity_factory.zeros(
-            [X_DIM, Y_DIM, Z_DIM],
+            [I_DIM, J_DIM, K_DIM],
             units="unknown",
             dtype=Int,
         )
 
         for k in range(idx.domain[2]):
-            self._k_mask.data[:, :, k] = k
+            self._k_mask[:, :, k] = k
 
         self._cu = quantity_factory.zeros(
-            [X_DIM, Y_DIM, Z_DIM],
+            [I_DIM, J_DIM, K_DIM],
             units="unknown",
             dtype=Float,
         )
         self._rt = quantity_factory.zeros(
-            [X_DIM, Y_DIM, Z_DIM],
+            [I_DIM, J_DIM, K_DIM],
             units="unknown",
             dtype=Float,
         )
         self._f1_p1 = quantity_factory.zeros(
-            [X_DIM, Y_DIM],
+            [I_DIM, J_DIM],
             units="unknown",
             dtype=Float,
         )
         self._ad_p1 = quantity_factory.zeros(
-            [X_DIM, Y_DIM],
+            [I_DIM, J_DIM],
             units="unknown",
             dtype=Float,
         )
@@ -759,13 +758,13 @@ class Prandtl:
         idx = stencil_factory.grid_indexing
         self._kmpbl = idx.domain[2] // 2 + 1
         self._k_mask = quantity_factory.zeros(
-            [X_DIM, Y_DIM, Z_DIM],
+            [I_DIM, J_DIM, K_DIM],
             units="unknown",
             dtype=Int,
         )
 
         for k in range(idx.domain[2]):
-            self._k_mask.data[:, :, k] = k
+            self._k_mask[:, :, k] = k
 
         self._compute_prandtl_num_exchange_coeff = stencil_factory.from_origin_domain(
             func=compute_prandtl_num_exchange_coeff,
@@ -807,7 +806,7 @@ class TKEPredict:
     ):
         idx = stencil_factory.grid_indexing
         self._dt_atmos = config.dt_atmos
-        self._kk = max(round(self._dt_atmos / physcons.CDTN), 1)
+        self._kk = max(round(self._dt_atmos / pbl_constants.CDTN), 1)
         self._dtn = self._dt_atmos / float(self._kk)
 
         self._predict_tke = stencil_factory.from_origin_domain(
@@ -845,18 +844,18 @@ class EdDiffShear:
     ):
         idx = stencil_factory.grid_indexing
         self._k_mask = quantity_factory.zeros(
-            [X_DIM, Y_DIM, Z_DIM],
+            [I_DIM, J_DIM, K_DIM],
             units="unknown",
             dtype=Int,
         )
         self._dkt_out = quantity_factory.zeros(
-            [X_DIM, Y_DIM, Z_DIM],
+            [I_DIM, J_DIM, K_DIM],
             units="unknown",
             dtype=Float,
         )
 
         for k in range(idx.domain[2]):
-            self._k_mask.data[:, :, k] = k
+            self._k_mask[:, :, k] = k
 
         self._compute_eddy_diffusivity_buoy_shear = stencil_factory.from_origin_domain(
             func=compute_eddy_diffusivity_buoy_shear,
@@ -958,13 +957,13 @@ class UpDownTKE:
         self._ntke = config.ntracers - 1
 
         self._k_mask = quantity_factory.zeros(
-            [X_DIM, Y_DIM, Z_DIM],
+            [I_DIM, J_DIM, K_DIM],
             units="unknown",
             dtype=Int,
         )
 
         for k in range(idx.domain[2]):
-            self._k_mask.data[:, :, k] = k
+            self._k_mask[:, :, k] = k
 
         self._tke_up_down_prop = stencil_factory.from_origin_domain(
             func=tke_up_down_prop,
@@ -1025,14 +1024,14 @@ class MomentTridiagComp:
 
         def make_quantity():
             return self.quantity_factory.zeros(
-                [X_DIM, Y_DIM, Z_DIM],
+                [I_DIM, J_DIM, K_DIM],
                 units="unknown",
                 dtype=Float,
             )
 
         def make_quantity_2D(type):
             return self.quantity_factory.zeros(
-                [X_DIM, Y_DIM],
+                [I_DIM, J_DIM],
                 units="unknown",
                 dtype=type,
             )
@@ -1043,18 +1042,18 @@ class MomentTridiagComp:
         self._f1_p1 = make_quantity_2D(Float)
         self._f2_p1 = make_quantity_2D(Float)
         self._a2 = self.quantity_factory.zeros(
-            [X_DIM, Y_DIM, Z_DIM, self.TRACER_DIM],
+            [I_DIM, J_DIM, K_DIM, self.TRACER_DIM],
             units="unknown",
             dtype=Float,
         )
         self._k_mask = self.quantity_factory.zeros(
-            [X_DIM, Y_DIM, Z_DIM],
+            [I_DIM, J_DIM, K_DIM],
             units="unknown",
             dtype=Int,
         )
 
         for k in range(idx.domain[2]):
-            self._k_mask.data[:, :, k] = k
+            self._k_mask[:, :, k] = k
 
         self._moment_tridiag_mat_ele_comp = stencil_factory.from_origin_domain(
             func=moment_tridiag_mat_ele_comp,
@@ -1157,14 +1156,14 @@ class HeatTracerTridiag:
 
         def make_quantity():
             return self.quantity_factory.zeros(
-                [X_DIM, Y_DIM, Z_DIM],
+                [I_DIM, J_DIM, K_DIM],
                 units="unknown",
                 dtype=Float,
             )
 
         def make_quantity_2D(type):
             return self.quantity_factory.zeros(
-                [X_DIM, Y_DIM],
+                [I_DIM, J_DIM],
                 units="unknown",
                 dtype=type,
             )
@@ -1175,18 +1174,18 @@ class HeatTracerTridiag:
         self._f1_p1 = make_quantity_2D(Float)
         self._f2_p1 = make_quantity_2D(Float)
         self._a2 = self.quantity_factory.zeros(
-            [X_DIM, Y_DIM, Z_DIM, self.TRACER_DIM],
+            [I_DIM, J_DIM, K_DIM, self.TRACER_DIM],
             units="unknown",
             dtype=Float,
         )
         self._k_mask = self.quantity_factory.zeros(
-            [X_DIM, Y_DIM, Z_DIM],
+            [I_DIM, J_DIM, K_DIM],
             units="unknown",
             dtype=Int,
         )
 
         for k in range(idx.domain[2]):
-            self._k_mask.data[:, :, k] = k
+            self._k_mask[:, :, k] = k
 
         self._heat_moist_tridiag_mat_ele_comp = stencil_factory.from_origin_domain(
             func=heat_moist_tridiag_mat_ele_comp,
@@ -1309,31 +1308,31 @@ class TKETendencyCalc:
         self._rdt = 1.0 / self._dt_atmos
         self._ntke = config.ntracers - 1
         self._k_mask = quantity_factory.zeros(
-            [X_DIM, Y_DIM, Z_DIM],
+            [I_DIM, J_DIM, K_DIM],
             units="unknown",
             dtype=Int,
         )
 
         for k in range(idx.domain[2]):
-            self._k_mask.data[:, :, k] = k
+            self._k_mask[:, :, k] = k
 
         self._cu = quantity_factory.zeros(
-            [X_DIM, Y_DIM, Z_DIM],
+            [I_DIM, J_DIM, K_DIM],
             units="unknown",
             dtype=Float,
         )
         self._rt = quantity_factory.zeros(
-            [X_DIM, Y_DIM, Z_DIM],
+            [I_DIM, J_DIM, K_DIM],
             units="unknown",
             dtype=Float,
         )
         self._f1_p1 = quantity_factory.zeros(
-            [X_DIM, Y_DIM],
+            [I_DIM, J_DIM],
             units="unknown",
             dtype=Float,
         )
         self._ad_p1 = quantity_factory.zeros(
-            [X_DIM, Y_DIM],
+            [I_DIM, J_DIM],
             units="unknown",
             dtype=Float,
         )
@@ -1345,7 +1344,7 @@ class TKETendencyCalc:
         )
 
         self._copy_stencil = stencil_factory.from_origin_domain(
-            func=copy_defn,
+            func=copy,
             origin=idx.origin_compute(),
             domain=idx.domain_compute(),
         )
@@ -1457,14 +1456,14 @@ class HeatTracerTendencyCalc:
 
         def make_quantity():
             return self.quantity_factory.zeros(
-                [X_DIM, Y_DIM, Z_DIM],
+                [I_DIM, J_DIM, K_DIM],
                 units="unknown",
                 dtype=Float,
             )
 
         def make_quantity_2D(type):
             return self.quantity_factory.zeros(
-                [X_DIM, Y_DIM],
+                [I_DIM, J_DIM],
                 units="unknown",
                 dtype=type,
             )
@@ -1475,18 +1474,18 @@ class HeatTracerTendencyCalc:
         self._f1_p1 = make_quantity_2D(Float)
         self._f2_p1 = make_quantity_2D(Float)
         self._a2 = self.quantity_factory.zeros(
-            [X_DIM, Y_DIM, Z_DIM, self.TRACER_DIM],
+            [I_DIM, J_DIM, K_DIM, self.TRACER_DIM],
             units="unknown",
             dtype=Float,
         )
         self._k_mask = self.quantity_factory.zeros(
-            [X_DIM, Y_DIM, Z_DIM],
+            [I_DIM, J_DIM, K_DIM],
             units="unknown",
             dtype=Int,
         )
 
         for k in range(idx.domain[2]):
-            self._k_mask.data[:, :, k] = k
+            self._k_mask[:, :, k] = k
 
         self._heat_moist_tridiag_mat_ele_comp = stencil_factory.from_origin_domain(
             func=heat_moist_tridiag_mat_ele_comp,
@@ -1675,14 +1674,14 @@ class MomentTendencyCalc:
 
         def make_quantity():
             return self.quantity_factory.zeros(
-                [X_DIM, Y_DIM, Z_DIM],
+                [I_DIM, J_DIM, K_DIM],
                 units="unknown",
                 dtype=Float,
             )
 
         def make_quantity_2D(type):
             return self.quantity_factory.zeros(
-                [X_DIM, Y_DIM],
+                [I_DIM, J_DIM],
                 units="unknown",
                 dtype=type,
             )
@@ -1693,18 +1692,18 @@ class MomentTendencyCalc:
         self._f1_p1 = make_quantity_2D(Float)
         self._f2_p1 = make_quantity_2D(Float)
         self._a2 = self.quantity_factory.zeros(
-            [X_DIM, Y_DIM, Z_DIM, self.TRACER_DIM],
+            [I_DIM, J_DIM, K_DIM, self.TRACER_DIM],
             units="unknown",
             dtype=Float,
         )
         self._k_mask = self.quantity_factory.zeros(
-            [X_DIM, Y_DIM, Z_DIM],
+            [I_DIM, J_DIM, K_DIM],
             units="unknown",
             dtype=Int,
         )
 
         for k in range(idx.domain[2]):
-            self._k_mask.data[:, :, k] = k
+            self._k_mask[:, :, k] = k
 
         self._moment_tridiag_mat_ele_comp = stencil_factory.from_origin_domain(
             func=moment_tridiag_mat_ele_comp,
@@ -1722,17 +1721,17 @@ class MomentTendencyCalc:
         )
 
         self._cu = quantity_factory.zeros(
-            [X_DIM, Y_DIM, Z_DIM],
+            [I_DIM, J_DIM, K_DIM],
             units="unknown",
             dtype=Float,
         )
         self._r1 = quantity_factory.zeros(
-            [X_DIM, Y_DIM, Z_DIM],
+            [I_DIM, J_DIM, K_DIM],
             units="unknown",
             dtype=Float,
         )
         self._r2 = quantity_factory.zeros(
-            [X_DIM, Y_DIM, Z_DIM, TRACER_DIM],
+            [I_DIM, J_DIM, K_DIM, TRACER_DIM],
             units="unknown",
             dtype=Float,
         )
@@ -1856,9 +1855,9 @@ class Half2:
         kmpbl: int,
     ):
         self._ntracers = config.ntracers
-        assert self._ntracers == 9, (
-            "PBL scheme satmedmfvdif requires ntracer " f"({config.ntracers}) == 9"
-        )
+        assert (
+            self._ntracers == 9
+        ), f"PBL scheme satmedmfvdif requires ntracer ({config.ntracers}) == 9"
 
         self._ntrac1 = self._ntracers - 1
 
@@ -1876,7 +1875,7 @@ class Half2:
 
         self._dt_atmos = config.dt_atmos
         self._rdt = 1.0 / self._dt_atmos
-        self._kk = max(round(self._dt_atmos / physcons.CDTN), 1)
+        self._kk = max(round(self._dt_atmos / pbl_constants.CDTN), 1)
         self._dtn = self._dt_atmos / float(self._kk)
 
         self._ntiw = config.ntiw
@@ -1888,14 +1887,14 @@ class Half2:
 
         def make_quantity():
             return self.quantity_factory.zeros(
-                [X_DIM, Y_DIM, Z_DIM],
+                [I_DIM, J_DIM, K_DIM],
                 units="unknown",
                 dtype=Float,
             )
 
         def make_quantity_2D(type):
             return self.quantity_factory.zeros(
-                [X_DIM, Y_DIM],
+                [I_DIM, J_DIM],
                 units="unknown",
                 dtype=type,
             )
@@ -1906,23 +1905,23 @@ class Half2:
         self._f1_p1 = make_quantity_2D(Float)
         self._f2_p1 = make_quantity_2D(Float)
         self._a2 = self.quantity_factory.zeros(
-            [X_DIM, Y_DIM, Z_DIM, self.TRACER_DIM],
+            [I_DIM, J_DIM, K_DIM, self.TRACER_DIM],
             units="unknown",
             dtype=Float,
         )
 
         self._k_mask = quantity_factory.zeros(
-            [X_DIM, Y_DIM, Z_DIM],
+            [I_DIM, J_DIM, K_DIM],
             units="unknown",
             dtype=Int,
         )
         for k in range(idx.domain[2]):
-            self._k_mask.data[:, :, k] = k
+            self._k_mask[:, :, k] = k
 
         self._tem1 = make_quantity()
         self._lev = make_quantity_2D(Int)
         self._mlenflg = quantity_factory.zeros(
-            [X_DIM, Y_DIM, Z_DIM],
+            [I_DIM, J_DIM, K_DIM],
             units="unknown",
             dtype=Bool,
         )
@@ -2539,7 +2538,7 @@ class SCUEnd:
 
         self._dt_atmos = config.dt_atmos
         self._rdt = 1.0 / self._dt_atmos
-        self._kk = max(round(self._dt_atmos / physcons.CDTN), 1)
+        self._kk = max(round(self._dt_atmos / pbl_constants.CDTN), 1)
         self._dtn = self._dt_atmos / float(self._kk)
 
         self._ntiw = config.ntiw
@@ -2551,14 +2550,14 @@ class SCUEnd:
 
         def make_quantity():
             return self.quantity_factory.zeros(
-                [X_DIM, Y_DIM, Z_DIM],
+                [I_DIM, J_DIM, K_DIM],
                 units="unknown",
                 dtype=Float,
             )
 
         def make_quantity_2D(type):
             return self.quantity_factory.zeros(
-                [X_DIM, Y_DIM],
+                [I_DIM, J_DIM],
                 units="unknown",
                 dtype=type,
             )
@@ -2569,7 +2568,7 @@ class SCUEnd:
         self._f1_p1 = make_quantity_2D(Float)
         self._f2_p1 = make_quantity_2D(Float)
         self._a2 = self.quantity_factory.zeros(
-            [X_DIM, Y_DIM, Z_DIM, self.TRACER_DIM],
+            [I_DIM, J_DIM, K_DIM, self.TRACER_DIM],
             units="unknown",
             dtype=Float,
         )
@@ -2577,18 +2576,18 @@ class SCUEnd:
         self._tem1 = make_quantity()
         self._lev = make_quantity_2D(Int)
         self._mlenflg = quantity_factory.zeros(
-            [X_DIM, Y_DIM, Z_DIM],
+            [I_DIM, J_DIM, K_DIM],
             units="unknown",
             dtype=Bool,
         )
 
         self._k_mask = quantity_factory.zeros(
-            [X_DIM, Y_DIM, Z_DIM],
+            [I_DIM, J_DIM, K_DIM],
             units="unknown",
             dtype=Int,
         )
         for k in range(idx.domain[2]):
-            self._k_mask.data[:, :, k] = k
+            self._k_mask[:, :, k] = k
 
         self._mfscu = StratocumulusMassFlux(
             stencil_factory,
@@ -3329,11 +3328,10 @@ class TranslatePBLInit(TranslatePhysicsFortranData2Py):
             n_halo=3,
             data_dimensions={},
             layout=self.config.layout,
+            backend=self.stencil_factory.backend,
         )
 
-        quantity_factory = QuantityFactory.from_backend(
-            sizer, self.stencil_factory.backend
-        )
+        quantity_factory = QuantityFactory(sizer, backend=self.stencil_factory.backend)
 
         self.make_storage_data_input_vars(inputs)
 
@@ -3439,11 +3437,10 @@ class TranslateMRF(TranslatePhysicsFortranData2Py):
             n_halo=3,
             data_dimensions={},
             layout=self.config.layout,
+            backend=self.stencil_factory.backend,
         )
 
-        quantity_factory = QuantityFactory.from_backend(
-            sizer, self.stencil_factory.backend
-        )
+        quantity_factory = QuantityFactory(sizer, backend=self.stencil_factory.backend)
 
         self.make_storage_data_input_vars(inputs)
 
@@ -3508,11 +3505,10 @@ class TranslateThermalPBL(TranslatePhysicsFortranData2Py):
             n_halo=3,
             data_dimensions={},
             layout=self.config.layout,
+            backend=self.stencil_factory.backend,
         )
 
-        quantity_factory = QuantityFactory.from_backend(
-            sizer, self.stencil_factory.backend
-        )
+        quantity_factory = QuantityFactory(sizer, backend=self.stencil_factory.backend)
 
         self.make_storage_data_input_vars(inputs)
 
@@ -3566,11 +3562,10 @@ class TranslateStratocumulus(TranslatePhysicsFortranData2Py):
             n_halo=3,
             data_dimensions={},
             layout=self.config.layout,
+            backend=self.stencil_factory.backend,
         )
 
-        quantity_factory = QuantityFactory.from_backend(
-            sizer, self.stencil_factory.backend
-        )
+        quantity_factory = QuantityFactory(sizer, backend=self.stencil_factory.backend)
 
         self.make_storage_data_input_vars(inputs)
 
@@ -3638,11 +3633,10 @@ class TranslatePBLAML(TranslatePhysicsFortranData2Py):
             n_halo=3,
             data_dimensions={},
             layout=self.config.layout,
+            backend=self.stencil_factory.backend,
         )
 
-        quantity_factory = QuantityFactory.from_backend(
-            sizer, self.stencil_factory.backend
-        )
+        quantity_factory = QuantityFactory(sizer, backend=self.stencil_factory.backend)
 
         self.make_storage_data_input_vars(inputs)
 
@@ -3713,11 +3707,10 @@ class TranslateTKETridiagEle(TranslatePhysicsFortranData2Py):
             n_halo=3,
             data_dimensions={},
             layout=self.config.layout,
+            backend=self.stencil_factory.backend,
         )
 
-        quantity_factory = QuantityFactory.from_backend(
-            sizer, self.stencil_factory.backend
-        )
+        quantity_factory = QuantityFactory(sizer, backend=self.stencil_factory.backend)
 
         self.make_storage_data_input_vars(inputs)
 
@@ -3773,11 +3766,10 @@ class TranslatePrandtl(TranslatePhysicsFortranData2Py):
             n_halo=3,
             data_dimensions={},
             layout=self.config.layout,
+            backend=self.stencil_factory.backend,
         )
 
-        quantity_factory = QuantityFactory.from_backend(
-            sizer, self.stencil_factory.backend
-        )
+        quantity_factory = QuantityFactory(sizer, backend=self.stencil_factory.backend)
 
         self.make_storage_data_input_vars(inputs)
 
@@ -3923,11 +3915,10 @@ class TranslateEdDiffShear(TranslatePhysicsFortranData2Py):
             n_halo=3,
             data_dimensions={},
             layout=self.config.layout,
+            backend=self.stencil_factory.backend,
         )
 
-        quantity_factory = QuantityFactory.from_backend(
-            sizer, self.stencil_factory.backend
-        )
+        quantity_factory = QuantityFactory(sizer, backend=self.stencil_factory.backend)
 
         self.make_storage_data_input_vars(inputs)
 
@@ -3986,11 +3977,10 @@ class TranslateUpDownTKE(TranslatePhysicsFortranData2Py):
             n_halo=3,
             data_dimensions={},
             layout=self.config.layout,
+            backend=self.stencil_factory.backend,
         )
 
-        quantity_factory = QuantityFactory.from_backend(
-            sizer, self.stencil_factory.backend
-        )
+        quantity_factory = QuantityFactory(sizer, backend=self.stencil_factory.backend)
         config = self.config.pbl
 
         self.make_storage_data_input_vars(inputs)
@@ -4082,11 +4072,10 @@ class TranslateMomentTridiagComp(TranslatePhysicsFortranData2Py):
             n_halo=3,
             data_dimensions={},
             layout=self.config.layout,
+            backend=self.stencil_factory.backend,
         )
 
-        quantity_factory = QuantityFactory.from_backend(
-            sizer, self.stencil_factory.backend
-        )
+        quantity_factory = QuantityFactory(sizer, backend=self.stencil_factory.backend)
         config = self.config.pbl
 
         self.make_storage_data_input_vars(inputs)
@@ -4166,11 +4155,10 @@ class TranslateHeatTracerTridiagEle(TranslatePhysicsFortranData2Py):
             n_halo=3,
             data_dimensions={},
             layout=self.config.layout,
+            backend=self.stencil_factory.backend,
         )
 
-        quantity_factory = QuantityFactory.from_backend(
-            sizer, self.stencil_factory.backend
-        )
+        quantity_factory = QuantityFactory(sizer, backend=self.stencil_factory.backend)
         config = self.config.pbl
 
         self.make_storage_data_input_vars(inputs)
@@ -4234,11 +4222,10 @@ class TranslateTKETendencyCalc(TranslatePhysicsFortranData2Py):
             n_halo=3,
             data_dimensions={},
             layout=self.config.layout,
+            backend=self.stencil_factory.backend,
         )
 
-        quantity_factory = QuantityFactory.from_backend(
-            sizer, self.stencil_factory.backend
-        )
+        quantity_factory = QuantityFactory(sizer, backend=self.stencil_factory.backend)
 
         self.make_storage_data_input_vars(inputs)
 
@@ -4319,11 +4306,10 @@ class TranslateHeatTracerTendencyCalc(TranslatePhysicsFortranData2Py):
             n_halo=3,
             data_dimensions={},
             layout=self.config.layout,
+            backend=self.stencil_factory.backend,
         )
 
-        quantity_factory = QuantityFactory.from_backend(
-            sizer, self.stencil_factory.backend
-        )
+        quantity_factory = QuantityFactory(sizer, backend=self.stencil_factory.backend)
 
         config = self.config.pbl
         config.ntke = config.ntracers - 1
@@ -4409,11 +4395,10 @@ class TranslateMomentTendencyCalc(TranslatePhysicsFortranData2Py):
             n_halo=3,
             data_dimensions={},
             layout=self.config.layout,
+            backend=self.stencil_factory.backend,
         )
 
-        quantity_factory = QuantityFactory.from_backend(
-            sizer, self.stencil_factory.backend
-        )
+        quantity_factory = QuantityFactory(sizer, backend=self.stencil_factory.backend)
 
         self.make_storage_data_input_vars(inputs)
 
@@ -4632,11 +4617,10 @@ class TranslateHalf2(TranslatePhysicsFortranData2Py):
             n_halo=3,
             data_dimensions={},
             layout=self.config.layout,
+            backend=self.stencil_factory.backend,
         )
 
-        quantity_factory = QuantityFactory.from_backend(
-            sizer, self.stencil_factory.backend
-        )
+        quantity_factory = QuantityFactory(sizer, backend=self.stencil_factory.backend)
 
         self.make_storage_data_input_vars(inputs)
 
@@ -4655,13 +4639,13 @@ class TranslateHalf2(TranslatePhysicsFortranData2Py):
 
         pcnvflg = quantity_factory.from_array(
             data=inputs.pop("pcnvflg"),
-            dims=[X_DIM, Y_DIM],
+            dims=[I_DIM, J_DIM],
             units="",
         )
 
         scuflg = quantity_factory.from_array(
             data=inputs.pop("scuflg"),
-            dims=[X_DIM, Y_DIM],
+            dims=[I_DIM, J_DIM],
             units="",
         )
 
@@ -4875,11 +4859,10 @@ class TranslateSCUEnd(TranslatePhysicsFortranData2Py):
             n_halo=3,
             data_dimensions={},
             layout=self.config.layout,
+            backend=self.stencil_factory.backend,
         )
 
-        quantity_factory = QuantityFactory.from_backend(
-            sizer, self.stencil_factory.backend
-        )
+        quantity_factory = QuantityFactory(sizer, backend=self.stencil_factory.backend)
 
         self.make_storage_data_input_vars(inputs)
 
@@ -4898,13 +4881,13 @@ class TranslateSCUEnd(TranslatePhysicsFortranData2Py):
 
         pcnvflg = quantity_factory.from_array(
             data=inputs.pop("pcnvflg"),
-            dims=[X_DIM, Y_DIM],
+            dims=[I_DIM, J_DIM],
             units="",
         )
 
         scuflg = quantity_factory.from_array(
             data=inputs.pop("scuflg"),
-            dims=[X_DIM, Y_DIM],
+            dims=[I_DIM, J_DIM],
             units="",
         )
 

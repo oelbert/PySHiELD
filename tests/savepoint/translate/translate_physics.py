@@ -49,13 +49,6 @@ class TranslatePhysicsFortranData2Py(TranslateFortranData2Py):
         super().__init__(grid, stencil_factory)
         self.config = PhysicsConfig.from_f90nml(namelist)
 
-        # This test wasn't running (on CI) for a long time because it was misconfigured.
-        # Now it's properly configured and temporarily skipped (i.e. still not running
-        # as before). Issue https://github.com/NOAA-GFDL/PySHiELD/issues/66 exists to
-        # re-enable and fix this test. To unskip, just delete the following line (and
-        # this comment).
-        self.skip_test = True
-
     def transform_physics_serialized_data(self, data, roll_zero, index_order):
         if isinstance(data, np.ndarray):
             n_dim = len(data.shape)
@@ -172,9 +165,7 @@ class TranslatePhysicsFortranData2Py(TranslateFortranData2Py):
                 inputs[serialname] = self.transform_physics_serialized_data(
                     inputs[serialname], roll_zero, index_order
                 )
-        super().make_storage_data_input_vars(
-            inputs, storage_vars=storage_vars, dict_4d=dict_4d
-        )
+        super().make_storage_data_input_vars(inputs, storage_vars=storage_vars)
 
     def slice_output(self, inputs, out_data=None):
         if out_data is None:

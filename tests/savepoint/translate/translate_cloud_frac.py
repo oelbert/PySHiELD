@@ -1,12 +1,11 @@
 import pyshield.stencils.gfdl_cld_microphysics.constants as mpcons
 import pyshield.stencils.gfdl_cld_microphysics.physical_functions as physfun
 from ndsl import GridIndexing, QuantityFactory, StencilFactory, SubtileGridSizer
-from ndsl.constants import X_DIM, Y_DIM, Z_DIM
+from ndsl.constants import I_DIM, J_DIM, K_DIM
 from ndsl.dsl.gt4py import PARALLEL, computation, interval
 from ndsl.dsl.typing import FloatField, FloatFieldIJ
 from pyshield.stencils.gfdl_cld_microphysics import GFDLCloudMPConfig
-from pyshield.stencils.gfdl_cld_microphysics.cloud_fraction import (  # noqa
-    CloudFraction,
+from pyshield.stencils.gfdl_cld_microphysics.cloud_fraction import (
     cloud_scheme_1,
     cloud_scheme_2,
     cloud_scheme_3,
@@ -145,7 +144,7 @@ class CloudFractionTest:
     ):
         self._idx: GridIndexing = stencil_factory.grid_indexing
 
-        self._te = quantity_factory.zeros(dims=[X_DIM, Y_DIM, Z_DIM], units="unknown")
+        self._te = quantity_factory.zeros(dims=[I_DIM, J_DIM, K_DIM], units="unknown")
 
         self._cloud_fraction = stencil_factory.from_origin_domain(
             func=cloud_fraction_test,
@@ -344,10 +343,11 @@ class TranslateCloudFrac(TranslatePhysicsFortranData2Py):
             n_halo=3,
             data_dimensions={},
             layout=self.config.layout,
+            backend=self.stencil_factory.backend,
         )
 
-        self.quantity_factory = QuantityFactory.from_backend(
-            sizer, self.stencil_factory.backend
+        self.quantity_factory = QuantityFactory(
+            sizer, backend=self.stencil_factory.backend
         )
 
     def compute(self, inputs):

@@ -1,5 +1,11 @@
 import numpy as np
-from gt4py.cartesian.gtscript import (
+
+import ndsl.constants as constants
+import pyshield.constants as physcons
+import pyshield.stencils.shallow_convection.constants as sccons
+from ndsl import QuantityFactory, StencilFactory
+from ndsl.constants import I_DIM, J_DIM, K_DIM
+from ndsl.dsl.gt4py import (
     BACKWARD,
     FORWARD,
     PARALLEL,
@@ -9,14 +15,6 @@ from gt4py.cartesian.gtscript import (
     log,
     sqrt,
 )
-
-import ndsl.constants as constants
-import pyshield.constants as physcons
-import pyshield.stencils.shallow_convection.constants as sccons
-
-# from pace.dsl.dace.orchestration import orchestrate
-from ndsl import QuantityFactory, StencilFactory
-from ndsl.constants import X_DIM, Y_DIM, Z_DIM
 from ndsl.dsl.typing import (
     Bool,
     BoolFieldIJ,
@@ -27,12 +25,9 @@ from ndsl.dsl.typing import (
     IntField,
     IntFieldIJ,
 )
+from pyshield._config import TRACER_DIM, FloatFieldTracer
 from pyshield.functions.physics_functions import fpvs
-from pyshield.stencils.shallow_convection._config import (
-    SC_TRACER_DIM,
-    FloatFieldShalConv,
-    ShallowConvectionConfig,
-)
+from pyshield.stencils.shallow_convection._config import ShallowConvectionConfig
 from pyshield.stencils.shallow_convection.samf_shalconv_state import SAMFShalConvState
 
 
@@ -210,11 +205,13 @@ def init_final(
     heso: FloatField,
     hpbl: FloatFieldIJ,
     t1: FloatField,
-    q1: FloatField,
+    qtr: FloatFieldTracer,
     u1: FloatField,
     v1: FloatField,
     k_mask: IntField,
 ):
+    from __externals__ import ntvap
+
     with computation(PARALLEL), interval(...):
         # Calculate hydrostatic height at layer centers assuming a flat
         # surface (no terrain) from the geopotential
@@ -245,7 +242,6 @@ def init_final(
         tem = 0.0
 
         if cnvflg and k_mask <= kmax:
-
             # Convert prsl from centibar to millibar, set normalized mass
             # flux to 1, cloud properties to 0, and save model state
             # variables (after advection/turbulence)
@@ -260,7 +256,7 @@ def init_final(
             pwo = 0.0
             dellal = 0.0
             to = t1
-            qo = q1
+            qo = qtr[0, 0, 0][ntvap]
             uo = u1
             vo = v1
             wu2 = 0.0
@@ -288,10 +284,10 @@ def init_tracers(
     cnvflg: BoolFieldIJ,
     k_mask: IntField,
     kmax: IntFieldIJ,
-    ctr: FloatFieldShalConv,
-    ctro: FloatFieldShalConv,
-    ecko: FloatFieldShalConv,
-    qtr: FloatFieldShalConv,
+    ctr: FloatFieldTracer,
+    ctro: FloatFieldTracer,
+    ecko: FloatFieldTracer,
+    qtr: FloatFieldTracer,
     n_tracer: int,
 ):
     with computation(PARALLEL), interval(...):
@@ -406,7 +402,7 @@ def stencil_ntrstatic0(
     cnvflg: BoolFieldIJ,
     k_mask: IntField,
     kmax: IntFieldIJ,
-    ctro: FloatFieldShalConv,
+    ctro: FloatFieldTracer,
     n_tracer: int,
 ):
     with computation(FORWARD), interval(0, -1):
@@ -530,7 +526,7 @@ def stencil_static3(
     kb: IntFieldIJ,
     kbcon: IntFieldIJ,
     zo: FloatField,
-    qtr: FloatFieldShalConv,
+    qtr: FloatFieldTracer,
     clamt: FloatFieldIJ,
 ):
     # turbulent entrainment rate assumed to be proportional
@@ -668,8 +664,8 @@ def stencil_ntrstatic1(
     cnvflg: BoolFieldIJ,
     k_mask: IntField,
     kb: IntFieldIJ,
-    ecko: FloatFieldShalConv,
-    ctro: FloatFieldShalConv,
+    ecko: FloatFieldTracer,
+    ctro: FloatFieldTracer,
     n_tracer: Int,
 ):
     with computation(PARALLEL), interval(...):
@@ -744,8 +740,8 @@ def stencil_ntrstatic2(
     kmax: IntFieldIJ,
     zi: FloatField,
     xlamue: FloatField,
-    ecko: FloatFieldShalConv,
-    ctro: FloatFieldShalConv,
+    ecko: FloatFieldTracer,
+    ctro: FloatFieldTracer,
     n_tracer: Int,
 ):
     with computation(FORWARD), interval(1, -1):
@@ -814,7 +810,6 @@ def stencil_static9(
         tem = 0.0
 
         if cnvflg:
-
             # Use pfld_kbcon and pfld_kbcon1 to represent
             # tem = pfld(i,kbcon(i)) - pfld(i,kbcon1(i))
             tem = pfld_kbcon - pfld_kbcon1
@@ -1486,7 +1481,6 @@ def comp_tendencies(
 
         # Changes due to subsidence and entrainment
         if cnvflg and k_mask > kb and k_mask < ktcon:
-
             dp = 1000.0 * del0
             dz = zi[0, 0, 0] - zi[0, 0, -1]
             gdp = constants.GRAV / dp
@@ -1654,11 +1648,11 @@ def comp_tendencies_tr(
     kmax: IntFieldIJ,
     kb: IntFieldIJ,
     ktcon: IntFieldIJ,
-    dellae: FloatFieldShalConv,
+    dellae: FloatFieldTracer,
     del0: FloatField,
     eta: FloatField,
-    ctro: FloatFieldShalConv,
-    ecko: FloatFieldShalConv,
+    ctro: FloatFieldTracer,
+    ecko: FloatFieldTracer,
     n_tracer: Int,
 ):
     with computation(PARALLEL), interval(...):
@@ -1666,7 +1660,6 @@ def comp_tendencies_tr(
             dellae[0, 0, 0][n_tracer] = 0.0
 
     with computation(PARALLEL), interval(1, -1):
-
         tem1 = 0.0
         tem2 = 0.0
         dp = 0.0
@@ -1683,7 +1676,6 @@ def comp_tendencies_tr(
             )
 
     with computation(PARALLEL), interval(1, None):
-
         # Cloud top
         if cnvflg and ktcon == k_mask:
             dp = 1000.0 * del0
@@ -1719,7 +1711,7 @@ def feedback_control_update_mass_flux(
     dellaq: FloatField,
     t1: FloatField,
     xmb: FloatFieldIJ,
-    q1: FloatField,
+    qtr: FloatFieldTracer,
     u1: FloatField,
     dellau: FloatField,
     v1: FloatField,
@@ -1746,10 +1738,9 @@ def feedback_control_update_mass_flux(
     # flux and the tendencies calculated per unit cloud base
     # mass flux from the static control.
     # Recalculate saturation specific humidity.
-    from __externals__ import dt2
+    from __externals__ import dt2, ntvap
 
     with computation(FORWARD), interval(0, 1):
-
         # Initialize flg
         flg = cnvflg
         rntot = 0.0
@@ -1782,7 +1773,7 @@ def feedback_control_update_mass_flux(
             if k_mask > kb and k_mask <= ktcon:
                 dellat = (dellah - constants.HLV * dellaq) / constants.CP_AIR
                 t1 = t1 + dellat * xmb * dt2
-                q1 = q1 + dellaq * xmb * dt2
+                qtr[0, 0, 0][ntvap] = qtr[0, 0, 0][ntvap] + dellaq * xmb * dt2
                 u1 = u1 + dellau * xmb * dt2
                 v1 = v1 + dellav * xmb * dt2
 
@@ -1822,14 +1813,12 @@ def feedback_control_update_mass_flux(
     # evaporation of convective precipitation
     with computation(BACKWARD):
         with interval(...):
-
             evef = 0.0
             dp = 0.0
             tem = 0.0
             tem1 = 0.0
 
             if k_mask <= kmax:
-
                 deltv = 0.0
                 delq = 0.0
                 qevap = 0.0
@@ -1844,7 +1833,9 @@ def feedback_control_update_mass_flux(
                     else:
                         evef = edt * sccons.EVFACT
                     qcond = (
-                        evef * (q1 - qeso) / (1.0 + physcons.EL2ORC * qeso / (t1 * t1))
+                        evef
+                        * (qtr[0, 0, 0][ntvap] - qeso)
+                        / (1.0 + physcons.EL2ORC * qeso / (t1 * t1))
                     )
 
                     dp = 1000.0 * del0
@@ -1869,7 +1860,7 @@ def feedback_control_update_mass_flux(
                         else:
                             rn = rn - tem1
 
-                        q1 = q1 + qevap
+                        qtr[0, 0, 0][ntvap] = qtr[0, 0, 0][ntvap] + qevap
                         t1 = t1 - physcons.ELOCP * qevap
                         deltv = -physcons.ELOCP * qevap / dt2
                         delq = qevap / dt2
@@ -1920,11 +1911,11 @@ def feedback_control_upd_trr(
     kmax: IntFieldIJ,
     ktcon: IntFieldIJ,
     del0: FloatField,
-    delebar: FloatFieldShalConv,
-    ctr: FloatFieldShalConv,
-    dellae: FloatFieldShalConv,
+    delebar: FloatFieldTracer,
+    ctr: FloatFieldTracer,
+    dellae: FloatFieldTracer,
     xmb: FloatFieldIJ,
-    qtr: FloatFieldShalConv,
+    qtr: FloatFieldTracer,
     n_tracer: Int,
 ):
     from __externals__ import dt2
@@ -1965,13 +1956,12 @@ def store_aero_conc(
     k_mask: IntField,
     kmax: IntFieldIJ,
     rn: FloatFieldIJ,
-    qtr: FloatFieldShalConv,
+    qtr: FloatFieldTracer,
     qaero: FloatField,
     n_tracer: Int,
     k_aerosol: Int,
 ):
     with computation(PARALLEL), interval(...):
-
         # Store aerosol concentrations if present
         if cnvflg and rn > 0.0 and k_mask <= kmax:
             qtr[0, 0, 0][n_tracer] = qaero[0, 0, 0][k_aerosol]
@@ -1985,7 +1975,7 @@ def separate_detrained_cw(
     dellal: FloatField,
     xmb: FloatFieldIJ,
     t1: FloatField,
-    qtr: FloatFieldShalConv,
+    qtr: FloatFieldTracer,
 ):
     from __externals__ import dt2, ntcw, ntiw
 
@@ -1998,13 +1988,12 @@ def separate_detrained_cw(
         tem1 = 0.0
 
         if cnvflg and k_mask >= kbcon and k_mask <= ktcon:
-
             tem = dellal * xmb * dt2
             tem1 = (sccons.SHAL_TCR - t1) * sccons.SHAL_TCRF
             tem1 = min(1.0, tem1)
             tem1 = max(0.0, tem1)
 
-            if qtr[0, 0, 0][1] > -999.0:
+            if qtr[0, 0, 0][ntcw] > -999.0:
                 qtr[0, 0, 0][ntiw] = qtr[0, 0, 0][ntiw] + tem * tem1  # ice
                 qtr[0, 0, 0][ntcw] = qtr[0, 0, 0][ntcw] + tem * (1.0 - tem1)  # water
             else:
@@ -2021,13 +2010,12 @@ def tke_contribution(
     pfld: FloatField,
     t1: FloatField,
     sigmagfm: FloatFieldIJ,
-    qtr: FloatFieldShalConv,
+    qtr: FloatFieldTracer,
 ):
     # Include TKE contribution from shallow convection
     from __externals__ import ntk
 
     with computation(FORWARD), interval(1, -1):
-
         tem = 0.0
         tem1 = 0.0
         ptem = 0.0
@@ -2146,6 +2134,8 @@ class ScaleAwareMassFluxShallowConvection:
         self._ntk = config.ntke
         self._ntiw = config.ntiw
         self._ntcw = config.ntcw
+        self._ntvap = config.ntvap
+        self._ntcld = config.ntcld
         self._ntr = config.nsamftrac
         self._ncloud = config.ncld
         self._dt2 = config.dt_atmos
@@ -2170,13 +2160,13 @@ class ScaleAwareMassFluxShallowConvection:
 
         self._km = grid_indexing.domain[2]
         self._km1 = grid_indexing.domain[2] - 1
-        self.TRACER_DIM = SC_TRACER_DIM
+        self.TRACER_DIM = TRACER_DIM
 
         self.quantity_factory = quantity_factory
         if self.TRACER_DIM not in self.quantity_factory.sizer.data_dimensions.keys():
             self.quantity_factory.add_data_dimensions(
                 {
-                    self.TRACER_DIM: int(self._ntr + 2),
+                    self.TRACER_DIM: int(self._ntr + 4),
                 }
             )
 
@@ -2195,25 +2185,25 @@ class ScaleAwareMassFluxShallowConvection:
 
         def make_quantity():
             return quantity_factory.zeros(
-                [X_DIM, Y_DIM, Z_DIM],
+                [I_DIM, J_DIM, K_DIM],
                 units="unknown",
                 dtype=Float,
             )
 
         def make_quantity_2D(type=Float):
-            return quantity_factory.zeros([X_DIM, Y_DIM], units="unknown", dtype=type)
+            return quantity_factory.zeros([I_DIM, J_DIM], units="unknown", dtype=type)
 
         # Allocate arrays
 
         # Layer mask:
         self._k_mask = quantity_factory.zeros(
-            [X_DIM, Y_DIM, Z_DIM],
+            [I_DIM, J_DIM, K_DIM],
             units="unknown",
             dtype=Int,
         )
 
         for k in range(grid_indexing.domain[2]):
-            self._k_mask.data[:, :, k] = k
+            self._k_mask[:, :, k] = k
 
         self._cnvflg = make_quantity_2D(Bool)
         self._heo_kb = make_quantity_2D()
@@ -2305,31 +2295,31 @@ class ScaleAwareMassFluxShallowConvection:
         self._prsl_ktcon = make_quantity_2D()
 
         self._ctr = quantity_factory.zeros(
-            [X_DIM, Y_DIM, Z_DIM, self.TRACER_DIM],
+            [I_DIM, J_DIM, K_DIM, self.TRACER_DIM],
             units="unknown",
             dtype=Float,
         )
 
         self._ctro = quantity_factory.zeros(
-            [X_DIM, Y_DIM, Z_DIM, self.TRACER_DIM],
+            [I_DIM, J_DIM, K_DIM, self.TRACER_DIM],
             units="unknown",
             dtype=Float,
         )
 
         self._ecko = quantity_factory.zeros(
-            [X_DIM, Y_DIM, Z_DIM, self.TRACER_DIM],
+            [I_DIM, J_DIM, K_DIM, self.TRACER_DIM],
             units="unknown",
             dtype=Float,
         )
 
         self._dellae = quantity_factory.zeros(
-            [X_DIM, Y_DIM, Z_DIM, self.TRACER_DIM],
+            [I_DIM, J_DIM, K_DIM, self.TRACER_DIM],
             units="unknown",
             dtype=Float,
         )
 
         self._delebar = quantity_factory.zeros(
-            [X_DIM, Y_DIM, Z_DIM, self.TRACER_DIM],
+            [I_DIM, J_DIM, K_DIM, self.TRACER_DIM],
             units="unknown",
             dtype=Float,
         )
@@ -2337,12 +2327,12 @@ class ScaleAwareMassFluxShallowConvection:
         # Configure stencils
         self._pa_to_cb = stencil_factory.from_dims_halo(
             func=pa_to_cb,
-            compute_dims=[X_DIM, Y_DIM, Z_DIM],
+            compute_dims=[I_DIM, J_DIM, K_DIM],
         )
         self._init_col_arr = stencil_factory.from_dims_halo(
             func=init_col_arr,
             externals={"km": self._km},
-            compute_dims=[X_DIM, Y_DIM, Z_DIM],
+            compute_dims=[I_DIM, J_DIM, K_DIM],
         )
         self._init_par_and_arr = stencil_factory.from_dims_halo(
             func=init_par_and_arr,
@@ -2350,32 +2340,35 @@ class ScaleAwareMassFluxShallowConvection:
                 "asolfac": self._asolfac,
                 "c0s": self._c0s,
             },
-            compute_dims=[X_DIM, Y_DIM, Z_DIM],
+            compute_dims=[I_DIM, J_DIM, K_DIM],
         )
         self._init_kbm_kmax = stencil_factory.from_dims_halo(
             func=init_kbm_kmax,
             externals={"km": self._km},
-            compute_dims=[X_DIM, Y_DIM, Z_DIM],
+            compute_dims=[I_DIM, J_DIM, K_DIM],
         )
         self._init_final = stencil_factory.from_dims_halo(
             func=init_final,
-            compute_dims=[X_DIM, Y_DIM, Z_DIM],
+            compute_dims=[I_DIM, J_DIM, K_DIM],
+            externals={
+                "ntvap": self._ntvap,
+            },
         )
         self._init_tracers = stencil_factory.from_dims_halo(
             func=init_tracers,
-            compute_dims=[X_DIM, Y_DIM, Z_DIM],
+            compute_dims=[I_DIM, J_DIM, K_DIM],
         )
         self._stencil_static0 = stencil_factory.from_dims_halo(
             func=stencil_static0,
-            compute_dims=[X_DIM, Y_DIM, Z_DIM],
+            compute_dims=[I_DIM, J_DIM, K_DIM],
         )
         self._stencil_static1 = stencil_factory.from_dims_halo(
             func=stencil_static1,
-            compute_dims=[X_DIM, Y_DIM, Z_DIM],
+            compute_dims=[I_DIM, J_DIM, K_DIM],
         )
         self._stencil_static2 = stencil_factory.from_dims_halo(
             func=stencil_static2,
-            compute_dims=[X_DIM, Y_DIM, Z_DIM],
+            compute_dims=[I_DIM, J_DIM, K_DIM],
         )
         self._stencil_static3 = stencil_factory.from_dims_halo(
             func=stencil_static3,
@@ -2383,40 +2376,40 @@ class ScaleAwareMassFluxShallowConvection:
                 "ntk": self._ntk,
                 "clam": self._clam,
             },
-            compute_dims=[X_DIM, Y_DIM, Z_DIM],
+            compute_dims=[I_DIM, J_DIM, K_DIM],
         )
         self._stencil_ntrstatic0 = stencil_factory.from_dims_halo(
             func=stencil_ntrstatic0,
-            compute_dims=[X_DIM, Y_DIM, Z_DIM],
+            compute_dims=[I_DIM, J_DIM, K_DIM],
         )
         self._stencil_static5 = stencil_factory.from_dims_halo(
             func=stencil_static5,
-            compute_dims=[X_DIM, Y_DIM, Z_DIM],
+            compute_dims=[I_DIM, J_DIM, K_DIM],
         )
         self._stencil_ntrstatic1 = stencil_factory.from_dims_halo(
             func=stencil_ntrstatic1,
-            compute_dims=[X_DIM, Y_DIM, Z_DIM],
+            compute_dims=[I_DIM, J_DIM, K_DIM],
         )
         self._stencil_static7 = stencil_factory.from_dims_halo(
             func=stencil_static7,
             externals={"pgcon": self._pgcon},
-            compute_dims=[X_DIM, Y_DIM, Z_DIM],
+            compute_dims=[I_DIM, J_DIM, K_DIM],
         )
         self._stencil_ntrstatic2 = stencil_factory.from_dims_halo(
             func=stencil_ntrstatic2,
-            compute_dims=[X_DIM, Y_DIM, Z_DIM],
+            compute_dims=[I_DIM, J_DIM, K_DIM],
         )
         self._stencil_update_kbcon1_cnvflg = stencil_factory.from_dims_halo(
             func=stencil_update_kbcon1_cnvflg,
-            compute_dims=[X_DIM, Y_DIM, Z_DIM],
+            compute_dims=[I_DIM, J_DIM, K_DIM],
         )
         self._stencil_static9 = stencil_factory.from_dims_halo(
             func=stencil_static9,
-            compute_dims=[X_DIM, Y_DIM, Z_DIM],
+            compute_dims=[I_DIM, J_DIM, K_DIM],
         )
         self._stencil_static10 = stencil_factory.from_dims_halo(
             func=stencil_static10,
-            compute_dims=[X_DIM, Y_DIM, Z_DIM],
+            compute_dims=[I_DIM, J_DIM, K_DIM],
         )
         self._stencil_static11 = stencil_factory.from_dims_halo(
             func=stencil_static11,
@@ -2428,40 +2421,43 @@ class ScaleAwareMassFluxShallowConvection:
                 "ncloud": self._ncloud,
                 "top_shal": self._top_shal,
             },
-            compute_dims=[X_DIM, Y_DIM, Z_DIM],
+            compute_dims=[I_DIM, J_DIM, K_DIM],
         )
         self._stencil_static12 = stencil_factory.from_dims_halo(
             func=stencil_static12,
             externals={"c1": self._c1, "ncloud": self._ncloud},
-            compute_dims=[X_DIM, Y_DIM, Z_DIM],
+            compute_dims=[I_DIM, J_DIM, K_DIM],
         )
         if self._ncloud > 0:
             self._stencil_static13 = stencil_factory.from_dims_halo(
                 func=stencil_static13,
-                compute_dims=[X_DIM, Y_DIM, Z_DIM],
+                compute_dims=[I_DIM, J_DIM, K_DIM],
             )
         self._stencil_static14 = stencil_factory.from_dims_halo(
             func=stencil_static14,
-            compute_dims=[X_DIM, Y_DIM, Z_DIM],
+            compute_dims=[I_DIM, J_DIM, K_DIM],
         )
         self._comp_tendencies = stencil_factory.from_dims_halo(
             func=comp_tendencies,
             externals={"dt2": self._dt2},
-            compute_dims=[X_DIM, Y_DIM, Z_DIM],
+            compute_dims=[I_DIM, J_DIM, K_DIM],
         )
         self._comp_tendencies_tr = stencil_factory.from_dims_halo(
             func=comp_tendencies_tr,
-            compute_dims=[X_DIM, Y_DIM, Z_DIM],
+            compute_dims=[I_DIM, J_DIM, K_DIM],
         )
         self._feedback_control_update_mass_flux = stencil_factory.from_dims_halo(
             func=feedback_control_update_mass_flux,
-            externals={"dt2": self._dt2},
-            compute_dims=[X_DIM, Y_DIM, Z_DIM],
+            externals={
+                "dt2": self._dt2,
+                "ntvap": self._ntvap,
+            },
+            compute_dims=[I_DIM, J_DIM, K_DIM],
         )
         self._feedback_control_upd_trr = stencil_factory.from_dims_halo(
             func=feedback_control_upd_trr,
             externals={"dt2": self._dt2},
-            compute_dims=[X_DIM, Y_DIM, Z_DIM],
+            compute_dims=[I_DIM, J_DIM, K_DIM],
         )
         if self._ncloud > 0:
             self._separate_detrained_cw = stencil_factory.from_dims_halo(
@@ -2471,7 +2467,7 @@ class ScaleAwareMassFluxShallowConvection:
                     "ntiw": self._ntiw,
                     "ntcw": self._ntcw,
                 },
-                compute_dims=[X_DIM, Y_DIM, Z_DIM],
+                compute_dims=[I_DIM, J_DIM, K_DIM],
             )
         if self._ntk > 0:
             self._tke_contribution = stencil_factory.from_dims_halo(
@@ -2479,12 +2475,12 @@ class ScaleAwareMassFluxShallowConvection:
                 externals={
                     "ntk": self._ntk,
                 },
-                compute_dims=[X_DIM, Y_DIM, Z_DIM],
+                compute_dims=[I_DIM, J_DIM, K_DIM],
             )
         # if self._do_aerosols:
         #     self._store_aero_conc = stencil_factory.from_dims_halo(
         #         func=store_aero_conc,
-        #         compute_dims=[X_DIM, Y_DIM, Z_DIM],
+        #         compute_dims=[I_DIM, J_DIM, K_DIM],
         #     )
 
     def __call__(
@@ -2575,15 +2571,20 @@ class ScaleAwareMassFluxShallowConvection:
             self._heso,
             state.hpbl,
             state.t1,
-            state.q1,
+            state.qtr,
             state.u1,
             state.v1,
             self._k_mask,
         )
 
         # Init tracers
-        for n_tracer in range(self._ntr + 2):
-            if (n_tracer != self._ntiw) and (n_tracer != self._ntcw):
+        for n_tracer in range(self._ntr + 4):
+            if (
+                (n_tracer != self._ntiw)
+                and (n_tracer != self._ntcw)
+                and (n_tracer != self._ntcld)
+                and (n_tracer != self._ntvap)
+            ):
                 self._init_tracers(
                     self._cnvflg,
                     self._k_mask,
@@ -2613,8 +2614,13 @@ class ScaleAwareMassFluxShallowConvection:
             self._heso,
             self._pfld,
         )
-        for n_tracer in range(self._ntr + 2):
-            if (n_tracer != self._ntiw) and (n_tracer != self._ntcw):
+        for n_tracer in range(self._ntr + 4):
+            if (
+                (n_tracer != self._ntiw)
+                and (n_tracer != self._ntcw)
+                and (n_tracer != self._ntcld)
+                and (n_tracer != self._ntvap)
+            ):
                 self._stencil_ntrstatic0(
                     self._cnvflg,
                     self._k_mask,
@@ -2690,8 +2696,13 @@ class ScaleAwareMassFluxShallowConvection:
             self._flg,
         )
 
-        for n_tracer in range(self._ntr + 2):
-            if (n_tracer != self._ntiw) and (n_tracer != self._ntcw):
+        for n_tracer in range(self._ntr + 4):
+            if (
+                (n_tracer != self._ntiw)
+                and (n_tracer != self._ntcw)
+                and (n_tracer != self._ntcld)
+                and (n_tracer != self._ntvap)
+            ):
                 self._stencil_ntrstatic1(
                     self._cnvflg,
                     self._k_mask,
@@ -2719,8 +2730,13 @@ class ScaleAwareMassFluxShallowConvection:
             self._vo,
         )
 
-        for n_tracer in range(self._ntr + 2):
-            if (n_tracer != self._ntiw) and (n_tracer != self._ntcw):
+        for n_tracer in range(self._ntr + 4):
+            if (
+                (n_tracer != self._ntiw)
+                and (n_tracer != self._ntcw)
+                and (n_tracer != self._ntcld)
+                and (n_tracer != self._ntvap)
+            ):
                 self._stencil_ntrstatic2(
                     self._cnvflg,
                     self._k_mask,
@@ -2923,8 +2939,13 @@ class ScaleAwareMassFluxShallowConvection:
             self._umean,
         )
 
-        for n_tracer in range(self._ntr + 2):
-            if (n_tracer != self._ntiw) and (n_tracer != self._ntcw):
+        for n_tracer in range(self._ntr + 4):
+            if (
+                (n_tracer != self._ntiw)
+                and (n_tracer != self._ntcw)
+                and (n_tracer != self._ntcld)
+                and (n_tracer != self._ntvap)
+            ):
                 self._comp_tendencies_tr(
                     self._cnvflg,
                     self._k_mask,
@@ -2966,7 +2987,7 @@ class ScaleAwareMassFluxShallowConvection:
             self._dellaq,
             state.t1,
             self._xmb,
-            state.q1,
+            state.qtr,
             state.u1,
             self._dellau,
             state.v1,
@@ -2989,8 +3010,13 @@ class ScaleAwareMassFluxShallowConvection:
             self._eta,
         )
 
-        for n_tracer in range(self._ntr + 2):
-            if (n_tracer != self._ntiw) and (n_tracer != self._ntcw):
+        for n_tracer in range(self._ntr + 4):
+            if (
+                (n_tracer != self._ntiw)
+                and (n_tracer != self._ntcw)
+                and (n_tracer != self._ntcld)
+                and (n_tracer != self._ntvap)
+            ):
                 self._feedback_control_upd_trr(
                     self._cnvflg,
                     self._k_mask,
