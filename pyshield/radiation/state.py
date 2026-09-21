@@ -329,7 +329,7 @@ class RTE_RRTMGPState:
                         f"{dim_name}_{name}" for dim_name in field_info.metadata["dims"]
                     ]
                     data_vars[name] = xr.DataArray(
-                        gt_utils.asarray(getattr(self, name).data),
+                        gt_utils.asarray(getattr(self, name)[:]),
                         dims=dims,
                         attrs={
                             "long_name": field_info.metadata["name"],
@@ -386,7 +386,7 @@ class RTE_RRTMGPState:
                             newshape = (-1,)  # type: ignore[assignment]
                             dims.insert(0, "column")
                         elif ndims == 1:  # z-array
-                            newshape == (nz,)
+                            newshape = (nz,)  # type: ignore[assignment]
                         else:
                             raise NotImplementedError(
                                 (
@@ -395,7 +395,7 @@ class RTE_RRTMGPState:
                                 )
                             )
                         data_vars[name] = xr.DataArray(
-                            gt_utils.asarray(getattr(self, name).data)[
+                            gt_utils.asarray(getattr(self, name)[:])[
                                 tuple(slice_list)
                             ].reshape(newshape),
                             dims=dims,

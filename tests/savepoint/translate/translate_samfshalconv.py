@@ -10,7 +10,6 @@ from pyshield.stencils.shallow_convection import (
 )
 from tests.savepoint.translate.translate_physics import TranslatePhysicsFortranData2Py
 
-
 FloatFieldShalConv = set_4d_field_size(7, Float)
 
 SC_TRACER_DIM = "n_tracers_shal"
@@ -162,11 +161,11 @@ class TranslateShalConv(TranslatePhysicsFortranData2Py):
         inputs["prslp"] = state.prslp
         inputs["psp"] = state.psp
         inputs["phil"] = state.phil
-        inputs["q1"] = state.qtr.data[:, :, :, 0]
+        inputs["q1"] = state.qtr[:, :, :, 0]
         inputs["t1"] = state.t1
         inputs["u1"] = state.u1
         inputs["v1"] = state.v1
-        inputs["qtr"] = state.qtr.data[:, :, :, 1:-1]
+        inputs["qtr"] = state.qtr[:, :, :, 1:-1]
         inputs["rn"] = state.rn
         inputs["kbot"] = state.kbot
         inputs["ktop"] = state.ktop

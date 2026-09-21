@@ -21,7 +21,7 @@ from ndsl.dsl.typing import (
 )
 from ndsl.grid import GridData
 from ndsl.logging import ndsl_log
-from ndsl.stencils.basic_operations import copy
+from ndsl.stencils import copy
 from pyshield._config import (
     PHYSICS_PACKAGES,
     TRACER_DIM,
@@ -1150,9 +1150,9 @@ class Physics:
             dims=[K_INTERFACE_DIM], units="", dtype=Int
         )
         for k in range(npz):
-            self._level_flip.data[k] = npz - 1 - 2 * k
+            self._level_flip[k] = npz - 1 - 2 * k
             if k < nz:
-                self._layer_flip.data[k] = nz - 1 - 2 * k
+                self._layer_flip[k] = nz - 1 - 2 * k
 
         def make_quantity():
             return self.quantity_factory.zeros(
@@ -1327,7 +1327,7 @@ class Physics:
                     "You must specify a radiation configuration to use RTE-RRTMGP"
                 )
             self._rterrtmgp = True
-            sigma = calc_sigma(grid_data.ak.data, grid_data.bk.data, 0)
+            sigma = calc_sigma(grid_data.ak[:], grid_data.bk[:], 0)
             self._copy_to_radiation = stencil_factory.from_origin_domain(
                 func=copy_to_radiation,
                 origin=grid_indexing.origin_full(),
@@ -1627,57 +1627,55 @@ class Physics:
         )
 
         # Call radiation if timestep is right
-        if do_radiation and self._rterrtmgp:
-            if not surface_state:
-                raise ValueError("You must pass a surface state to run radiation")
-            if not radiation_state:
-                raise ValueError("You must pass a radiation state to run radiation")
-            if not date:
-                raise ValueError("You must pass a date to run radiation")
-            self._copy_to_radiation(
-                self._prsi1,
-                self._prsl1,
-                self._t1,
-                physics_state.tsfc,
-                self._qvapor1,
-                self._qliquid1,
-                self._qice1,
-                self._qo3mr1,
-                self._qcld1,
-                radiation_state.prsi,
-                radiation_state.prsl,
-                radiation_state.tlyr,
-                radiation_state.tsfc,
-                radiation_state.qvapor,
-                radiation_state.qliquid,
-                radiation_state.qice,
-                radiation_state.qo3mr,
-                radiation_state.qcld,
-            )
-            ndsl_log.info("Entering radiation")
-            self._radiation.step_radiation(radiation_state, surface_state, date)
-            self._copy_from_radiation(
-                radiation_state.hrtsw,
-                radiation_state.hrtlw,
-                radiation_state.fswu,
-                radiation_state.fswd,
-                radiation_state.flwu,
-                radiation_state.flwd,
-                physics_state.hrtsw,
-                physics_state.hrtlw,
-                self._hrtsw1,
-                self._hrtlw1,
-                physics_state.fswu,
-                physics_state.fswd,
-                physics_state.flwu,
-                physics_state.flwd,
-                self._layer_flip,
-                self._level_flip,
-            )
-
         if self._rterrtmgp:
-            if not radiation_state:
-                raise ValueError("You must pass a radiation state to run radiation")
+            if do_radiation:
+                if not surface_state:
+                    raise ValueError("You must pass a surface state to run radiation")
+                if not radiation_state:
+                    raise ValueError("You must pass a radiation state to run radiation")
+                if not date:
+                    raise ValueError("You must pass a date to run radiation")
+                self._copy_to_radiation(
+                    self._prsi1,
+                    self._prsl1,
+                    self._t1,
+                    physics_state.tsfc,
+                    self._qvapor1,
+                    self._qliquid1,
+                    self._qice1,
+                    self._qo3mr1,
+                    self._qcld1,
+                    radiation_state.prsi,
+                    radiation_state.prsl,
+                    radiation_state.tlyr,
+                    radiation_state.tsfc,
+                    radiation_state.qvapor,
+                    radiation_state.qliquid,
+                    radiation_state.qice,
+                    radiation_state.qo3mr,
+                    radiation_state.qcld,
+                )
+                ndsl_log.info("Entering radiation")
+                self._radiation.step_radiation(radiation_state, surface_state, date)
+                self._copy_from_radiation(
+                    radiation_state.hrtsw,
+                    radiation_state.hrtlw,
+                    radiation_state.fswu,
+                    radiation_state.fswd,
+                    radiation_state.flwu,
+                    radiation_state.flwd,
+                    physics_state.hrtsw,
+                    physics_state.hrtlw,
+                    self._hrtsw1,
+                    self._hrtlw1,
+                    physics_state.fswu,
+                    physics_state.fswd,
+                    physics_state.flwu,
+                    physics_state.flwd,
+                    self._layer_flip,
+                    self._level_flip,
+                )
+
             self._interpolate_radiation(
                 self._gridlat,
                 self._gridlon,

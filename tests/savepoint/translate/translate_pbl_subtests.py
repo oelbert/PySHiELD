@@ -1,7 +1,6 @@
-from gt4py.cartesian.gtscript import FORWARD, computation, interval
-
 from ndsl import QuantityFactory, StencilFactory, SubtileGridSizer
 from ndsl.constants import I_DIM, J_DIM, K_DIM
+from ndsl.dsl.gt4py import FORWARD, computation, interval
 from ndsl.dsl.typing import (
     Bool,
     BoolFieldIJ,
@@ -11,7 +10,7 @@ from ndsl.dsl.typing import (
     Int,
     IntFieldIJ,
 )
-from ndsl.stencils.basic_operations import copy
+from ndsl.stencils import copy
 from pyshield._config import TRACER_DIM, FloatFieldTracer
 from pyshield.stencils.pbl import PBLConfig
 from pyshield.stencils.pbl import constants as pbl_constants
@@ -104,7 +103,7 @@ class InitTurb:
         )
 
         for k in range(idx.domain[2]):
-            self._k_mask.data[:, :, k] = k
+            self._k_mask[:, :, k] = k
 
         self._init_turbulence = stencil_factory.from_origin_domain(
             func=init_turbulence,
@@ -332,7 +331,7 @@ class MRFScheme:
         )
 
         for k in range(idx.domain[2]):
-            self._k_mask.data[:, :, k] = k
+            self._k_mask[:, :, k] = k
 
         self._thlvx_0 = quantity_factory.zeros(
             [I_DIM, J_DIM],
@@ -437,7 +436,7 @@ class ThermalPBL:
         )
 
         for k in range(idx.domain[2]):
-            self._k_mask.data[:, :, k] = k
+            self._k_mask[:, :, k] = k
 
         self._thlvx_0 = quantity_factory.zeros(
             [I_DIM, J_DIM],
@@ -531,7 +530,7 @@ class Stratocumulus:
         )
 
         for k in range(idx.domain[2]):
-            self._k_mask.data[:, :, k] = k
+            self._k_mask[:, :, k] = k
 
         self._stratocumulus = stencil_factory.from_origin_domain(
             func=stratocumulus,
@@ -600,7 +599,7 @@ class PBLAML:
         )
 
         for k in range(idx.domain[2]):
-            self._k_mask.data[:, :, k] = k
+            self._k_mask[:, :, k] = k
 
         self._compute_asymptotic_mixing_length = stencil_factory.from_origin_domain(
             func=compute_asymptotic_mixing_length,
@@ -669,7 +668,7 @@ class TKETridiag:
         )
 
         for k in range(idx.domain[2]):
-            self._k_mask.data[:, :, k] = k
+            self._k_mask[:, :, k] = k
 
         self._cu = quantity_factory.zeros(
             [I_DIM, J_DIM, K_DIM],
@@ -765,7 +764,7 @@ class Prandtl:
         )
 
         for k in range(idx.domain[2]):
-            self._k_mask.data[:, :, k] = k
+            self._k_mask[:, :, k] = k
 
         self._compute_prandtl_num_exchange_coeff = stencil_factory.from_origin_domain(
             func=compute_prandtl_num_exchange_coeff,
@@ -856,7 +855,7 @@ class EdDiffShear:
         )
 
         for k in range(idx.domain[2]):
-            self._k_mask.data[:, :, k] = k
+            self._k_mask[:, :, k] = k
 
         self._compute_eddy_diffusivity_buoy_shear = stencil_factory.from_origin_domain(
             func=compute_eddy_diffusivity_buoy_shear,
@@ -964,7 +963,7 @@ class UpDownTKE:
         )
 
         for k in range(idx.domain[2]):
-            self._k_mask.data[:, :, k] = k
+            self._k_mask[:, :, k] = k
 
         self._tke_up_down_prop = stencil_factory.from_origin_domain(
             func=tke_up_down_prop,
@@ -1054,7 +1053,7 @@ class MomentTridiagComp:
         )
 
         for k in range(idx.domain[2]):
-            self._k_mask.data[:, :, k] = k
+            self._k_mask[:, :, k] = k
 
         self._moment_tridiag_mat_ele_comp = stencil_factory.from_origin_domain(
             func=moment_tridiag_mat_ele_comp,
@@ -1186,7 +1185,7 @@ class HeatTracerTridiag:
         )
 
         for k in range(idx.domain[2]):
-            self._k_mask.data[:, :, k] = k
+            self._k_mask[:, :, k] = k
 
         self._heat_moist_tridiag_mat_ele_comp = stencil_factory.from_origin_domain(
             func=heat_moist_tridiag_mat_ele_comp,
@@ -1315,7 +1314,7 @@ class TKETendencyCalc:
         )
 
         for k in range(idx.domain[2]):
-            self._k_mask.data[:, :, k] = k
+            self._k_mask[:, :, k] = k
 
         self._cu = quantity_factory.zeros(
             [I_DIM, J_DIM, K_DIM],
@@ -1486,7 +1485,7 @@ class HeatTracerTendencyCalc:
         )
 
         for k in range(idx.domain[2]):
-            self._k_mask.data[:, :, k] = k
+            self._k_mask[:, :, k] = k
 
         self._heat_moist_tridiag_mat_ele_comp = stencil_factory.from_origin_domain(
             func=heat_moist_tridiag_mat_ele_comp,
@@ -1704,7 +1703,7 @@ class MomentTendencyCalc:
         )
 
         for k in range(idx.domain[2]):
-            self._k_mask.data[:, :, k] = k
+            self._k_mask[:, :, k] = k
 
         self._moment_tridiag_mat_ele_comp = stencil_factory.from_origin_domain(
             func=moment_tridiag_mat_ele_comp,
@@ -1917,7 +1916,7 @@ class Half2:
             dtype=Int,
         )
         for k in range(idx.domain[2]):
-            self._k_mask.data[:, :, k] = k
+            self._k_mask[:, :, k] = k
 
         self._tem1 = make_quantity()
         self._lev = make_quantity_2D(Int)
@@ -2588,7 +2587,7 @@ class SCUEnd:
             dtype=Int,
         )
         for k in range(idx.domain[2]):
-            self._k_mask.data[:, :, k] = k
+            self._k_mask[:, :, k] = k
 
         self._mfscu = StratocumulusMassFlux(
             stencil_factory,

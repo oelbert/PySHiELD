@@ -2,8 +2,6 @@ import ndsl.constants as constants
 import pyshield.stencils.pbl.constants as pbl_constants
 from ndsl.constants import I_DIM, J_DIM, K_DIM
 from ndsl.dsl.gt4py import BACKWARD, FORWARD, PARALLEL, computation, exp, interval, sqrt
-
-# from pace.dsl.dace.orchestration import orchestrate
 from ndsl.dsl.stencil import StencilFactory
 from ndsl.dsl.typing import (
     Bool,
@@ -1604,7 +1602,7 @@ class ScaleAwareTKEMoistEDMF:
         )
 
         for k in range(idx.domain[2]):
-            self._k_mask.data[:, :, k] = k
+            self._k_mask[:, :, k] = k
 
         # Internal compute variables
         self._lcld = make_quantity_2D(Int)

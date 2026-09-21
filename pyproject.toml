@@ -9,7 +9,6 @@ classifiers = [
   "Intended Audience :: Developers",
   "Natural Language :: English",
   "Programming Language :: Python :: 3",
-  "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12"
 ]
 dependencies = [
@@ -23,7 +22,7 @@ license = "Apache-2.0"
 license-files = ["LICENSE.md"]
 name = "pyshield"
 readme = "README.md"
-requires-python = ">=3.11.7, <3.14"
+requires-python = ">=3.12, <3.13"
 version = "0.2.0"
 
 [project.optional-dependencies]
@@ -40,7 +39,7 @@ extras = [
   "pyshield[pyfv3]",
   "pyshield[test]"
 ]
-ndsl = ["ndsl @ git+https://github.com/NOAA-GFDL/NDSL.git@develop"]
+ndsl = ["ndsl @ git+https://github.com/NOAA-GFDL/NDSL.git@2026.08.00"]
 pyfv3 = ["pyfv3 @ git+https://github.com/NOAA-GFDL/pyFV3.git@develop"]
 test = [
   "coverage",
@@ -54,8 +53,7 @@ Repository = "https://github.com/NOAA-GFDL/PySHiELD"
 [tool.aliases]
 
 [tool.black]
-line-length = 88
-target_version = ['py311']
+target-version = ["py312"]
 
 [tool.coverage.run]
 branch = true
@@ -76,15 +74,10 @@ max-line-length = 88
 
 [tool.isort]
 default_section = "THIRDPARTY"
-force_grid_wrap = 0
-include_trailing_comma = true
 known_first_party = "pyfv3,ndsl,pyshield"
 known_third_party = "f90nml,pytest,xarray,numpy,mpi4py,gt4py"
-line_length = 88
-lines_after_imports = 2
-multi_line_output = 3
+profile = "black"
 sections = "FUTURE,STDLIB,THIRDPARTY,FIRSTPARTY,LOCALFOLDER"
-use_parentheses = true
 
 [tool.mypy]
 explicit_package_bases = true

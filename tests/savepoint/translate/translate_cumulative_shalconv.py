@@ -1,10 +1,10 @@
 import copy
 
 import numpy as np
-from gt4py.cartesian.gtscript import FORWARD, computation, interval
 
 from ndsl import QuantityFactory, StencilFactory, SubtileGridSizer
 from ndsl.constants import I_DIM, J_DIM, K_DIM
+from ndsl.dsl.gt4py import FORWARD, computation, interval
 from ndsl.dsl.typing import (
     Bool,
     BoolFieldIJ,
@@ -44,7 +44,6 @@ from pyshield.stencils.shallow_convection.samfshalconv import (
     stencil_update_kbcon1_cnvflg,
 )
 from tests.savepoint.translate.translate_physics import TranslatePhysicsFortranData2Py
-
 
 FloatFieldShalConv = set_4d_field_size(7, Float)
 
@@ -260,7 +259,7 @@ class Static1:
         )
 
         for k in range(grid_indexing.domain[2]):
-            self._k_mask.data[:, :, k] = k
+            self._k_mask[:, :, k] = k
 
         self._heo_kb = make_quantity_2D()
         self._drag = make_quantity()
@@ -629,7 +628,7 @@ class Static2:
         )
 
         for k in range(grid_indexing.domain[2]):
-            self._k_mask.data[:, :, k] = k
+            self._k_mask[:, :, k] = k
 
         self._heo_kb = make_quantity_2D()
         self._drag = make_quantity()
@@ -1068,7 +1067,7 @@ class UpdateKB9:
         )
 
         for k in range(grid_indexing.domain[2]):
-            self._k_mask.data[:, :, k] = k
+            self._k_mask[:, :, k] = k
 
         self._heo_kb = make_quantity_2D()
         self._drag = make_quantity()
@@ -1650,7 +1649,7 @@ class Static10:
         )
 
         for k in range(grid_indexing.domain[2]):
-            self._k_mask.data[:, :, k] = k
+            self._k_mask[:, :, k] = k
 
         self._heo_kb = make_quantity_2D()
         self._drag = make_quantity()
@@ -3035,7 +3034,7 @@ class FeedbackCtrl:
             dtype=Int,
         )
         for k in range(grid_indexing.domain[2]):
-            self._k_mask.data[:, :, k] = k
+            self._k_mask[:, :, k] = k
 
         self._feedback_control_update_mass_flux = stencil_factory.from_dims_halo(
             func=feedback_control_update_mass_flux,
@@ -3150,7 +3149,7 @@ class SC13:
             dtype=Int,
         )
         for k in range(grid_indexing.domain[2]):
-            self._k_mask.data[:, :, k] = k
+            self._k_mask[:, :, k] = k
         self._stencil_static13 = stencil_factory.from_dims_halo(
             func=stencil_static13,
             compute_dims=[I_DIM, J_DIM, K_DIM],
@@ -3200,7 +3199,7 @@ class CompTendencies:
             dtype=Int,
         )
         for k in range(grid_indexing.domain[2]):
-            self._k_mask.data[:, :, k] = k
+            self._k_mask[:, :, k] = k
         self._comp_tendencies = stencil_factory.from_dims_halo(
             func=comp_tendencies,
             externals={"dt2": self._dt2},
