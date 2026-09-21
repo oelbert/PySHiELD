@@ -28,6 +28,7 @@ from .translate_mfscu import TranslateMFSCU
 from .translate_microphysics import TranslateMicroph
 from .translate_mp_full import TranslateMPFull, TranslateMPSub
 from .translate_neg_adj import TranslateNegAdjP
+from .translate_ozphys import TranslateOZPhys15
 from .translate_particle_properties import TranslateParticleProperties
 from .translate_pbl import TranslatePBL
 from .translate_pbl_subtests import (
