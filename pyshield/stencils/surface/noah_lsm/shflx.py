@@ -1,5 +1,12 @@
 from gt4py.cartesian import gtscript
-from gt4py.cartesian.gtscript import FORWARD, PARALLEL, computation, interval, log
+from gt4py.cartesian.gtscript import (
+    FORWARD,
+    PARALLEL,
+    computation,
+    interval,
+    log,
+    log10,
+)
 
 import ndsl.constants as constants
 import pyshield.constants as physcons
@@ -13,7 +20,6 @@ from ndsl.dsl.typing import (
     Float,
     FloatField,
     FloatFieldIJ,
-    FloatFieldK,
     Int,
     IntFieldIJ,
 )
@@ -172,6 +178,7 @@ def tdfcnd(smc, qz, smcmax, sh2o):
     # saturation ratio
     satratio = smc / smcmax
 
+    # parameters  w/(m.k)
     thkice = 2.2
     thkw = 0.57
     thko = 2.0
@@ -199,8 +206,9 @@ def tdfcnd(smc, qz, smcmax, sh2o):
         ake = satratio
     elif satratio > 0.1:
         # kersten number
-        ake = log(satratio) / log(10) + 1.0  # log10 from ln
+        ake = log10(satratio) + 1.0
     else:
+        # use k = kdry
         ake = 0.0
 
     # thermal conductivity
@@ -222,9 +230,12 @@ def start_shflx(
     no_ice_mask: BoolFieldIJ,
 ):
     with computation(FORWARD), interval(0, 1):
+        ice_mask = False
+        no_ice_mask = False
         if surface_mask:
             # updates the temperature state of the soil column
 
+            # TODO: These could be set at compile-time
             ctfil1 = 0.5
             ctfil2 = 1.0 - ctfil1
 
@@ -232,9 +243,7 @@ def start_shflx(
 
             if ice != 0:  # sea-ice or glacial ice case
                 ice_mask = True
-                no_ice_mask = False
             else:
-                ice_mask = False
                 no_ice_mask = True
 
     with computation(PARALLEL), interval(...):
@@ -285,18 +294,15 @@ def hrtice(
             if surface_mask:
                 # 2. Inner Layers
                 denom = 0.5 * (zsoil[0, 0, -1] - zsoil[0, 0, 1])
-                dtsdz2 = (stc - stc[0, 0, 1]) / denom
-                ddz2 = 2.0 / (zsoil[0, 0, -1] - zsoil[0, 0, 1])
-                ci = -df1 * ddz2 / ((zsoil[0, 0, -1] - zsoil) * hcpct)
+                dtsdz = (stc - stc[0, 0, 1]) / denom
+                ddz = 2.0 / (zsoil[0, 0, -1] - zsoil[0, 0, 1])
+                ci = -df1 * ddz / ((zsoil[0, 0, -1] - zsoil) * hcpct)
 
                 denom = (zsoil - zsoil[0, 0, -1]) * hcpct
-                rhsts = (df1 * dtsdz2 - df1 * dtsdz) / denom
+                rhsts = (df1 * dtsdz - df1 * dtsdz[0, 0, -1]) / denom
 
-                ai = -df1 * ddz / ((zsoil[0, 0, -1] - zsoil) * hcpct)
+                ai = -df1 * ddz[0, 0, -1] / ((zsoil[0, 0, -1] - zsoil) * hcpct)
                 bi = -(ai + ci)
-
-                dtsdz = dtsdz2
-                ddz = ddz2
 
         with interval(-1, None):
             if surface_mask:
@@ -306,13 +312,13 @@ def hrtice(
                     zbot = zsoil
                 else:
                     zbot = -25.0
-                dtsdz2 = (stc - tbot) / (0.5 * (zsoil[0, 0, -1] - zsoil) - zbot)
+                dtsdz = (stc - tbot) / (0.5 * (zsoil[0, 0, -1] - zsoil) - zbot)
                 ci = 0.0
 
                 denom = (zsoil - zsoil[0, 0, -1]) * hcpct
-                rhsts = (df1 * dtsdz2 - df1 * dtsdz) / denom
+                rhsts = (df1 * dtsdz - df1 * dtsdz[0, 0, -1]) / denom
 
-                ai = -df1 * ddz / ((zsoil[0, 0, -1] - zsoil) * hcpct)
+                ai = -df1 * ddz[0, 0, -1] / ((zsoil[0, 0, -1] - zsoil) * hcpct)
                 bi = -(ai + ci)
 
 
@@ -741,7 +747,7 @@ class SoilHeatFlux:
             self._ai,
             self._bi,
             self._ci,
-            surface_mask,
+            self._ice_mask,
         )
 
         self._hrt(
@@ -763,7 +769,7 @@ class SoilHeatFlux:
             self._ai,
             self._bi,
             self._ci,
-            surface_mask,
+            self._no_ice_mask,
         )
 
         self._prep_hstep(

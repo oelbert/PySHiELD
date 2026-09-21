@@ -11,7 +11,6 @@ from ndsl.dsl.typing import (
     Float,
     FloatField,
     FloatFieldIJ,
-    FloatFieldK,
     Int,
     IntFieldIJ,
     IntFieldK,
@@ -70,6 +69,7 @@ def start_nopac(
             et = 0.0
 
     with computation(FORWARD), interval(0, 1):
+        evapo_mask = False
         if nopac_mask:
             if etp > 0.0:
                 evapo_mask = True

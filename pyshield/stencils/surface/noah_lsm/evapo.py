@@ -2,7 +2,7 @@ from gt4py.cartesian import gtscript
 from gt4py.cartesian.gtscript import FORWARD, computation, interval
 
 import pyshield.constants as physcons
-from ndsl.constants import X_DIM, Y_DIM
+from ndsl.constants import X_DIM, Y_DIM, Z_DIM
 
 # from pace.dsl.dace.orchestration import orchestrate
 from ndsl.dsl.stencil import StencilFactory
@@ -52,6 +52,7 @@ def start_evaporation(
             et1 = 0.0
 
     with computation(FORWARD), interval(0, 1):
+        transp_mask = False
         if evapo_mask:
             ec1 = 0.0
             ett1 = 0.0
@@ -79,6 +80,7 @@ def transpiration(
     pc: FloatFieldIJ,
     rtdis: FloatField,
     et1: FloatField,
+    gx: FloatField,
     sgx: FloatFieldIJ,
     transp_mask: BoolFieldIJ,
     k_mask: IntFieldK,
@@ -122,6 +124,11 @@ def transpiration(
 
     with computation(FORWARD), interval(0, 1):
         if transp_mask:
+            # calculate an 'adjusted' potential transpiration
+            # if statement below to avoid tangent linear problems near zero
+            # note: gx and other terms below redistribute transpiration by layer,
+            # et(k), as a function of soil moisture availability, while preserving
+            # total etp1a.
             if cmc != 0.0:
                 etp1a = (
                     shdfac
@@ -145,10 +152,10 @@ def transpiration(
 
     with computation(FORWARD), interval(...):
         if transp_mask:
-            rtx = rtdis + gx - sgx
-            gx *= max(rtx, 0.0)
-
-            denom += gx
+            if nroot > k_mask:
+                rtx = rtdis + gx - sgx
+                gx *= max(rtx, 0.0)
+                denom += gx
 
     with computation(FORWARD), interval(0, 1):
         if transp_mask:
@@ -157,7 +164,8 @@ def transpiration(
 
     with computation(FORWARD), interval(...):
         if transp_mask:
-            et1 = etp1a * gx / denom
+            if nroot > k_mask:
+                et1 = etp1a * gx / denom
 
             # return et1
 
@@ -185,6 +193,7 @@ def finish_evaporation(
             if etp1 > 0.0:
                 if shdfac > 0.0:
                     # calculate canopy evaporation.
+                    # if statements to avoid tangent linear problems near cmc=0.0.
                     if cmc > 0.0:
                         ec1 = (
                             shdfac * ((cmc / physcons.CMCMAX) ** physcons.CFACTR) * etp1
@@ -217,6 +226,12 @@ class EvapoTranspiration:
             dims=[X_DIM, Y_DIM],
             units="",
             dtype=Bool,
+        )
+
+        self._gx = quantity_factory.zeros(
+            dims=[X_DIM, Y_DIM, Z_DIM],
+            units="",
+            dtype=Float,
         )
 
         self._sgx = quantity_factory.zeros(
@@ -332,6 +347,7 @@ class EvapoTranspiration:
             pc,
             rtdis,
             et1,
+            self._gx,
             self._sgx,
             self._transp_mask,
             k_mask,

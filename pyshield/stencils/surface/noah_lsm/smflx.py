@@ -6,14 +6,7 @@ from ndsl.constants import X_DIM, Y_DIM, Z_DIM
 
 # from pace.dsl.dace.orchestration import orchestrate
 from ndsl.dsl.stencil import StencilFactory
-from ndsl.dsl.typing import (
-    Bool,
-    BoolFieldIJ,
-    Float,
-    FloatField,
-    FloatFieldIJ,
-    FloatFieldK,
-)
+from ndsl.dsl.typing import Bool, BoolFieldIJ, Float, FloatField, FloatFieldIJ
 from ndsl.initialization.allocator import QuantityFactory
 from ndsl.quantity import Quantity
 from pyshield.stencils.surface.noah_lsm.sstep import SoilCanopyMoisture
@@ -29,7 +22,13 @@ def wdfcnd_fn(smc, smcmax, bexp, dksat, dwsat, sicemax):
     expon = bexp + 2.0
     wdf = dwsat * factr0**expon
 
-    # frozen soil hydraulic diffusivity.
+    # frozen soil hydraulic diffusivity. very sensitive to the vertical
+    # gradient of unfrozen water. the latter gradient can become very
+    # extreme in freezing/thawing situations, and given the relatively
+    # few and thick soil layers, this gradient sufferes serious
+    # trunction errors yielding erroneously high vertical transports of
+    # unfrozen water in both directions from huge hydraulic diffusivity.
+    # therefore, we found we had to arbitrarily constrain wdf
     if sicemax > 0.0:
         vkwgt = 1.0 / (1.0 + (500.0 * sicemax) ** 3.0)
         wdf = vkwgt * wdf + (1.0 - vkwgt) * dwsat * factr**expon
@@ -68,10 +67,14 @@ def start_smflx(
     from __externals__ import dt
 
     with computation(FORWARD), interval(0, 1):
+        frozen_ground = False
         if surface_mask:
             # compute the right hand side of the canopy eqn term
             rhsct = shdfac * prcp1 - ec1
 
+            # convert rhsct (a rate) to trhsct (an amount) and add it to
+            # existing cmc.  if resulting amt exceeds max capacity, it becomes
+            # drip and will fall to the grnd.
             drip = 0.0
             trhsct = dt * rhsct
             excess = cmc + trhsct
@@ -168,7 +171,7 @@ def srt(
     with computation(FORWARD), interval(0, 1):
         if surface_mask:
             # determine rainfall infiltration rate and runoff
-            cvfrz = 3
+            cvfrz = 3  # TODO: this can be a compile-time constant
             pddum = pcpdrp
             runoff1 = 0.0
             sicemax = 0.0
@@ -184,17 +187,15 @@ def srt(
                     # frozen ground version
                     dt1 = dt / 86400.0
                     smcav = smcmax - smcwlt
-                    dd = -zsoil * smcav
-                    dd = dd * (1.0 - (sh2oa + sice - smcwlt) / smcav)
+                    dmax = -zsoil * smcav
+                    dd = dmax * (1.0 - (sh2oa + sice - smcwlt) / smcav)
                     dice = -zsoil * sice
         with interval(1, None):
             if surface_mask:
                 if pcpdrp != 0:
-                    dd += (
-                        (zsoil[0, 0, -1] - zsoil)
-                        * smcav
-                        * (1.0 - (sh2oa + sice - smcwlt) / smcav)
-                    )
+                    dmax = (zsoil[0, 0, -1] - zsoil) * smcav
+                    dmax = dmax * (1.0 - (sh2oa + sice - smcwlt) / smcav)
+                    dd += dmax
                     dice += (zsoil[0, 0, -1] - zsoil) * sice
 
     with computation(FORWARD):
@@ -211,6 +212,7 @@ def srt(
 
                     infmax = (px * (ddt / (px + ddt))) / dt
 
+                    # frozen ground version:
                     # reduction of infiltration based on frozen ground parameters
                     fcr = 1.0
 
@@ -219,19 +221,19 @@ def srt(
                         ialp1 = cvfrz - 1  # = 2
 
                         # Hardcode for ialp1 = 2
-                        sum = (
+                        sums = (
                             1.0
                             + (acrt ** (cvfrz - 1) / 2.0)
                             + (acrt ** (cvfrz - 2) / 1.0)
                         )
 
-                        fcr = 1.0 - exp(-acrt) * sum
+                        fcr = 1.0 - exp(-acrt) * sums
 
                     infmax *= fcr
 
-                    wdf0, wcnd0 = wdfcnd_fn(sh2oa, smcmax, bexp, dksat, dwsat, sicemax)
+                    wdf, wcnd = wdfcnd_fn(sh2oa, smcmax, bexp, dksat, dwsat, sicemax)
 
-                    infmax = max(infmax, wcnd0)
+                    infmax = max(infmax, wcnd)
                     infmax = min(infmax, px)
 
                     if pcpdrp > infmax:
@@ -242,13 +244,15 @@ def srt(
 
                 # calc the matrix coefficients ai, bi, and ci for the top layer
                 ddz = 1.0 / (-0.5 * zsoil[0, 0, 1])
-                ai0 = 0.0
-                bi0 = wdf0 * ddz / (-zsoil)
-                ci0 = -bi0
+                ai = 0.0
+                bi = wdf * ddz / (-zsoil)
+                ci = -bi
 
                 # calc rhstt for the top layer
                 dsmdz = (sh2o - sh2o[0, 0, 1]) / (-0.5 * zsoil[0, 0, 1])
-                rhstt = (wdf0 * dsmdz + wcnd0 - pddum + edir + et) / zsoil
+                rhstt = (wdf * dsmdz + wcnd - pddum + edir + et) / zsoil
+                # sstt = wdf * dsmdz + wcnd + edir + et
+                ddz2 = 0.0
 
     with computation(FORWARD), interval(1, -1):
         if surface_mask:
@@ -291,10 +295,10 @@ def srt(
             rhstt = -numer / denom2
 
             # calc matrix coefs
-            ai = -wdf * ddz / denom2
+            ai = -wdf * ddz[0, 0, -1] / denom2
             bi = -(ai + ci)
 
-            runoff2 = slope * wcnd
+            runoff2 = slopx * wcnd
 
 
 class SoilMoistureFlux:

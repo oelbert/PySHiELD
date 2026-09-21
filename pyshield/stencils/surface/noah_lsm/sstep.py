@@ -5,7 +5,7 @@ from ndsl.constants import X_DIM, Y_DIM, Z_DIM
 
 # from pace.dsl.dace.orchestration import orchestrate
 from ndsl.dsl.stencil import StencilFactory
-from ndsl.dsl.typing import BoolFieldIJ, Float, FloatField, FloatFieldIJ, FloatFieldK
+from ndsl.dsl.typing import BoolFieldIJ, Float, FloatField, FloatFieldIJ
 from ndsl.initialization.allocator import QuantityFactory
 from ndsl.stencils.tridiag import masked_tridiag_solve
 
@@ -62,7 +62,6 @@ def finish_sstep(
 
             smc = max(min(stot, smcmax), 0.02)
             sh2o = max(smc - sice, 0.0)
-            runoff3 = 0.0
 
     with computation(FORWARD), interval(0, 1):
         if surface_mask:

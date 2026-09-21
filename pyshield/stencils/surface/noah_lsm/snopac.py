@@ -13,7 +13,6 @@ from ndsl.dsl.typing import (
     Float,
     FloatField,
     FloatFieldIJ,
-    FloatFieldK,
     Int,
     IntFieldIJ,
     IntFieldK,
@@ -132,6 +131,7 @@ def start_snopac(
             et = 0.0
 
     with computation(FORWARD), interval(0, 1):
+        evapo_mask = False
         if snopac_mask:
             snoexp = 2.0
             esdmin = 1.0e-6
@@ -232,6 +232,7 @@ def update_temp_and_melt_snow(
                         et = et1 * 1000.0
 
     with computation(FORWARD), interval(0, 1):
+        smflx_mask = False
         if snopac_mask:
             if etp >= 0.0:
                 if ice == 0:

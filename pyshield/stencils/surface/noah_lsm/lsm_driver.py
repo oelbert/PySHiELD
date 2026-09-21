@@ -107,20 +107,24 @@ def canres(
                     # use soil depth as weighting factor
                     gx = 0.0
                     if k_mask < nroot:
-                        gx = max(0.0, min(1.0, (sh2o - smcwlt) / (smcref - smcwlt)))
-                        rcsoil = rcsoil + (zsoil / zroot * gx)
+                        gx = (sh2o - smcwlt) / (smcref - smcwlt)
+                        gx = max(0.0, min(1.0, gx))
+                        rcsoil = rcsoil + ((zsoil / zroot) * gx)
         with interval(1, None):
             if lsm_mask:
                 if shdfac > 0.0:
                     if k_mask < nroot:
-                        gx = max(0.0, min(1.0, (sh2o - smcwlt) / (smcref - smcwlt)))
-                        rcsoil = rcsoil + ((zsoil - zsoil[0, 0, -1]) / zroot * gx)
+                        gx = (sh2o - smcwlt) / (smcref - smcwlt)
+                        gx = max(0.0, min(1.0, gx))
+                        rcsoil = rcsoil + (((zsoil - zsoil[0, 0, -1]) / zroot) * gx)
     with computation(FORWARD), interval(0, 1):
         if lsm_mask:
             if shdfac > 0.0:
                 rcsoil = max(rcsoil, 0.0001)
 
-                # determine canopy resistance due to all factors
+                # determine canopy resistance due to all factors. convert canopy
+                # resistance (rc) to plant coefficient (pc) to be used with
+                # potential evap in determining actual evap.
 
                 rc = rsmin / (xlai * rcs * rct * rcq * rcsoil)
                 rr = (4.0 * sfcems * physcons.SIGMA1 * physcons.RD1 / physcons.CP1) * (
@@ -161,7 +165,42 @@ def penman(
     frzgra,
     ffrozp,
 ):
-    # --- ... subprograms called: none
+    """
+    !  subroutine penman calculates potential evaporation for the current   !
+    !  point.  various partial sums/products are also calculated and passed !
+    !  back to the calling routine for later use.                           !
+    !                                                                       !
+    !                                                                       !
+    !  subprogram called:  none                                             !
+    !                                                                       !
+    !  ====================  defination of variables  ====================  !
+    !                                                                       !
+    !  inputs:                                                       size   !
+    !     sfctmp   - real, sfc temperature at 1st level above ground   1    !
+    !     sfcprs   - real, sfc pressure                                1    !
+    !     sfcems   - real, sfc emissivity for lw radiation             1    !
+    !     ch       - real, sfc exchange coeff for heat & moisture      1    !
+    !     t2v      - real, sfc virtual temperature                     1    !
+    !     th2      - real, air potential temp at zlvl abv grnd         1    !
+    !     prcp     - real, precip rate                                 1    !
+    !     fdown    - real, net solar + downward lw flux at sfc         1    !
+    !     ssoil    - real, upward soil heat flux                       1    !
+    !     q2       - real, mixing ratio at hght zlvl abv ground        1    !
+    !     q2sat    - real, sat mixing ratio at zlvl abv ground         1    !
+    !     dqsdt2   - real, slope of sat specific humidity curve        1    !
+    !     snowng   - logical, snow flag                                1    !
+    !     frzgra   - logical, freezing rain flag                       1    !
+    !                                                                       !
+    !  outputs:                                                             !
+    !     t24      - real, sfctmp**4                                   1    !
+    !     etp      - real, potential evaporation                       1    !
+    !     rch      - real, companion coefficient of ch                 1    !
+    !     epsca    - real,                                             1    !
+    !     rr       - real,                                             1    !
+    !     flx2     - real, freezing rain latent heat flux              1    !
+    !                                                                       !
+    !  ====================    end of description    =====================  !
+    """
 
     flx2 = 0.0
     # # prepare partial quantities for penman equation.
@@ -308,6 +347,7 @@ def init_lsm(
             slc_old = slc
 
     with computation(FORWARD), interval(0, 1):
+        lsm_mask = False
         if land and flag_guess:
             weasd_old = weasd
             snwdph_old = snwdph
@@ -799,6 +839,23 @@ def sflx_1(
             # subroutines sfcdif and penman.
             t2v = sfctmp * (1.0 + 0.61 * q2)
 
+            # TODO: possibly add support for uncoupled mode here?
+            #    if couple == 0:
+            #        t1v  = t1  * (1.0 + 0.61 * q2)
+            #        th2v = th2 * (1.0 + 0.61 * q2)
+
+            #        call sfcdif
+            # #!  ---  inputs:                                                         !
+            # #!          ( zlvl, z0, t1v, th2v, sfcspd, czil,                         !
+            # #!  ---  input/outputs:                                                  !
+            # #!            cm, ch )                                                   !
+
+            # #!     swnet = net solar radiation into ground (w/m2; dn-up) from input
+            # #!     fdown  = net solar + downward lw flux at sfc (w/m2)
+
+            #        fdown = swnet + lwdn
+            #    else:
+
             # surface exchange coefficients computed externally and passed in,
             # hence subroutine sfcdif not called.
             fdown = swnet + lwdn
@@ -826,9 +883,10 @@ def sflx_1(
             )
 
             # etp = 1.712958945801106e-06
-            # call canres to calculate the canopy resistance and convert it
+            # next call canres to calculate the canopy resistance and convert it
             # into pc if nonzero greenness fraction
 
+            # Initialize some values for canres and snopac/nopac:
             rc = 0.0
             rcs = 0.0
             rct = 0.0
@@ -845,16 +903,17 @@ def sflx_1(
             esnow = 0.0
 
         # TODO: Split these out completely
+        snopac_mask = False
+        nopac_mask = False
         if lsm_mask:
             esnow = 0.0
 
             # now decide major pathway branch to take depending on whether
             # snowpack exists or not:
+            # TODO: find a way to combine these so we're not launching so many kernels
             if sneqv == 0.0:
                 nopac_mask = True
-                snopac_mask = False
             else:
-                nopac_mask = False
                 snopac_mask = True
 
 
@@ -1650,6 +1709,61 @@ class NoahLSM:
             self._lsm_mask,
         )
 
+        # TODO: Can we combine snopac and nopac into one call?
+        self._nopac(
+            self._nroot,
+            ep,
+            self._prcp,
+            self._smcmax,
+            self._smcwlt,
+            self._smcref,
+            self._smcdry,
+            self._shdfac,
+            self._sfctmp,
+            sfcemis,
+            self._t24,
+            self._theta1,
+            self._fdown,
+            self._epsca,
+            self._bexp,
+            self._pc,
+            self._rch,
+            self._rr,
+            self._slope,
+            self._kdt,
+            self._frzx,
+            self._psisat,
+            self._zsoil,
+            self._dksat,
+            self._dwsat,
+            self._ice,
+            self._rtdis,
+            self._quartz,
+            self._vegtype,
+            self._cmc,
+            tsurf,
+            stc,
+            slc,
+            tg3,
+            smc,
+            evap,
+            gflux,
+            self._runoff1,
+            self._runoff2,
+            self._runoff3,
+            evbs,
+            evcw,
+            self._et,
+            trans,
+            self._beta,
+            self._drip,
+            self._dew,
+            self._flx1,
+            self._flx3,
+            self._nopac_mask,
+            self._k_mask,
+        )
+
         self._snopac(
             self._nroot,
             ep,
@@ -1710,60 +1824,6 @@ class NoahLSM:
             self._flx3,
             sbsno,
             self._snopac_mask,
-            self._k_mask,
-        )
-
-        self._nopac(
-            self._nroot,
-            ep,
-            self._prcp,
-            self._smcmax,
-            self._smcwlt,
-            self._smcref,
-            self._smcdry,
-            self._shdfac,
-            self._sfctmp,
-            sfcemis,
-            self._t24,
-            self._theta1,
-            self._fdown,
-            self._epsca,
-            self._bexp,
-            self._pc,
-            self._rch,
-            self._rr,
-            self._slope,
-            self._kdt,
-            self._frzx,
-            self._psisat,
-            self._zsoil,
-            self._dksat,
-            self._dwsat,
-            self._ice,
-            self._rtdis,
-            self._quartz,
-            self._vegtype,
-            self._cmc,
-            tsurf,
-            stc,
-            slc,
-            tg3,
-            smc,
-            evap,
-            gflux,
-            self._runoff1,
-            self._runoff2,
-            self._runoff3,
-            evbs,
-            evcw,
-            self._et,
-            trans,
-            self._beta,
-            self._drip,
-            self._dew,
-            self._flx1,
-            self._flx3,
-            self._nopac_mask,
             self._k_mask,
         )
 
