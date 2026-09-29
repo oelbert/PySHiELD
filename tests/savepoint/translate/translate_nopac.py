@@ -1,8 +1,8 @@
 from gt4py.cartesian.gtscript import FORWARD, computation, interval
 
-import pyshield.constants as physcons
+# import pyshield.constants as physcons
 from ndsl import Namelist, StencilFactory
-from ndsl.constants import X_DIM, Y_DIM, Z_DIM
+from ndsl.constants import I_DIM, J_DIM, K_DIM
 from ndsl.dsl.stencil import GridIndexing
 from ndsl.dsl.typing import (
     Bool,
@@ -15,7 +15,8 @@ from ndsl.dsl.typing import (
 )
 from ndsl.initialization.allocator import QuantityFactory
 from ndsl.initialization.sizer import SubtileGridSizer
-from pyshield.stencils.surface.noah_lsm.lsm_2d import nopac_fn
+
+# from pyshield.stencils.surface.noah_lsm.lsm_2d import nopac_fn
 from pyshield.stencils.surface.noah_lsm.nopac import NOPAC
 from tests.savepoint.translate.translate_physics import TranslatePhysicsFortranData2Py
 
@@ -80,7 +81,7 @@ def nopac_stencil(
     nroot: IntFieldIJ,
     nopac_mask: BoolFieldIJ,
 ):
-    from __externals__ import dt, ivegsrc, lheatstrg
+    # from __externals__ import dt, ivegsrc, lheatstrg
 
     with computation(FORWARD), interval(0, 1):
         smc0 = smc[0, 0, 0]
@@ -108,105 +109,105 @@ def nopac_stencil(
         zsoil2 = zsoil[0, 0, 2]
         zsoil3 = zsoil[0, 0, 3]
 
-        if nopac_mask:
-            (
-                cmc,
-                t1,
-                stc0,
-                stc1,
-                stc2,
-                stc3,
-                sh2o0,
-                sh2o1,
-                sh2o2,
-                sh2o3,
-                tbot,
-                eta,
-                smc0,
-                smc1,
-                smc2,
-                smc3,
-                ssoil,
-                runoff1,
-                runoff2,
-                runoff3,
-                edir,
-                ec,
-                et0,
-                et1,
-                et2,
-                et3,
-                ett,
-                beta,
-                drip,
-                dew,
-                flx1,
-                flx3,
-            ) = nopac_fn(
-                nroot,
-                etp,
-                prcp,
-                smcmax,
-                smcwlt,
-                smcref,
-                smcdry,
-                physcons.CMCMAX,
-                dt,
-                shdfac,
-                physcons.SBETA,
-                sfctmp,
-                sfcems,
-                t24,
-                th2,
-                fdown,
-                epsca,
-                bexp,
-                pc,
-                rch,
-                rr,
-                physcons.CFACTR,
-                slope,
-                kdt,
-                frzx,
-                psisat,
-                zsoil0,
-                zsoil1,
-                zsoil2,
-                zsoil3,
-                dksat,
-                dwsat,
-                physcons.ZBOT,
-                ice,
-                rtdis0,
-                rtdis1,
-                rtdis2,
-                rtdis3,
-                quartz,
-                physcons.FXEXP,
-                physcons.CSOIL,
-                ivegsrc,
-                vegtype,
-                cmc,
-                t1,
-                stc0,
-                stc1,
-                stc2,
-                stc3,
-                sh2o0,
-                sh2o1,
-                sh2o2,
-                sh2o3,
-                tbot,
-                smc0,
-                smc1,
-                smc2,
-                smc3,
-                lheatstrg,
-                gx0,
-                gx2,
-                gx3,
-                gx4,
-            )
+        # if nopac_mask:
+        #     (
+        #         cmc,
+        #         t1,
+        #         stc0,
+        #         stc1,
+        #         stc2,
+        #         stc3,
+        #         sh2o0,
+        #         sh2o1,
+        #         sh2o2,
+        #         sh2o3,
+        #         tbot,
+        #         eta,
+        #         smc0,
+        #         smc1,
+        #         smc2,
+        #         smc3,
+        #         ssoil,
+        #         runoff1,
+        #         runoff2,
+        #         runoff3,
+        #         edir,
+        #         ec,
+        #         et0,
+        #         et1,
+        #         et2,
+        #         et3,
+        #         ett,
+        #         beta,
+        #         drip,
+        #         dew,
+        #         flx1,
+        #         flx3,
+        #     ) = nopac_fn(
+        #         nroot,
+        #         etp,
+        #         prcp,
+        #         smcmax,
+        #         smcwlt,
+        #         smcref,
+        #         smcdry,
+        #         physcons.CMCMAX,
+        #         dt,
+        #         shdfac,
+        #         physcons.SBETA,
+        #         sfctmp,
+        #         sfcems,
+        #         t24,
+        #         th2,
+        #         fdown,
+        #         epsca,
+        #         bexp,
+        #         pc,
+        #         rch,
+        #         rr,
+        #         physcons.CFACTR,
+        #         slope,
+        #         kdt,
+        #         frzx,
+        #         psisat,
+        #         zsoil0,
+        #         zsoil1,
+        #         zsoil2,
+        #         zsoil3,
+        #         dksat,
+        #         dwsat,
+        #         physcons.ZBOT,
+        #         ice,
+        #         rtdis0,
+        #         rtdis1,
+        #         rtdis2,
+        #         rtdis3,
+        #         quartz,
+        #         physcons.FXEXP,
+        #         physcons.CSOIL,
+        #         ivegsrc,
+        #         vegtype,
+        #         cmc,
+        #         t1,
+        #         stc0,
+        #         stc1,
+        #         stc2,
+        #         stc3,
+        #         sh2o0,
+        #         sh2o1,
+        #         sh2o2,
+        #         sh2o3,
+        #         tbot,
+        #         smc0,
+        #         smc1,
+        #         smc2,
+        #         smc3,
+        #         lheatstrg,
+        #         gx0,
+        #         gx2,
+        #         gx3,
+        #         gx4,
+        #     )
     with computation(FORWARD), interval(0, 1):
         smc[0, 0, 0] = smc0
         stc[0, 0, 0] = stc0
@@ -243,22 +244,22 @@ class Nopac2d:
         domain = grid_indexing.domain
         domain_2d = (domain[0], domain[1], 1)
         self._gx0 = quantity_factory.zeros(
-            [X_DIM, Y_DIM],
+            [I_DIM, J_DIM],
             units="unknown",
             dtype=Float,
         )
         self._gx2 = quantity_factory.zeros(
-            [X_DIM, Y_DIM],
+            [I_DIM, J_DIM],
             units="unknown",
             dtype=Float,
         )
         self._gx3 = quantity_factory.zeros(
-            [X_DIM, Y_DIM],
+            [I_DIM, J_DIM],
             units="unknown",
             dtype=Float,
         )
         self._gx4 = quantity_factory.zeros(
-            [X_DIM, Y_DIM],
+            [I_DIM, J_DIM],
             units="unknown",
             dtype=Float,
         )
@@ -411,7 +412,7 @@ class NopacTest:
         domain_2d = (domain[0], domain[1], 1)
 
         self._k_mask = quantity_factory.zeros(
-            [X_DIM, Y_DIM, Z_DIM],
+            [I_DIM, J_DIM, K_DIM],
             units="unknown",
             dtype=Int,
         )

@@ -1,21 +1,18 @@
 from gt4py.cartesian.gtscript import FORWARD, computation, interval
 
-import pyshield.constants as physcons
 from ndsl import Namelist, StencilFactory
-from ndsl.constants import X_DIM, Y_DIM, Z_DIM
+from ndsl.constants import I_DIM, J_DIM, K_DIM
 from ndsl.dsl.stencil import GridIndexing
 from ndsl.dsl.typing import (
     Bool,
     BoolFieldIJ,
     Float,
-    FloatField,
-    FloatFieldIJ,
     Int,
-    IntFieldIJ,
 )
 from ndsl.initialization.allocator import QuantityFactory
 from ndsl.initialization.sizer import SubtileGridSizer
-from pyshield.stencils.surface.noah_lsm.lsm_2d import snopac_fn
+
+# from pyshield.stencils.surface.noah_lsm.lsm_2d import snopac_fn
 from pyshield.stencils.surface.noah_lsm.snopac import SNOPAC
 from tests.savepoint.translate.translate_physics import TranslatePhysicsFortranData2Py
 
@@ -60,13 +57,13 @@ class SnopacTest:
         domain_2d = (domain[0], domain[1], 1)
 
         self._snopack_mask = quantity_factory.zeros(
-            [X_DIM, Y_DIM],
+            [I_DIM, J_DIM],
             units="unknown",
             dtype=Bool,
         )
 
         self._k_mask = quantity_factory.zeros(
-            [X_DIM, Y_DIM, Z_DIM],
+            [I_DIM, J_DIM, K_DIM],
             units="unknown",
             dtype=Int,
         )
