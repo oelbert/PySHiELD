@@ -1,6 +1,5 @@
-from ndsl import QuantityFactory, StencilFactory
+from ndsl import QuantityFactory, StencilFactory, SubtileGridSizer
 from ndsl.dsl.stencil import GridIndexing
-from ndsl.initialization.sizer import SubtileGridSizer
 from pyshield._config import LSMConfig
 from pyshield.stencils.surface.noah_lsm.lsm_2d import NoahLSM_2D
 from pyshield.stencils.surface.noah_lsm.lsm_driver import NoahLSM

@@ -1,7 +1,7 @@
 from gt4py.cartesian.gtscript import FORWARD, computation, interval
 
 # import pyshield.constants as physcons
-from ndsl import StencilFactory
+from ndsl import StencilFactory, SubtileGridSizer
 from ndsl.constants import I_DIM, J_DIM, K_DIM
 from ndsl.dsl.stencil import GridIndexing
 from ndsl.dsl.typing import (
@@ -13,7 +13,6 @@ from ndsl.dsl.typing import (
     IntFieldIJ,
 )
 from ndsl.initialization.allocator import QuantityFactory
-from ndsl.initialization.sizer import SubtileGridSizer
 from ndsl.quantity import Quantity
 
 # from pyshield.stencils.surface.noah_lsm.lsm_2d import canres_fn
