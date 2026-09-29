@@ -415,15 +415,19 @@ def hrt(
                 if (not lheatstrg) and (ivegsrc == 1) and (vegtype == 12):
                     df1k = 3.24 * (1.0 - shdfac) + shdfac * df1k
 
-                tbk = stc + (stc[0, 0, 1] - stc) * (zsoil[0, 0, -1] - zsoil) / (
-                    zsoil[0, 0, -1] - zsoil[0, 0, 1]
-                )
-                # calc the vertical soil temp gradient thru each layer
                 denom = 0.5 * (zsoil[0, 0, -1] - zsoil[0, 0, 1])
                 dtsdz = (stc - stc[0, 0, 1]) / denom
                 ddz = 2.0 / (zsoil[0, 0, -1] - zsoil[0, 0, 1])
 
                 ci = -df1k * ddz / ((zsoil[0, 0, -1] - zsoil) * hcpct)
+
+                # TODO: this is inside an "if itavg" in Fotran, but itavg is hardcoded
+                # to True...
+                tbk = stc + (stc[0, 0, 1] - stc) * (zsoil[0, 0, -1] - zsoil) / (
+                    zsoil[0, 0, -1] - zsoil[0, 0, 1]
+                )
+
+                # calc the vertical soil temp gradient thru each layer
 
                 # calculate rhsts
                 denom = (zsoil - zsoil[0, 0, -1]) * hcpct
@@ -439,7 +443,10 @@ def hrt(
                     or (tbk < constants.TICE0)
                 ):
                     dz = zsoil[0, 0, -1] - zsoil
+                    # TODO: this is inside an "if itavg" in Fotran,
+                    # but itavg is hardcoded to True...
                     tavg = tmpavg_fn(tbk[0, 0, -1], stc, tbk, dz)
+
                     tsnsr, sh2o = snksrc_fn(
                         psisat, bexp, tavg, smc, sh2o, smcmax, qtot, dz
                     )
