@@ -4,6 +4,7 @@ from numpy import ndarray
 
 import ndsl.constants as constants
 import pyshield.constants as physcons
+import pyshield.stencils.surface.constants as sfccons
 import pyshield.stencils.surface.noah_lsm.constants as lsmcons
 from ndsl.constants import I_DIM, J_DIM, K_DIM, K_INTERFACE_DIM
 
@@ -160,10 +161,10 @@ def canres_fn(
     # determine canopy resistance due to all factors
 
     rc = rsmin / (xlai * rcs * rct * rcq * rcsoil)
-    rr = (4.0 * sfcems * physcons.SIGMA1 * physcons.RD1 / cpx1) * (sfctmp**4.0) / (
+    rr = (4.0 * sfcems * sfccons.SIGMA1 * sfccons.RD1 / cpx1) * (sfctmp**4.0) / (
         sfcprs * ch
     ) + 1.0
-    delta = (physcons.LSUBC / cpx1) * dqsdt2
+    delta = (sfccons.LSUBC / cpx1) * dqsdt2
 
     pc = (rr + delta) / (rr * (1.0 + rc * ch) + delta)
 
@@ -206,10 +207,10 @@ def penman_fn(
 
     flx2 = 0.0
     # # prepare partial quantities for penman equation.
-    delta = physcons.ELCP * dqsdt2
+    delta = sfccons.ELCP * dqsdt2
     t24 = sfctmp * sfctmp * sfctmp * sfctmp
     rr = t24 * 6.48e-8 / (sfcprs * ch) + 1.0
-    rho = sfcprs / (physcons.RD1 * t2v)
+    rho = sfcprs / (sfccons.RD1 * t2v)
     rch = rho * cpx * ch
 
     # adjust the partial sums / products with the latent heat
@@ -219,24 +220,24 @@ def penman_fn(
             rr += physcons.CPH2O1 * prcp / rch
     else:
         # fractional snowfall/rainfall
-        rr += (physcons.CPICE * ffrozp + physcons.CPH2O1 * (1.0 - ffrozp)) * prcp / rch
+        rr += (sfccons.CPICE * ffrozp + physcons.CPH2O1 * (1.0 - ffrozp)) * prcp / rch
 
     # ssoil = 13.753581783277639
-    fnet = fdown - sfcems * physcons.SIGMA1 * t24 - ssoil
+    fnet = fdown - sfcems * sfccons.SIGMA1 * t24 - ssoil
 
     # include the latent heat effects of frzng rain converting to ice
     # on impact in the calculation of flx2 and fnet.
     if frzgra:
-        flx2 = -physcons.LSUBF * prcp
+        flx2 = -sfccons.LSUBF * prcp
         fnet = fnet - flx2
 
     # finish penman equation calculations.
 
     rad = fnet / rch + th2 - sfctmp
-    a = physcons.ELCP * (q2sat - q2)
+    a = sfccons.ELCP * (q2sat - q2)
 
     epsca = (a * rr + rad * delta) / (delta + rr)
-    etp = epsca * rch / physcons.LSUBC
+    etp = epsca * rch / sfccons.LSUBC
 
     return t24, etp, rch, epsca, rr, flx2
 
@@ -611,7 +612,7 @@ def tmpavg_fn(tup, tm, tdn, dz):
 @gtscript.function
 def frh2o_loop_fn(psisat, ck, swl, smcmax, smc, bx, tavg, error):
     df = log(
-        (psisat * physcons.GS2 / physcons.LSUBF)
+        (psisat * sfccons.GS2 / sfccons.LSUBF)
         * ((1.0 + ck * swl) ** 2.0)
         * (smcmax / (smc - swl)) ** bx
     ) - log(-(tavg - constants.TFREEZE) / tavg)
@@ -699,7 +700,7 @@ def snksrc_fn(psisat, bexp, tavg, smc, sh2o, smcmax, qtot, dt, dz):
 
     # estimate the new amount of liquid water
     dh2o = 1.0000e3
-    xh2o = sh2o + qtot * dt / (dh2o * physcons.LSUBF * dz)
+    xh2o = sh2o + qtot * dt / (dh2o * sfccons.LSUBF * dz)
 
     if xh2o < sh2o and xh2o < free:
         if free > sh2o:
@@ -713,7 +714,7 @@ def snksrc_fn(psisat, bexp, tavg, smc, sh2o, smcmax, qtot, dt, dz):
             xh2o = free
 
     xh2o = max(min(xh2o, smc), 0.0)
-    tsnsr = -dh2o * physcons.LSUBF * dz * (xh2o - sh2o) / dt
+    tsnsr = -dh2o * sfccons.LSUBF * dz * (xh2o - sh2o) / dt
     sh2o = xh2o
 
     return tsnsr, sh2o
@@ -883,8 +884,8 @@ def hrt_fn(
     hcpct = (
         sh2o0 * physcons.CPH2O2
         + (1.0 - smcmax) * csoil_loc
-        + (smcmax - smc0) * physcons.CP2
-        + (smc0 - sh2o0) * physcons.CPICE1
+        + (smcmax - smc0) * sfccons.CP2
+        + (smc0 - sh2o0) * sfccons.CPICE1
     )
 
     # calc the matrix coefficients ai, bi, and ci for the top layer
@@ -930,8 +931,8 @@ def hrt_fn(
     hcpct = (
         sh2o1 * physcons.CPH2O2
         + (1.0 - smcmax) * csoil_loc
-        + (smcmax - smc1) * physcons.CP2
-        + (smc1 - sh2o1) * physcons.CPICE1
+        + (smcmax - smc1) * sfccons.CP2
+        + (smc1 - sh2o1) * sfccons.CPICE1
     )
 
     # calculate thermal diffusivity for each layer
@@ -982,8 +983,8 @@ def hrt_fn(
     hcpct = (
         sh2o2 * physcons.CPH2O2
         + (1.0 - smcmax) * csoil_loc
-        + (smcmax - smc2) * physcons.CP2
-        + (smc2 - sh2o2) * physcons.CPICE1
+        + (smcmax - smc2) * sfccons.CP2
+        + (smc2 - sh2o2) * sfccons.CPICE1
     )
 
     # calculate thermal diffusivity for each layer
@@ -1034,8 +1035,8 @@ def hrt_fn(
     hcpct = (
         sh2o3 * physcons.CPH2O2
         + (1.0 - smcmax) * csoil_loc
-        + (smcmax - smc3) * physcons.CP2
-        + (smc3 - sh2o3) * physcons.CPICE1
+        + (smcmax - smc3) * sfccons.CP2
+        + (smc3 - sh2o3) * sfccons.CPICE1
     )
 
     # calculate thermal diffusivity for each layer
@@ -2499,7 +2500,7 @@ def nopac_fn(
         df1 = df1 * exp(sbeta * shdfac)
 
     # compute intermediate terms passed to routine hrt
-    yynum = fdown - sfcems * physcons.SIGMA1 * t24
+    yynum = fdown - sfcems * sfccons.SIGMA1 * t24
     yy = sfctmp + (yynum / rch + th2 - sfctmp - beta * epsca) / rr
     zz1 = df1 / (-0.5 * zsoil0 * rch * rr) + 1.0
 
@@ -2711,7 +2712,7 @@ def snopac_fn(
         # dewfall (=frostfall in this case).
         dew = -etp1
         esnow2 = etp1 * dt
-        etanrg = etp * ((1.0 - sncovr) * physcons.LSUBC + sncovr * physcons.LSUBS)
+        etanrg = etp * ((1.0 - sncovr) * sfccons.LSUBC + sncovr * sfccons.LSUBS)
 
     else:
         # upward moisture flux
@@ -2720,7 +2721,7 @@ def snopac_fn(
             esnow = etp
             esnow1 = esnow * 0.001
             esnow2 = esnow1 * dt
-            etanrg = esnow * physcons.LSUBS
+            etanrg = esnow * sfccons.LSUBS
 
         else:
             # for non-glacial land case
@@ -2774,7 +2775,7 @@ def snopac_fn(
             esnow = etp * sncovr
             esnow1 = esnow * 0.001
             esnow2 = esnow1 * dt
-            etanrg = esnow * physcons.LSUBS + etns * physcons.LSUBC
+            etanrg = esnow * sfccons.LSUBS + etns * sfccons.LSUBC
 
     # if precip is falling, calculate heat flux from snow sfc
     # to newly accumulating precip
@@ -2782,7 +2783,7 @@ def snopac_fn(
     if snowng:
         # fractional snowfall/rainfall
         flx1 = (
-            (physcons.CPICE * ffrozp + physcons.CPH2O1 * (1.0 - ffrozp))
+            (sfccons.CPICE * ffrozp + physcons.CPH2O1 * (1.0 - ffrozp))
             * prcp
             * (t1 - sfctmp)
         )
@@ -2796,7 +2797,7 @@ def snopac_fn(
     dtot = snowh + dsoil
     denom = 1.0 + df1 / (dtot * rr * rch)
     t12a = (
-        (fdown - flx1 - flx2 - sfcems * physcons.SIGMA1 * t24) / rch
+        (fdown - flx1 - flx2 - sfcems * sfccons.SIGMA1 * t24) / rch
         + th2
         - sfctmp
         - etanrg / rch
@@ -2841,7 +2842,7 @@ def snopac_fn(
                 fdown
                 - flx1
                 - flx2
-                - sfcems * physcons.SIGMA1 * t14
+                - sfcems * sfccons.SIGMA1 * t14
                 - ssoil
                 - seh
                 - etanrg
@@ -2849,7 +2850,7 @@ def snopac_fn(
             if flx3 <= 0.0:
                 flx3 = 0.0
 
-            ex = flx3 * 0.001 / physcons.LSUBF
+            ex = flx3 * 0.001 / sfccons.LSUBF
 
             # snowmelt reduction
             snomlt = ex * dt
@@ -2860,7 +2861,7 @@ def snopac_fn(
             else:
                 # snowmelt exceeds snow depth
                 ex = sneqv / dt
-                flx3 = ex * 1000.0 * physcons.LSUBF
+                flx3 = ex * 1000.0 * sfccons.LSUBF
                 snomlt = sneqv
                 sneqv = 0.0
 
@@ -3314,7 +3315,7 @@ def sflx(
 
     # enhance cp as a function of z0 to mimic heat storage
     cpx = constants.CP_AIR
-    cpx1 = physcons.CP1
+    cpx1 = sfccons.CP1
     cpfac = 1.0
 
     # call penman subroutine to calculate potential evaporation (etp),
@@ -3597,21 +3598,21 @@ def sflx(
         )
 
     # prepare sensible heat (h) for return to parent model
-    sheat = -(ch * physcons.CP1 * sfcprs) / (physcons.RD1 * t2v) * (th2 - t1)
+    sheat = -(ch * sfccons.CP1 * sfcprs) / (sfccons.RD1 * t2v) * (th2 - t1)
 
     # convert units and/or sign of total evap (eta), potential evap (etp),
     # subsurface heat flux (s), and runoffs for what parent model expects
     # convert eta from kg m-2 s-1 to w m-2
-    edir = edir * physcons.LSUBC
-    ec = ec * physcons.LSUBC
-    et_0 = et_0 * physcons.LSUBC
-    et_1 = et_1 * physcons.LSUBC
-    et_2 = et_2 * physcons.LSUBC
-    et_3 = et_3 * physcons.LSUBC
+    edir = edir * sfccons.LSUBC
+    ec = ec * sfccons.LSUBC
+    et_0 = et_0 * sfccons.LSUBC
+    et_1 = et_1 * sfccons.LSUBC
+    et_2 = et_2 * sfccons.LSUBC
+    et_3 = et_3 * sfccons.LSUBC
 
-    ett = ett * physcons.LSUBC
-    esnow = esnow * physcons.LSUBS
-    etp = etp * ((1.0 - sncovr) * physcons.LSUBC + sncovr * physcons.LSUBS)
+    ett = ett * sfccons.LSUBC
+    esnow = esnow * sfccons.LSUBS
+    etp = etp * ((1.0 - sncovr) * sfccons.LSUBC + sncovr * sfccons.LSUBS)
 
     # esnow = 0.0
     if etp > 0.0:
@@ -3825,7 +3826,7 @@ def sfc_drv(
         # set constant parameters
         cpinv = 1.0 / constants.CP_AIR
         hvapi = 1.0 / constants.HLV
-        elocp = physcons.HOCP
+        elocp = sfccons.HOCP
         rhoh2o = 1000.0
         a2 = 17.2693882
         a3 = 273.16

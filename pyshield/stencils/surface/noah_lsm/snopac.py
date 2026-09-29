@@ -3,6 +3,7 @@ from gt4py.cartesian.gtscript import FORWARD, PARALLEL, computation, exp, interv
 
 import ndsl.constants as constants
 import pyshield.constants as physcons
+import pyshield.stencils.surface.constants as sfccons
 from ndsl.constants import I_DIM, J_DIM, K_DIM
 
 # from pace.dsl.dace.orchestration import orchestrate
@@ -164,9 +165,7 @@ def start_snopac(
                 # dewfall (=frostfall in this case).
                 dew = -etp1
                 esnow2 = etp1 * dt
-                etanrg = etp * (
-                    (1.0 - sncovr) * physcons.LSUBC + sncovr * physcons.LSUBS
-                )
+                etanrg = etp * ((1.0 - sncovr) * sfccons.LSUBC + sncovr * sfccons.LSUBS)
 
             else:
                 # upward moisture flux
@@ -175,7 +174,7 @@ def start_snopac(
                     esnow = etp
                     esnow1 = esnow * 0.001
                     esnow2 = esnow1 * dt
-                    etanrg = esnow * physcons.LSUBS
+                    etanrg = esnow * sfccons.LSUBS
 
                 else:
                     # for non-glacial land case
@@ -250,7 +249,7 @@ def update_temp_and_melt_snow(
                     esnow = etp * sncovr
                     esnow1 = esnow * 0.001
                     esnow2 = esnow1 * dt
-                    etanrg = esnow * physcons.LSUBS + etns * physcons.LSUBC
+                    etanrg = esnow * sfccons.LSUBS + etns * sfccons.LSUBC
 
             # if precip is falling, calculate heat flux from snow sfc
             # to newly accumulating precip
@@ -258,7 +257,7 @@ def update_temp_and_melt_snow(
             if snowng:
                 # fractional snowfall/rainfall
                 flx1 = (
-                    (physcons.CPICE * ffrozp + physcons.CPH2O1 * (1.0 - ffrozp))
+                    (sfccons.CPICE * ffrozp + physcons.CPH2O1 * (1.0 - ffrozp))
                     * prcp
                     * (t1 - sfctmp)
                 )
@@ -272,7 +271,7 @@ def update_temp_and_melt_snow(
             dtot = snowh + dsoil
             denom = 1.0 + df1 / (dtot * rr * rch)
             t12a = (
-                (fdown - flx1 - flx2 - sfcems * physcons.SIGMA1 * t24) / rch
+                (fdown - flx1 - flx2 - sfcems * sfccons.SIGMA1 * t24) / rch
                 + th2
                 - sfctmp
                 - etanrg / rch
@@ -317,7 +316,7 @@ def update_temp_and_melt_snow(
                         fdown
                         - flx1
                         - flx2
-                        - sfcems * (physcons.SIGMA1) * t14
+                        - sfcems * (sfccons.SIGMA1) * t14
                         - ssoil
                         - seh
                         - etanrg
@@ -325,7 +324,7 @@ def update_temp_and_melt_snow(
                     if flx3 <= 0.0:
                         flx3 = 0.0
 
-                    ex = flx3 * 0.001 / physcons.LSUBF
+                    ex = flx3 * 0.001 / sfccons.LSUBF
 
                     # snowmelt reduction
                     snomlt = ex * dt
@@ -336,7 +335,7 @@ def update_temp_and_melt_snow(
                     else:
                         # snowmelt exceeds snow depth
                         ex = sneqv / dt
-                        flx3 = ex * 1000.0 * physcons.LSUBF
+                        flx3 = ex * 1000.0 * sfccons.LSUBF
                         snomlt = sneqv
                         sneqv = 0.0
 

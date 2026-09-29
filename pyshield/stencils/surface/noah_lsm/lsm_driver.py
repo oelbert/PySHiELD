@@ -4,6 +4,7 @@ from numpy import ndarray, zeros
 
 import ndsl.constants as constants
 import pyshield.constants as physcons
+import pyshield.stencils.surface.constants as sfccons
 import pyshield.stencils.surface.noah_lsm.constants as lsmcons
 from ndsl.constants import I_DIM, J_DIM, K_DIM
 
@@ -128,10 +129,10 @@ def canres(
                 # potential evap in determining actual evap.
 
                 rc = rsmin / (xlai * rcs * rct * rcq * rcsoil)
-                rr = (4.0 * sfcems * physcons.SIGMA1 * physcons.RD1 / physcons.CP1) * (
+                rr = (4.0 * sfcems * sfccons.SIGMA1 * sfccons.RD1 / sfccons.CP1) * (
                     sfctmp**4.0
                 ) / (sfcprs * ch) + 1.0
-                delta = (physcons.LSUBC / physcons.CP1) * dqsdt2
+                delta = (sfccons.LSUBC / sfccons.CP1) * dqsdt2
 
                 pc = (rr + delta) / (rr * (1.0 + rc * ch) + delta)
 
@@ -205,10 +206,10 @@ def penman(
 
     flx2 = 0.0
     # # prepare partial quantities for penman equation.
-    delta = physcons.ELCP * dqsdt2
+    delta = sfccons.ELCP * dqsdt2
     t24 = sfctmp * sfctmp * sfctmp * sfctmp
     rr = t24 * 6.48e-8 / (sfcprs * ch) + 1.0
-    rho = sfcprs / (physcons.RD1 * t2v)
+    rho = sfcprs / (sfccons.RD1 * t2v)
     rch = rho * constants.CP_AIR * ch
 
     # adjust the partial sums / products with the latent heat
@@ -218,24 +219,24 @@ def penman(
             rr += physcons.CPH2O1 * prcp / rch
     else:
         # fractional snowfall/rainfall
-        rr += (physcons.CPICE * ffrozp + physcons.CPH2O1 * (1.0 - ffrozp)) * prcp / rch
+        rr += (sfccons.CPICE * ffrozp + physcons.CPH2O1 * (1.0 - ffrozp)) * prcp / rch
 
     # ssoil = 13.753581783277639
-    fnet = fdown - sfcems * physcons.SIGMA1 * t24 - ssoil
+    fnet = fdown - sfcems * sfccons.SIGMA1 * t24 - ssoil
 
     # include the latent heat effects of frzng rain converting to ice
     # on impact in the calculation of flx2 and fnet.
     if frzgra:
-        flx2 = -physcons.LSUBF * prcp
+        flx2 = -sfccons.LSUBF * prcp
         fnet = fnet - flx2
 
     # finish penman equation calculations.
 
     rad = fnet / rch + th2 - sfctmp
-    a = physcons.ELCP * (q2sat - q2)
+    a = sfccons.ELCP * (q2sat - q2)
 
     epsca = (a * rr + rad * delta) / (delta + rr)
-    etp = epsca * rch / physcons.LSUBC
+    etp = epsca * rch / sfccons.LSUBC
 
     return t24, etp, rch, epsca, rr, flx2
 
@@ -392,7 +393,7 @@ def init_lsm(
             # forcing data
             prcp = constants.RHO_H2O * tprcp / dt  # precip rate (kg m-2 s-1)
             # slope of sat specific humidity curve at t=sfctmp (kg kg-1 k-1):
-            dqsdt2 = qs1 * physcons.A23M4 / (t1 - physcons.A4) ** 2.0
+            dqsdt2 = qs1 * sfccons.A23M4 / (t1 - sfccons.A4) ** 2.0
 
             # history variables
             cmc = canopy * 0.001  # canopy moisture content (m)
@@ -954,26 +955,24 @@ def sflx_2(
         from __externals__ import dt
 
         if lsm_mask:
-            et = et * physcons.LSUBC
+            et = et * sfccons.LSUBC
 
     with computation(FORWARD):
         with interval(0, 1):
             if lsm_mask:
 
                 # prepare sensible heat (h) for return to parent model
-                sheat = (
-                    -(ch * physcons.CP1 * sfcprs) / (physcons.RD1 * t2v) * (th2 - t1)
-                )
+                sheat = -(ch * sfccons.CP1 * sfcprs) / (sfccons.RD1 * t2v) * (th2 - t1)
 
                 # convert units and/or sign of total evap (eta), potential evap (etp),
                 # subsurface heat flux (s), and runoffs for what parent model expects
                 # convert eta from kg m-2 s-1 to w m-2
-                edir = edir * physcons.LSUBC
-                ec = ec * physcons.LSUBC
+                edir = edir * sfccons.LSUBC
+                ec = ec * sfccons.LSUBC
 
-                ett = ett * physcons.LSUBC
-                esnow = esnow * physcons.LSUBS
-                etp = etp * ((1.0 - sncovr) * physcons.LSUBC + sncovr * physcons.LSUBS)
+                ett = ett * sfccons.LSUBC
+                esnow = esnow * sfccons.LSUBS
+                etp = etp * ((1.0 - sncovr) * sfccons.LSUBC + sncovr * sfccons.LSUBS)
 
                 # esnow = 0.0
                 if etp > 0.0:

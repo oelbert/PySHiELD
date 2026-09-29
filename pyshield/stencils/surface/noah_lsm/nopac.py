@@ -1,6 +1,6 @@
 from gt4py.cartesian.gtscript import FORWARD, PARALLEL, computation, exp, interval
 
-import pyshield.constants as physcons
+import pyshield.stencils.surface.constants as sfccons
 import pyshield.stencils.surface.noah_lsm.constants as lsmcons
 from ndsl.constants import I_DIM, J_DIM, K_DIM
 
@@ -147,7 +147,7 @@ def prep_for_flux_calc(
                 df1 *= exp(lsmcons.SBETA * shdfac)
 
             # compute intermediate terms passed to routine hrt
-            yynum = fdown - sfcems * physcons.SIGMA1 * t24
+            yynum = fdown - sfcems * sfccons.SIGMA1 * t24
             yy = sfctmp + (yynum / rch + th2 - sfctmp - beta * epsca) / rr
             zz1 = df1 / (-0.5 * zsoil * rch * rr) + 1.0
 

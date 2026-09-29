@@ -10,6 +10,7 @@ from gt4py.cartesian.gtscript import (
 
 import ndsl.constants as constants
 import pyshield.constants as physcons
+import pyshield.stencils.surface.constants as sfccons
 import pyshield.stencils.surface.noah_lsm.constants as lsmcons
 from ndsl.constants import I_DIM, J_DIM, K_DIM
 
@@ -47,7 +48,7 @@ def frh2o_fn(psis, bexp, tavg, smc, sh2o, smcmax):
         while (nlog < 10) and kcount:
             nlog += 1
             df = log(
-                (psis * physcons.GS2 / physcons.LSUBF)
+                (psis * sfccons.GS2 / sfccons.LSUBF)
                 * ((1.0 + ck * swl) ** 2.0)
                 * (smcmax / (smc - swl)) ** bx
             ) - log(-(tavg - constants.TICE0) / tavg)
@@ -69,7 +70,7 @@ def frh2o_fn(psis, bexp, tavg, smc, sh2o, smcmax):
         if not kcount:
             fk = (
                 (
-                    (physcons.LSUBF / (physcons.GS2 * (-psis)))
+                    (sfccons.LSUBF / (sfccons.GS2 * (-psis)))
                     * ((tavg - constants.TICE0) / tavg)
                 )
                 ** (-1 / bx)
@@ -93,7 +94,7 @@ def snksrc_fn(psisat, bexp, tavg, smc, sh2o, smcmax, qtot, dz):
 
     # estimate the new amount of liquid water
     dh2o = 1.0000e3
-    xh2o = sh2o + qtot * dt / (dh2o * physcons.LSUBF * dz)
+    xh2o = sh2o + qtot * dt / (dh2o * sfccons.LSUBF * dz)
 
     if xh2o < sh2o and xh2o < free:
         if free > sh2o:
@@ -107,7 +108,7 @@ def snksrc_fn(psisat, bexp, tavg, smc, sh2o, smcmax, qtot, dz):
             xh2o = free
 
     xh2o = max(min(xh2o, smc), 0.0)
-    tsnsr = -dh2o * physcons.LSUBF * dz * (xh2o - sh2o) / dt
+    tsnsr = -dh2o * sfccons.LSUBF * dz * (xh2o - sh2o) / dt
     sh2o = xh2o
 
     return tsnsr, sh2o
@@ -358,8 +359,8 @@ def hrt(
                 hcpct = (
                     sh2o * physcons.CPH2O2
                     + (1.0 - smcmax) * csoil_loc
-                    + (smcmax - smc) * physcons.CP2
-                    + (smc - sh2o) * physcons.CPICE1
+                    + (smcmax - smc) * sfccons.CP2
+                    + (smc - sh2o) * sfccons.CPICE1
                 )
 
                 # calc the matrix coefficients ai, bi, and ci for the top layer
@@ -406,8 +407,8 @@ def hrt(
                 hcpct = (
                     sh2o * physcons.CPH2O2
                     + (1.0 - smcmax) * csoil_loc
-                    + (smcmax - smc) * physcons.CP2
-                    + (smc - sh2o) * physcons.CPICE1
+                    + (smcmax - smc) * sfccons.CP2
+                    + (smc - sh2o) * sfccons.CPICE1
                 )
 
                 # calculate thermal diffusivity for each layer
@@ -463,8 +464,8 @@ def hrt(
                 hcpct = (
                     sh2o * physcons.CPH2O2
                     + (1.0 - smcmax) * csoil_loc
-                    + (smcmax - smc) * physcons.CP2
-                    + (smc - sh2o) * physcons.CPICE1
+                    + (smcmax - smc) * sfccons.CP2
+                    + (smc - sh2o) * sfccons.CPICE1
                 )
 
                 # calculate thermal diffusivity for each layer
