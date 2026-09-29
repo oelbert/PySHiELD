@@ -147,7 +147,7 @@ class SurfaceLayer:
         islmsk = set_sfc_arrays(config.sfc_data)
         self._islmsk = quantity_factory.from_array(
             islmsk,
-            [X_DIM, Y_DIM],
+            [I_DIM, J_DIM],
             units="None",
             dtype=Int,
         )

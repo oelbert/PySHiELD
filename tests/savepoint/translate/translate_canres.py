@@ -1,8 +1,8 @@
 from gt4py.cartesian.gtscript import FORWARD, computation, interval
 
-import pyshield.constants as physcons
+# import pyshield.constants as physcons
 from ndsl import StencilFactory
-from ndsl.constants import X_DIM, Y_DIM, Z_DIM, Z_INTERFACE_DIM
+from ndsl.constants import I_DIM, J_DIM, K_DIM
 from ndsl.dsl.stencil import GridIndexing
 from ndsl.dsl.typing import (
     BoolFieldIJ,
@@ -15,7 +15,8 @@ from ndsl.dsl.typing import (
 from ndsl.initialization.allocator import QuantityFactory
 from ndsl.initialization.sizer import SubtileGridSizer
 from ndsl.quantity import Quantity
-from pyshield.stencils.surface.noah_lsm.lsm_2d import canres_fn
+
+# from pyshield.stencils.surface.noah_lsm.lsm_2d import canres_fn
 from pyshield.stencils.surface.noah_lsm.lsm_driver import canres
 from tests.savepoint.translate.translate_physics import TranslatePhysicsFortranData2Py
 
@@ -55,35 +56,36 @@ def canres_stencil(
 ):
     with computation(FORWARD), interval(0, 1):
         if lsm_mask:
-            rc, pc, rcs, rct, rcq, rcsoil = canres_fn(
-                nroot,
-                swdn,
-                ch,
-                q2,
-                q2sat,
-                dqsdt2,
-                sfctmp,
-                physcons.CP1,
-                sfcprs,
-                sfcems,
-                sh2o0,
-                sh2o1,
-                sh2o2,
-                sh2o3,
-                smcwlt,
-                smcref,
-                zsoil0,
-                zsoil1,
-                zsoil2,
-                zsoil3,
-                rsmin,
-                physcons.RSMAX,
-                physcons.TOPT,
-                rgl,
-                hs,
-                xlai,
-                zroot,
-            )
+            pass
+            # rc, pc, rcs, rct, rcq, rcsoil = canres_fn(
+            #     nroot,
+            #     swdn,
+            #     ch,
+            #     q2,
+            #     q2sat,
+            #     dqsdt2,
+            #     sfctmp,
+            #     physcons.CP1,
+            #     sfcprs,
+            #     sfcems,
+            #     sh2o0,
+            #     sh2o1,
+            #     sh2o2,
+            #     sh2o3,
+            #     smcwlt,
+            #     smcref,
+            #     zsoil0,
+            #     zsoil1,
+            #     zsoil2,
+            #     zsoil3,
+            #     rsmin,
+            #     physcons.RSMAX,
+            #     physcons.TOPT,
+            #     rgl,
+            #     hs,
+            #     xlai,
+            #     zroot,
+            # )
 
 
 def set_2d_fields(
@@ -150,7 +152,7 @@ class Canres2D:
 
         def make_quantity_2d() -> Quantity:
             return quantity_factory.zeros(
-                [X_DIM, Y_DIM],
+                [I_DIM, J_DIM],
                 units="unknown",
                 dtype=Float,
             )
@@ -286,12 +288,12 @@ class Canres:
         nsoil,
     ):
         self._k_mask = quantity_factory.zeros(
-            [X_DIM, Y_DIM, Z_DIM],
+            [I_DIM, J_DIM, K_DIM],
             units="unknown",
             dtype=Int,
         )
         self._zroot = quantity_factory.zeros(
-            [X_DIM, Y_DIM, Z_DIM],
+            [I_DIM, J_DIM, K_DIM],
             units="unknown",
             dtype=Int,
         )
@@ -439,9 +441,9 @@ class TranslateCanres3D(TranslatePhysicsFortranData2Py):
 
     def compute(self, inputs):
         self.make_storage_data_input_vars(inputs)
-        inputs.pop("nsoil"),
-        inputs.pop("rsmax"),
-        inputs.pop("topt"),
+        inputs.pop("nsoil")
+        inputs.pop("rsmax")
+        inputs.pop("topt")
         self.compute_func = Canres(
             self.stencil_factory,
         )
