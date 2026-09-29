@@ -5,6 +5,7 @@ from pyshield.stencils.surface.noah_lsm.lsm_2d import NoahLSM_2D
 from pyshield.stencils.surface.noah_lsm.lsm_driver import NoahLSM
 from tests.savepoint.translate.translate_physics import TranslatePhysicsFortranData2Py
 
+LSOIL = 4
 
 class TranslateNoahLSM_3D(TranslatePhysicsFortranData2Py):
     def __init__(
@@ -16,7 +17,7 @@ class TranslateNoahLSM_3D(TranslatePhysicsFortranData2Py):
         grid_domain = (
             stencil_factory.grid_indexing.domain[0],
             stencil_factory.grid_indexing.domain[1],
-            int(namelist.lsoil),
+            int(LSOIL),
         )
         surface_grid_index = GridIndexing(
             grid_domain,
@@ -81,9 +82,9 @@ class TranslateNoahLSM_3D(TranslatePhysicsFortranData2Py):
             "tskin": {"shield": True},
             "tprcp": {"shield": True},
             "srflag": {"shield": True},
-            "smc": {"shield": True, "kend": namelist.lsoil},
-            "stc": {"shield": True, "kend": namelist.lsoil},
-            "slc": {"shield": True, "kend": namelist.lsoil},
+            "smc": {"shield": True, "kend": LSOIL},
+            "stc": {"shield": True, "kend": LSOIL},
+            "slc": {"shield": True, "kend": LSOIL},
             "canopy": {"shield": True},
             "trans": {"shield": True},
             "tsurf": {"shield": True},
@@ -121,9 +122,9 @@ class TranslateNoahLSM_3D(TranslatePhysicsFortranData2Py):
             "tskin": {"shield": True},
             "tprcp": {"shield": True},
             "srflag": {"shield": True},
-            "smc": {"shield": True, "kend": namelist.lsoil},
-            "stc": {"shield": True, "kend": namelist.lsoil},
-            "slc": {"shield": True, "kend": namelist.lsoil},
+            "smc": {"shield": True, "kend": LSOIL},
+            "stc": {"shield": True, "kend": LSOIL},
+            "slc": {"shield": True, "kend": LSOIL},
             "canopy": {"shield": True},
             "trans": {"shield": True},
             "tsurf": {"shield": True},
@@ -153,11 +154,11 @@ class TranslateNoahLSM_3D(TranslatePhysicsFortranData2Py):
         sizer = SubtileGridSizer(
             init_sizer.nx,
             init_sizer.ny,
-            namelist.lsoil,
+            LSOIL,
             init_sizer.n_halo,
             init_sizer.extra_dim_lengths,
         )
-        sizer.nz = namelist.lsoil
+        sizer.nz = LSOIL
         self.quantity_factory = QuantityFactory(
             sizer,
             self.grid.quantity_factory._numpy,
@@ -198,7 +199,7 @@ class TranslateNoahLSM_2D(TranslatePhysicsFortranData2Py):
         grid_domain = (
             stencil_factory.grid_indexing.domain[0],
             stencil_factory.grid_indexing.domain[1],
-            int(namelist.lsoil),
+            int(LSOIL),
         )
         surface_grid_index = GridIndexing(
             grid_domain,
@@ -263,9 +264,9 @@ class TranslateNoahLSM_2D(TranslatePhysicsFortranData2Py):
             "tskin": {"shield": True},
             "tprcp": {"shield": True},
             "srflag": {"shield": True},
-            "smc": {"shield": True, "kend": namelist.lsoil},
-            "stc": {"shield": True, "kend": namelist.lsoil},
-            "slc": {"shield": True, "kend": namelist.lsoil},
+            "smc": {"shield": True, "kend": LSOIL},
+            "stc": {"shield": True, "kend": LSOIL},
+            "slc": {"shield": True, "kend": LSOIL},
             "canopy": {"shield": True},
             "trans": {"shield": True},
             "tsurf": {"shield": True},
@@ -303,9 +304,9 @@ class TranslateNoahLSM_2D(TranslatePhysicsFortranData2Py):
             "tskin": {"shield": True},
             "tprcp": {"shield": True},
             "srflag": {"shield": True},
-            "smc": {"shield": True, "kend": namelist.lsoil},
-            "stc": {"shield": True, "kend": namelist.lsoil},
-            "slc": {"shield": True, "kend": namelist.lsoil},
+            "smc": {"shield": True, "kend": LSOIL},
+            "stc": {"shield": True, "kend": LSOIL},
+            "slc": {"shield": True, "kend": LSOIL},
             "canopy": {"shield": True},
             "trans": {"shield": True},
             "tsurf": {"shield": True},
@@ -335,11 +336,11 @@ class TranslateNoahLSM_2D(TranslatePhysicsFortranData2Py):
         sizer = SubtileGridSizer(
             init_sizer.nx,
             init_sizer.ny,
-            namelist.lsoil,
+            LSOIL,
             init_sizer.n_halo,
             init_sizer.extra_dim_lengths,
         )
-        sizer.nz = namelist.lsoil
+        sizer.nz = LSOIL
         self.quantity_factory = QuantityFactory(
             sizer,
             self.grid.quantity_factory._numpy,

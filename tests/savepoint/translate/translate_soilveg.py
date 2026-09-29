@@ -4,6 +4,7 @@ from pyshield._config import LSMConfig
 from pyshield.stencils.surface.noah_lsm.sfc_params import set_soil_veg
 from tests.savepoint.translate.translate_physics import TranslatePhysicsFortranData2Py
 
+LSOIL = 4
 
 class SoilVeg:
     def __init__(
@@ -30,7 +31,7 @@ class TranslateSoilVeg(TranslatePhysicsFortranData2Py):
         grid_domain = (
             stencil_factory.grid_indexing.domain[0],
             stencil_factory.grid_indexing.domain[1],
-            int(namelist.lsoil),
+            int(LSOIL),
         )
         surface_grid_index = GridIndexing(
             grid_domain,

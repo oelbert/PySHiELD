@@ -1,6 +1,6 @@
 from gt4py.cartesian.gtscript import FORWARD, computation, interval
 
-#import pyshield.constants as physcons
+# import pyshield.constants as physcons
 from ndsl import StencilFactory, SubtileGridSizer
 from ndsl.constants import I_DIM, J_DIM, K_DIM
 from ndsl.dsl.stencil import GridIndexing
@@ -16,6 +16,7 @@ from ndsl.initialization.allocator import QuantityFactory
 from pyshield.stencils.surface.noah_lsm.snopac import SNOPAC
 from tests.savepoint.translate.translate_physics import TranslatePhysicsFortranData2Py
 
+LSOIL = 4
 
 def invert_bool(
     bool_in: BoolFieldIJ,
@@ -216,7 +217,7 @@ class TranslateSnopack3D(TranslatePhysicsFortranData2Py):
         grid_domain = (
             stencil_factory.grid_indexing.domain[0],
             stencil_factory.grid_indexing.domain[1],
-            int(namelist.lsoil),
+            int(LSOIL),
         )
         surface_grid_index = GridIndexing(
             grid_domain,
@@ -340,11 +341,11 @@ class TranslateSnopack3D(TranslatePhysicsFortranData2Py):
         sizer = SubtileGridSizer(
             init_sizer.nx,
             init_sizer.ny,
-            namelist.lsoil,
+            LSOIL,
             init_sizer.n_halo,
             init_sizer.extra_dim_lengths,
         )
-        sizer.nz = namelist.lsoil
+        sizer.nz = LSOIL
         self.quantity_factory = QuantityFactory(
             sizer,
             self.grid.quantity_factory._numpy,

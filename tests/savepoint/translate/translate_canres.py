@@ -19,6 +19,7 @@ from ndsl.quantity import Quantity
 from pyshield.stencils.surface.noah_lsm.lsm_driver import canres
 from tests.savepoint.translate.translate_physics import TranslatePhysicsFortranData2Py
 
+LSOIL = 4
 
 def canres_stencil(
     nroot: IntFieldIJ,
@@ -380,7 +381,7 @@ class TranslateCanres3D(TranslatePhysicsFortranData2Py):
         grid_domain = (
             stencil_factory.grid_indexing.domain[0],
             stencil_factory.grid_indexing.domain[1],
-            int(namelist.lsoil),
+            int(LSOIL),
         )
         surface_grid_index = GridIndexing(
             grid_domain,
@@ -460,7 +461,7 @@ class Translate2dCanres(TranslatePhysicsFortranData2Py):
         grid_domain = (
             stencil_factory.grid_indexing.domain[0],
             stencil_factory.grid_indexing.domain[1],
-            int(namelist.lsoil),
+            int(LSOIL),
         )
         surface_grid_index = GridIndexing(
             grid_domain,
@@ -523,7 +524,7 @@ class Translate2dCanres(TranslatePhysicsFortranData2Py):
         sizer = SubtileGridSizer.from_tile_params(
             nx_tile=self.namelist.npx - 1,
             ny_tile=self.namelist.npx - 1,
-            nz=self.namelist.lsoil,
+            nz=self.LSOIL,
             n_halo=3,
             extra_dim_lengths={},
             layout=self.namelist.layout,

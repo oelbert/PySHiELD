@@ -19,6 +19,7 @@ from ndsl.initialization.allocator import QuantityFactory
 from pyshield.stencils.surface.noah_lsm.nopac import NOPAC
 from tests.savepoint.translate.translate_physics import TranslatePhysicsFortranData2Py
 
+LSOIL = 4
 
 def nopac_stencil(
     zsoil: FloatField,
@@ -539,7 +540,7 @@ class TranslateNopack3D(TranslatePhysicsFortranData2Py):
         grid_domain = (
             stencil_factory.grid_indexing.domain[0],
             stencil_factory.grid_indexing.domain[1],
-            int(namelist.lsoil),
+            int(LSOIL),
         )
         surface_grid_index = GridIndexing(
             grid_domain,
@@ -647,11 +648,11 @@ class TranslateNopack3D(TranslatePhysicsFortranData2Py):
         sizer = SubtileGridSizer(
             init_sizer.nx,
             init_sizer.ny,
-            namelist.lsoil,
+            LSOIL,
             init_sizer.n_halo,
             init_sizer.extra_dim_lengths,
         )
-        sizer.nz = namelist.lsoil
+        sizer.nz = LSOIL
         self.quantity_factory = QuantityFactory(
             sizer,
             self.grid.quantity_factory._numpy,
@@ -683,7 +684,7 @@ class TranslateNopack2D(TranslatePhysicsFortranData2Py):
         grid_domain = (
             stencil_factory.grid_indexing.domain[0],
             stencil_factory.grid_indexing.domain[1],
-            int(namelist.lsoil),
+            int(LSOIL),
         )
         surface_grid_index = GridIndexing(
             grid_domain,
@@ -791,11 +792,11 @@ class TranslateNopack2D(TranslatePhysicsFortranData2Py):
         sizer = SubtileGridSizer(
             init_sizer.nx,
             init_sizer.ny,
-            namelist.lsoil,
+            LSOIL,
             init_sizer.n_halo,
             init_sizer.extra_dim_lengths,
         )
-        sizer.nz = namelist.lsoil
+        sizer.nz = LSOIL
         self.quantity_factory = QuantityFactory(
             sizer,
             self.grid.quantity_factory._numpy,
