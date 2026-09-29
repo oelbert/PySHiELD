@@ -1,7 +1,7 @@
 from gt4py.cartesian.gtscript import FORWARD, computation, interval
 
 # import pyshield.constants as physcons
-from ndsl import Namelist, StencilFactory
+from ndsl import StencilFactory, SubtileGridSizer
 from ndsl.constants import I_DIM, J_DIM, K_DIM
 from ndsl.dsl.stencil import GridIndexing
 from ndsl.dsl.typing import (
@@ -14,7 +14,6 @@ from ndsl.dsl.typing import (
     IntFieldIJ,
 )
 from ndsl.initialization.allocator import QuantityFactory
-from ndsl.initialization.sizer import SubtileGridSizer
 
 # from pyshield.stencils.surface.noah_lsm.lsm_2d import nopac_fn
 from pyshield.stencils.surface.noah_lsm.nopac import NOPAC
@@ -534,7 +533,7 @@ class TranslateNopack3D(TranslatePhysicsFortranData2Py):
     def __init__(
         self,
         grid,
-        namelist: Namelist,
+        namelist,
         stencil_factory: StencilFactory,
     ):
         grid_domain = (
@@ -678,7 +677,7 @@ class TranslateNopack2D(TranslatePhysicsFortranData2Py):
     def __init__(
         self,
         grid,
-        namelist: Namelist,
+        namelist,
         stencil_factory: StencilFactory,
     ):
         grid_domain = (
@@ -822,7 +821,7 @@ class TranslateNopack1(TranslateNopack2D):
     def __init__(
         self,
         grid,
-        namelist: Namelist,
+        namelist,
         stencil_factory: StencilFactory,
     ):
         super().__init__(grid, namelist, stencil_factory)
@@ -832,7 +831,7 @@ class TranslateNopack2(TranslateNopack1):
     def __init__(
         self,
         grid,
-        namelist: Namelist,
+        namelist,
         stencil_factory: StencilFactory,
     ):
         super().__init__(grid, namelist, stencil_factory)

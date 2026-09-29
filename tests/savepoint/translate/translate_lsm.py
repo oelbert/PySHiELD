@@ -1,6 +1,5 @@
-from ndsl import Namelist, QuantityFactory, StencilFactory
+from ndsl import QuantityFactory, StencilFactory, SubtileGridSizer
 from ndsl.dsl.stencil import GridIndexing
-from ndsl.initialization.sizer import SubtileGridSizer
 from pyshield._config import LSMConfig
 from pyshield.stencils.surface.noah_lsm.lsm_2d import NoahLSM_2D
 from pyshield.stencils.surface.noah_lsm.lsm_driver import NoahLSM
@@ -11,7 +10,7 @@ class TranslateNoahLSM_3D(TranslatePhysicsFortranData2Py):
     def __init__(
         self,
         grid,
-        namelist: Namelist,
+        namelist,
         stencil_factory: StencilFactory,
     ):
         grid_domain = (
@@ -193,7 +192,7 @@ class TranslateNoahLSM_2D(TranslatePhysicsFortranData2Py):
     def __init__(
         self,
         grid,
-        namelist: Namelist,
+        namelist,
         stencil_factory: StencilFactory,
     ):
         grid_domain = (
@@ -378,7 +377,7 @@ class TranslateNoahLSM_iter1(TranslateNoahLSM_3D):
     def __init__(
         self,
         grid,
-        namelist: Namelist,
+        namelist,
         stencil_factory: StencilFactory,
     ):
         super().__init__(grid, namelist, stencil_factory)
@@ -388,7 +387,7 @@ class TranslateNoahLSM_iter2(TranslateNoahLSM_iter1):
     def __init__(
         self,
         grid,
-        namelist: Namelist,
+        namelist,
         stencil_factory: StencilFactory,
     ):
         super().__init__(grid, namelist, stencil_factory)

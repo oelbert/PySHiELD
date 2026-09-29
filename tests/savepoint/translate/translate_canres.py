@@ -1,7 +1,7 @@
 from gt4py.cartesian.gtscript import FORWARD, computation, interval
 
 # import pyshield.constants as physcons
-from ndsl import Namelist, StencilFactory
+from ndsl import StencilFactory, SubtileGridSizer
 from ndsl.constants import I_DIM, J_DIM, K_DIM
 from ndsl.dsl.stencil import GridIndexing
 from ndsl.dsl.typing import (
@@ -13,7 +13,6 @@ from ndsl.dsl.typing import (
     IntFieldIJ,
 )
 from ndsl.initialization.allocator import QuantityFactory
-from ndsl.initialization.sizer import SubtileGridSizer
 from ndsl.quantity import Quantity
 
 # from pyshield.stencils.surface.noah_lsm.lsm_2d import canres_fn
@@ -375,7 +374,7 @@ class TranslateCanres3D(TranslatePhysicsFortranData2Py):
     def __init__(
         self,
         grid,
-        namelist: Namelist,
+        namelist,
         stencil_factory: StencilFactory,
     ):
         grid_domain = (
@@ -455,7 +454,7 @@ class Translate2dCanres(TranslatePhysicsFortranData2Py):
     def __init__(
         self,
         grid,
-        namelist: Namelist,
+        namelist,
         stencil_factory: StencilFactory,
     ):
         grid_domain = (
@@ -544,7 +543,7 @@ class TranslateCanres1(TranslateCanres3D):
     def __init__(
         self,
         grid,
-        namelist: Namelist,
+        namelist,
         stencil_factory: StencilFactory,
     ):
         super().__init__(grid, namelist, stencil_factory)
@@ -554,7 +553,7 @@ class TranslateCanres2(TranslateCanres1):
     def __init__(
         self,
         grid,
-        namelist: Namelist,
+        namelist,
         stencil_factory: StencilFactory,
     ):
         super().__init__(grid, namelist, stencil_factory)

@@ -1,6 +1,5 @@
-from ndsl import Namelist, QuantityFactory, StencilFactory
+from ndsl import QuantityFactory, StencilFactory, SubtileGridSizer
 from ndsl.dsl.stencil import GridIndexing
-from ndsl.initialization.sizer import SubtileGridSizer
 from pyshield._config import LSMConfig
 from pyshield.stencils.surface.noah_lsm.sfc_params import set_soil_veg
 from tests.savepoint.translate.translate_physics import TranslatePhysicsFortranData2Py
@@ -25,7 +24,7 @@ class TranslateSoilVeg(TranslatePhysicsFortranData2Py):
     def __init__(
         self,
         grid,
-        namelist: Namelist,
+        namelist,
         stencil_factory: StencilFactory,
     ):
         grid_domain = (
