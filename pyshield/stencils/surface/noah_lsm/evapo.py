@@ -1,7 +1,7 @@
 from gt4py.cartesian import gtscript
 from gt4py.cartesian.gtscript import FORWARD, computation, interval
 
-import pyshield.constants as physcons
+import pyshield.stencils.surface.noah_lsm.constants as lsmcons
 from ndsl.constants import I_DIM, J_DIM, K_DIM
 
 # from pace.dsl.dace.orchestration import orchestrate
@@ -24,7 +24,7 @@ def devap_fn(etp1, smc, shdfac, smcmax, smcdry):
     sratio = (smc - smcdry) / (smcmax - smcdry)
 
     if sratio > 0.0:
-        fx = sratio**physcons.FXEXP
+        fx = sratio**lsmcons.FXEXP
         fx = max(min(fx, 1.0), 0.0)
     else:
         fx = 0.0
@@ -134,7 +134,7 @@ def transpiration(
                     shdfac
                     * pc
                     * etp1
-                    * (1.0 - (cmc / physcons.CMCMAX) ** physcons.CFACTR)
+                    * (1.0 - (cmc / lsmcons.CMCMAX) ** lsmcons.CFACTR)
                 )
             else:
                 etp1a = shdfac * pc * etp1
@@ -195,9 +195,7 @@ def finish_evaporation(
                     # calculate canopy evaporation.
                     # if statements to avoid tangent linear problems near cmc=0.0.
                     if cmc > 0.0:
-                        ec1 = (
-                            shdfac * ((cmc / physcons.CMCMAX) ** physcons.CFACTR) * etp1
-                        )
+                        ec1 = shdfac * ((cmc / lsmcons.CMCMAX) ** lsmcons.CFACTR) * etp1
                     else:
                         ec1 = 0.0
 

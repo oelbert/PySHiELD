@@ -10,6 +10,7 @@ from gt4py.cartesian.gtscript import (
 
 import ndsl.constants as constants
 import pyshield.constants as physcons
+import pyshield.stencils.surface.noah_lsm.constants as lsmcons
 from ndsl.constants import I_DIM, J_DIM, K_DIM
 
 # from pace.dsl.dace.orchestration import orchestrate
@@ -348,10 +349,10 @@ def hrt(
     with computation(FORWARD):
         with interval(0, 1):
             if surface_mask:
-                csoil_loc = physcons.CSOIL
+                csoil_loc = lsmcons.CSOIL
 
                 if (not lheatstrg) and (ivegsrc == 1) and (vegtype == 12):
-                    csoil_loc = 3.0e6 * (1.0 - shdfac) + physcons.CSOIL * shdfac
+                    csoil_loc = 3.0e6 * (1.0 - shdfac) + lsmcons.CSOIL * shdfac
 
                 # calc the heat capacity of the top soil layer
                 hcpct = (
@@ -473,10 +474,10 @@ def hrt(
                     df1k = 3.24 * (1.0 - shdfac) + shdfac * df1k
 
                 tbk = stc + (tbot - stc) * (zsoil[0, 0, -1] - zsoil) / (
-                    zsoil[0, 0, -1] + zsoil - 2.0 * physcons.ZBOT
+                    zsoil[0, 0, -1] + zsoil - 2.0 * lsmcons.ZBOT
                 )
 
-                denom = 0.5 * (zsoil[0, 0, -1] + zsoil) - physcons.ZBOT
+                denom = 0.5 * (zsoil[0, 0, -1] + zsoil) - lsmcons.ZBOT
                 dtsdz = (stc - tbot) / denom
                 ci = 0.0
 

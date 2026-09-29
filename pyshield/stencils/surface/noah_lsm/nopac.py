@@ -1,6 +1,7 @@
 from gt4py.cartesian.gtscript import FORWARD, PARALLEL, computation, exp, interval
 
 import pyshield.constants as physcons
+import pyshield.stencils.surface.noah_lsm.constants as lsmcons
 from ndsl.constants import I_DIM, J_DIM, K_DIM
 
 # from pace.dsl.dace.orchestration import orchestrate
@@ -141,11 +142,9 @@ def prep_for_flux_calc(
             df1 = tdfcnd(smc, quartz, smcmax, sh2o)
 
             if (not lheatstrg) and (ivegsrc == 1) and (vegtype == 12):
-                df1 = 3.24 * (1.0 - shdfac) + shdfac * df1 * exp(
-                    physcons.SBETA * shdfac
-                )
+                df1 = 3.24 * (1.0 - shdfac) + shdfac * df1 * exp(lsmcons.SBETA * shdfac)
             else:
-                df1 *= exp(physcons.SBETA * shdfac)
+                df1 *= exp(lsmcons.SBETA * shdfac)
 
             # compute intermediate terms passed to routine hrt
             yynum = fdown - sfcems * physcons.SIGMA1 * t24

@@ -4,6 +4,7 @@ from numpy import ndarray
 
 import ndsl.constants as constants
 import pyshield.constants as physcons
+import pyshield.stencils.surface.noah_lsm.constants as lsmcons
 from ndsl.constants import I_DIM, J_DIM, K_DIM, K_INTERFACE_DIM
 
 # from pace.dsl.dace.orchestration import orchestrate
@@ -259,12 +260,12 @@ def redprm_fn(
 ):
     # --- ... subprograms called: none
 
-    kdt = physcons.REFKDT * dksat / physcons.REFDK
+    kdt = lsmcons.REFKDT * dksat / lsmcons.REFDK
 
     frzfact = (smcmax / smcref) * (0.412 / 0.468)
 
     # to adjust frzk parameter to actual soil type: frzk * frzfact
-    frzx = physcons.FRZK * frzfact
+    frzx = lsmcons.FRZK * frzfact
 
     if vegtyp == BARE:
         shdfac = 0.0
@@ -3263,7 +3264,7 @@ def sflx(
         else:
             # determine snow fraction cover.
             # determine surface albedo modification due to snowdepth state.
-            sncovr = snfrac_fn(sneqv, snup, physcons.SALP)
+            sncovr = snfrac_fn(sneqv, snup, lsmcons.SALP)
             albedo = alcalc_fn(alb, snoalb, sncovr)
 
     # thermal conductivity for sea-ice case, glacial-ice case
@@ -3275,9 +3276,9 @@ def sflx(
         # of the thermal diffusivity.
         df1 = tdfcnd_fn(smc0, quartz, smcmax, sh2o0)
         if (not lheatstrg) and (ivegsrc == 1) and (vegtyp == 12):
-            df1 = 3.24 * (1.0 - shdfac) + shdfac * df1 * exp(physcons.SBETA * shdfac)
+            df1 = 3.24 * (1.0 - shdfac) + shdfac * df1 * exp(lsmcons.SBETA * shdfac)
         else:
-            df1 = df1 * exp(physcons.SBETA * shdfac)
+            df1 = df1 * exp(lsmcons.SBETA * shdfac)
 
     dsoil = -0.5 * zsoil0
 
@@ -3370,8 +3371,8 @@ def sflx(
             zsoil2,
             zsoil3,
             rsmin,
-            physcons.RSMAX,
-            physcons.TOPT,
+            lsmcons.RSMAX,
+            lsmcons.TOPT,
             rgl,
             hs,
             xlai,
@@ -3424,10 +3425,10 @@ def sflx(
             smcwlt,
             smcref,
             smcdry,
-            physcons.CMCMAX,
+            lsmcons.CMCMAX,
             dt,
             shdfac,
-            physcons.SBETA,
+            lsmcons.SBETA,
             sfctmp,
             sfcems,
             t24,
@@ -3438,7 +3439,7 @@ def sflx(
             pc,
             rch,
             rr,
-            physcons.CFACTR,
+            lsmcons.CFACTR,
             slope,
             kdt,
             frzx,
@@ -3449,15 +3450,15 @@ def sflx(
             zsoil3,
             dksat,
             dwsat,
-            physcons.ZBOT,
+            lsmcons.ZBOT,
             ice,
             rtdis0,
             rtdis1,
             rtdis2,
             rtdis3,
             quartz,
-            physcons.FXEXP,
-            physcons.CSOIL,
+            lsmcons.FXEXP,
+            lsmcons.CSOIL,
             ivegsrc,
             vegtyp,
             cmc,
@@ -3529,7 +3530,7 @@ def sflx(
             smcwlt,
             smcref,
             smcdry,
-            physcons.CMCMAX,
+            lsmcons.CMCMAX,
             dt,
             df1,
             sfcems,
@@ -3542,7 +3543,7 @@ def sflx(
             pc,
             rch,
             rr,
-            physcons.CFACTR,
+            lsmcons.CFACTR,
             slope,
             kdt,
             frzx,
@@ -3553,7 +3554,7 @@ def sflx(
             zsoil3,
             dwsat,
             dksat,
-            physcons.ZBOT,
+            lsmcons.ZBOT,
             shdfac,
             ice,
             rtdis0,
@@ -3561,8 +3562,8 @@ def sflx(
             rtdis2,
             rtdis3,
             quartz,
-            physcons.FXEXP,
-            physcons.CSOIL,
+            lsmcons.FXEXP,
+            lsmcons.CSOIL,
             flx2,
             snowng,
             ffrozp,

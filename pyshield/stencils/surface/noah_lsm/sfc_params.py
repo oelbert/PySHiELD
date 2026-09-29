@@ -1,8 +1,7 @@
 import numpy as np
 
-import pyshield.constants as physcons
+import pyshield.stencils.surface.noah_lsm.constants as lsmcons
 from ndsl.dsl.typing import Float, Int
-
 
 # Assuming isot = ivet = 1
 
@@ -855,12 +854,12 @@ def set_soil_veg(
     smcref[land_mask] = REFSMC[soil_data[land_mask]]
     smcwlt[land_mask] = WLTSMC[soil_data[land_mask]]
 
-    kdt = physcons.REFKDT * dksat / physcons.REFDK
+    kdt = lsmcons.REFKDT * dksat / lsmcons.REFDK
 
     frzfact[land_mask] = (smcmax[land_mask] / smcref[land_mask]) * (0.412 / 0.468)
 
     # to adjust frzk parameter to actual soil type: frzk * frzfact
-    frzx = physcons.FRZK * frzfact
+    frzx = lsmcons.FRZK * frzfact
 
     nroot[isl_mask == 1] = NROOT_DATA[veg_data[isl_mask == 1]]
     zroot[isl_mask == 1] = ZSOIL_DATA[nroot[isl_mask == 1] - 1]

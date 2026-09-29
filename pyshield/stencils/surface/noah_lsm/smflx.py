@@ -1,7 +1,7 @@
 from gt4py.cartesian import gtscript
 from gt4py.cartesian.gtscript import FORWARD, PARALLEL, computation, exp, interval
 
-import pyshield.constants as physcons
+import pyshield.stencils.surface.noah_lsm.constants as lsmcons
 from ndsl.constants import I_DIM, J_DIM, K_DIM
 
 # from pace.dsl.dace.orchestration import orchestrate
@@ -79,8 +79,8 @@ def start_smflx(
             trhsct = dt * rhsct
             excess = cmc + trhsct
 
-            if excess > physcons.CMCMAX:
-                drip = excess - physcons.CMCMAX
+            if excess > lsmcons.CMCMAX:
+                drip = excess - lsmcons.CMCMAX
 
             # pcpdrp is the combined prcp1 and drip (from cmc) that goes into the soil
             pcpdrp = (1.0 - shdfac) * prcp1 + drip / dt

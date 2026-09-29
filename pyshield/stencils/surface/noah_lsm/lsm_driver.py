@@ -4,6 +4,7 @@ from numpy import ndarray, zeros
 
 import ndsl.constants as constants
 import pyshield.constants as physcons
+import pyshield.stencils.surface.noah_lsm.constants as lsmcons
 from ndsl.constants import I_DIM, J_DIM, K_DIM
 
 # from pace.dsl.dace.orchestration import orchestrate
@@ -89,12 +90,12 @@ def canres(
 
                     # contribution due to incoming solar radiation
                     ff = 0.55 * 2.0 * swdn / (rgl * xlai)
-                    rcs = (ff + rsmin / physcons.RSMAX) / (1.0 + ff)
+                    rcs = (ff + rsmin / lsmcons.RSMAX) / (1.0 + ff)
                     rcs = max(rcs, 0.0001)
 
                     # contribution due to air temperature
                     # at first model level above ground
-                    rct = 1.0 - 0.0016 * (physcons.TOPT - sfctmp) ** 2.0
+                    rct = 1.0 - 0.0016 * (lsmcons.TOPT - sfctmp) ** 2.0
                     rct = max(rct, 0.0001)
 
                     # contribution due to vapor pressure deficit at first model level.
@@ -774,7 +775,7 @@ def sflx_1(
                 else:
                     # determine snow fraction cover.
                     # determine surface albedo modification due to snowdepth state.
-                    sncovr = snfrac(sneqv, snup, physcons.SALP)
+                    sncovr = snfrac(sneqv, snup, lsmcons.SALP)
                     albedo = alcalc(alb, snoalb, sncovr)
 
             # thermal conductivity for sea-ice case, glacial-ice case
@@ -802,10 +803,10 @@ def sflx_1(
                 df1 = tdfcnd(smc, quartz, smcmax, sh2o)
                 if (not lheatstrg) and (ivegsrc == 1) and (vegtype == 12):
                     df1 = 3.24 * (1.0 - shdfac) + shdfac * df1 * exp(
-                        physcons.SBETA * shdfac
+                        lsmcons.SBETA * shdfac
                     )
                 else:
-                    df1 = df1 * exp(physcons.SBETA * shdfac)
+                    df1 = df1 * exp(lsmcons.SBETA * shdfac)
 
             # finally "plane parallel" snowpack effect following
             # v.j. linardini reference cited above. note that dtot is

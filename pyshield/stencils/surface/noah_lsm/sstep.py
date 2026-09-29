@@ -1,6 +1,6 @@
 from gt4py.cartesian.gtscript import FORWARD, PARALLEL, computation, interval
 
-import pyshield.constants as physcons
+import pyshield.stencils.surface.noah_lsm.constants as lsmcons
 from ndsl.constants import I_DIM, J_DIM, K_DIM
 
 # from pace.dsl.dace.orchestration import orchestrate
@@ -69,7 +69,7 @@ def finish_sstep(
             cmc += dt * rhsct
             if cmc < 1.0e-20:
                 cmc = 0.0
-            cmc = min(cmc, physcons.CMCMAX)
+            cmc = min(cmc, lsmcons.CMCMAX)
 
 
 class SoilCanopyMoisture:
