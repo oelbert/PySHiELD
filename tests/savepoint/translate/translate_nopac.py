@@ -1,7 +1,7 @@
 from gt4py.cartesian.gtscript import FORWARD, computation, interval
 
 import pyshield.constants as physcons
-from ndsl import Namelist, StencilFactory
+from ndsl import StencilFactory
 from ndsl.constants import X_DIM, Y_DIM, Z_DIM
 from ndsl.dsl.stencil import GridIndexing
 from ndsl.dsl.typing import (
@@ -533,7 +533,7 @@ class TranslateNopack3D(TranslatePhysicsFortranData2Py):
     def __init__(
         self,
         grid,
-        namelist: Namelist,
+        namelist,
         stencil_factory: StencilFactory,
     ):
         grid_domain = (
@@ -677,7 +677,7 @@ class TranslateNopack2D(TranslatePhysicsFortranData2Py):
     def __init__(
         self,
         grid,
-        namelist: Namelist,
+        namelist,
         stencil_factory: StencilFactory,
     ):
         grid_domain = (
@@ -821,7 +821,7 @@ class TranslateNopack1(TranslateNopack2D):
     def __init__(
         self,
         grid,
-        namelist: Namelist,
+        namelist,
         stencil_factory: StencilFactory,
     ):
         super().__init__(grid, namelist, stencil_factory)
@@ -831,7 +831,7 @@ class TranslateNopack2(TranslateNopack1):
     def __init__(
         self,
         grid,
-        namelist: Namelist,
+        namelist,
         stencil_factory: StencilFactory,
     ):
         super().__init__(grid, namelist, stencil_factory)
