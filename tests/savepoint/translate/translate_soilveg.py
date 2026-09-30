@@ -1,10 +1,12 @@
-from ndsl import QuantityFactory, StencilFactory, SubtileGridSizer
+from ndsl import QuantityFactory, StencilFactory  # , SubtileGridSizer
 from ndsl.dsl.stencil import GridIndexing
 from pyshield._config import LSMConfig
-from pyshield.stencils.surface.noah_lsm.sfc_params import set_soil_veg
+
+# from pyshield.stencils.surface.noah_lsm.sfc_params import set_soil_veg
 from tests.savepoint.translate.translate_physics import TranslatePhysicsFortranData2Py
 
 LSOIL = 4
+
 
 class SoilVeg:
     def __init__(

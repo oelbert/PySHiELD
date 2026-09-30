@@ -528,6 +528,7 @@ class Translate2dCanres(TranslatePhysicsFortranData2Py):
             nz=self.LSOIL,
             n_halo=3,
             layout=self.namelist.layout,
+            backend=self.stencil_factory.backend,
         )
         inputs.pop("nsoil")
 

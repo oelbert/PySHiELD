@@ -158,6 +158,7 @@ class TranslateNoahLSM_3D(TranslatePhysicsFortranData2Py):
             LSOIL,
             init_sizer.n_halo,
             init_sizer.data_dimensions,
+            backend=self.stencil_factory.backend,
         )
         sizer.nz = LSOIL
         self.quantity_factory = QuantityFactory(
@@ -340,6 +341,7 @@ class TranslateNoahLSM_2D(TranslatePhysicsFortranData2Py):
             LSOIL,
             init_sizer.n_halo,
             init_sizer.data_dimensions,
+            backend=self.stencil_factory.backend,
         )
         sizer.nz = LSOIL
         self.quantity_factory = QuantityFactory(
