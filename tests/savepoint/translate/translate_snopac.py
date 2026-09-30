@@ -350,7 +350,7 @@ class TranslateSnopack3D(TranslatePhysicsFortranData2Py):
         sizer.nz = LSOIL
         self.quantity_factory = QuantityFactory(
             sizer,
-            self.grid.quantity_factory._numpy,
+            backend=self.stencil_factory.backend,
         )
 
     def compute(self, inputs):
