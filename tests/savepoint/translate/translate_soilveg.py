@@ -93,9 +93,9 @@ class TranslateSoilVeg(TranslatePhysicsFortranData2Py):
 
     def compute(self, inputs):
         self.make_storage_data_input_vars(inputs)
-        inputs.pop("nsoil"),
-        inputs.pop("rsmax"),
-        inputs.pop("topt"),
+        inputs.pop("nsoil")
+        inputs.pop("rsmax")
+        inputs.pop("topt")
         self.compute_func = SoilVeg(
             self.stencil_factory,
         )
