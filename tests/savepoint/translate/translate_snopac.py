@@ -17,6 +17,7 @@ from pyshield.stencils.surface.noah_lsm.snopac import SNOPAC
 from tests.savepoint.translate.translate_physics import TranslatePhysicsFortranData2Py
 
 LSOIL = 4
+IVEGSRC = 2
 
 
 def invert_bool(
@@ -359,7 +360,7 @@ class TranslateSnopack3D(TranslatePhysicsFortranData2Py):
             self.stencil_factory,
             self.quantity_factory,
             inputs.pop("nsoil"),
-            self.config.ivegsrc,
+            IVEGSRC,
             inputs.pop("lheatstrg"),
             inputs.pop("dt"),
         )

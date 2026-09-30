@@ -20,6 +20,7 @@ from pyshield.stencils.surface.noah_lsm.nopac import NOPAC
 from tests.savepoint.translate.translate_physics import TranslatePhysicsFortranData2Py
 
 LSOIL = 4
+IVEGSRC = 2
 
 
 def nopac_stencil(
@@ -666,7 +667,7 @@ class TranslateNopack3D(TranslatePhysicsFortranData2Py):
             self.stencil_factory,
             self.quantity_factory,
             inputs.pop("nsoil"),
-            self.config.ivegsrc,
+            IVEGSRC,
             inputs.pop("lheatstrg"),
             inputs.pop("dt"),
         )
@@ -811,7 +812,7 @@ class TranslateNopack2D(TranslatePhysicsFortranData2Py):
         self.compute_func = Nopac2d(
             self.stencil_factory,
             self.quantity_factory,
-            self.config.ivegsrc,
+            IVEGSRC,
             inputs.pop("lheatstrg"),
             inputs.pop("dt"),
         )
