@@ -1,6 +1,6 @@
 from gt4py.cartesian import gtscript
 from gt4py.cartesian.gtscript import FORWARD, PARALLEL, computation, exp, interval
-from numpy import ndarray, zeros
+from numpy import array, ndarray, zeros
 
 import ndsl.constants as constants
 import pyshield.constants as physcons
@@ -1220,17 +1220,17 @@ class NoahLSM:
         ) = set_soil_veg(land_data, veg_data, soil_data, vegfrac_data, slope_data)
 
         self._vegtype = quantity_factory.from_array(
-            veg_data,
+            array(veg_data, dtype=Int),
             dims=[I_DIM, J_DIM],
             units="",
         )
         self._soiltype = quantity_factory.from_array(
-            soil_data,
+            array(soil_data, dtype=Int),
             dims=[I_DIM, J_DIM],
             units="",
         )
         self._slopetype = quantity_factory.from_array(
-            slope_data,
+            array(slope_data, dtype=Int),
             dims=[I_DIM, J_DIM],
             units="",
         )
