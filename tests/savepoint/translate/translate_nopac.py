@@ -666,7 +666,7 @@ class TranslateNopack3D(TranslatePhysicsFortranData2Py):
             self.stencil_factory,
             self.quantity_factory,
             inputs.pop("nsoil"),
-            self.namelist.ivegsrc,
+            self.config.ivegsrc,
             inputs.pop("lheatstrg"),
             inputs.pop("dt"),
         )
@@ -811,7 +811,7 @@ class TranslateNopack2D(TranslatePhysicsFortranData2Py):
         self.compute_func = Nopac2d(
             self.stencil_factory,
             self.quantity_factory,
-            self.namelist.ivegsrc,
+            self.config.ivegsrc,
             inputs.pop("lheatstrg"),
             inputs.pop("dt"),
         )

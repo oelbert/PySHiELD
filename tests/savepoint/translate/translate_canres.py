@@ -523,11 +523,11 @@ class Translate2dCanres(TranslatePhysicsFortranData2Py):
     def compute(self, inputs):
         self.make_storage_data_input_vars(inputs)
         sizer = SubtileGridSizer.from_tile_params(
-            nx_tile=self.namelist.npx - 1,
-            ny_tile=self.namelist.npx - 1,
+            nx_tile=self.config.npx - 1,
+            ny_tile=self.config.npx - 1,
             nz=self.LSOIL,
             n_halo=3,
-            layout=self.namelist.layout,
+            layout=self.config.layout,
             backend=self.stencil_factory.backend,
         )
         inputs.pop("nsoil")
