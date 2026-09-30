@@ -18,6 +18,7 @@ from tests.savepoint.translate.translate_physics import TranslatePhysicsFortranD
 
 LSOIL = 4
 
+
 def invert_bool(
     bool_in: BoolFieldIJ,
     bool_out: BoolFieldIJ,
@@ -343,7 +344,7 @@ class TranslateSnopack3D(TranslatePhysicsFortranData2Py):
             init_sizer.ny,
             LSOIL,
             init_sizer.n_halo,
-            init_sizer.extra_dim_lengths,
+            init_sizer.data_dimensions,
         )
         sizer.nz = LSOIL
         self.quantity_factory = QuantityFactory(

@@ -21,6 +21,7 @@ from tests.savepoint.translate.translate_physics import TranslatePhysicsFortranD
 
 LSOIL = 4
 
+
 def canres_stencil(
     nroot: IntFieldIJ,
     swdn: FloatFieldIJ,
@@ -526,7 +527,6 @@ class Translate2dCanres(TranslatePhysicsFortranData2Py):
             ny_tile=self.namelist.npx - 1,
             nz=self.LSOIL,
             n_halo=3,
-            extra_dim_lengths={},
             layout=self.namelist.layout,
         )
         inputs.pop("nsoil")
