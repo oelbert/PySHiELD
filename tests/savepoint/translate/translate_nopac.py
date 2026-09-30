@@ -419,7 +419,7 @@ class NopacTest:
         )
 
         for k in range(nsoil):
-            self._k_mask.data[:, :, k] = k
+            self._k_mask[:, :, k] = k
 
         self._nopac = NOPAC(stencil_factory, quantity_factory, ivegsrc, lheatstrg, dt)
 

@@ -300,7 +300,7 @@ class Canres:
         )
 
         for k in range(nsoil):
-            self._k_mask.data[:, :, k] = k
+            self._k_mask[:, :, k] = k
 
         grid_indexing = stencil_factory.grid_indexing
         self._canres = stencil_factory.from_origin_domain(

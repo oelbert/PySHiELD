@@ -71,7 +71,7 @@ class SnopacTest:
         )
 
         for k in range(nsoil):
-            self._k_mask.data[:, :, k] = k
+            self._k_mask[:, :, k] = k
 
         self._invert = stencil_factory.from_origin_domain(
             func=invert_bool,
